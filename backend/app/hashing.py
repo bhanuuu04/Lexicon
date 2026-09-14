@@ -1,5 +1,8 @@
 """Feature re-export for backward compatibility."""
 from backend.app.features.hashing.service import (
+    hash_password,
+    verify_password,
+    compute_ntlm,
     compute_md5,
     compute_sha256,
     compute_bcrypt,
@@ -10,6 +13,9 @@ from backend.app.features.hashing.service import (
 )
 
 __all__ = [
+    "hash_password",
+    "verify_password",
+    "compute_ntlm",
     "compute_md5",
     "compute_sha256",
     "compute_bcrypt",
@@ -18,3 +24,4 @@ __all__ = [
     "verify_hash",
     "argon2_hasher",
 ]
+
