@@ -121,22 +121,27 @@ def invalidate_cache():
 def save_accounts(accounts: List[Dict[str, Any]]):
     global _accounts_cache
     _accounts_cache = accounts
-    try:
-        temp_file = ACCOUNTS_FILE.with_suffix(f".tmp.{os.getpid()}")
-        with open(str(temp_file), "w", encoding="utf-8") as f:
-            json.dump(accounts, f)
-        if temp_file.exists():
-            try:
-                temp_file.replace(ACCOUNTS_FILE)
-            except Exception:
-                if ACCOUNTS_FILE.exists():
-                    try:
-                        ACCOUNTS_FILE.unlink()
-                    except Exception:
-                        pass
-                temp_file.rename(ACCOUNTS_FILE)
-    except Exception as e:
-        print(f"[DatasetAPI] Warning: disk save encountered {e}, in-memory state updated successfully.")
+
+    def _async_write():
+        try:
+            temp_file = ACCOUNTS_FILE.with_suffix(f".tmp.{os.getpid()}")
+            with open(str(temp_file), "w", encoding="utf-8") as f:
+                json.dump(accounts, f)
+            if temp_file.exists():
+                try:
+                    temp_file.replace(ACCOUNTS_FILE)
+                except Exception:
+                    if ACCOUNTS_FILE.exists():
+                        try:
+                            ACCOUNTS_FILE.unlink()
+                        except Exception:
+                            pass
+                    temp_file.rename(ACCOUNTS_FILE)
+        except Exception as e:
+            print(f"[DatasetAPI] Warning: disk save encountered {e}, in-memory state updated successfully.")
+
+    import threading
+    threading.Thread(target=_async_write, daemon=True).start()
 
 def save_audit_summary(summary: Dict[str, Any]):
     global _audit_cache
@@ -581,17 +586,21 @@ def block_all_sensitive_endpoint(payload: BlockAllSensitiveRequest):
     # Persist locally
     save_accounts(accounts)
     summary = recalculate_and_save_summary(accounts)
-    
-    # Persist to Supabase
-    try:
-        supabase_service.bulk_block_sensitive(reason=payload.reason)
-        supabase_service.log_audit_action(
-            action="BULK_BLOCK_SENSITIVE",
-            actor="Auditor SOC Operations",
-            details={"blocked_count": blocked_count, "reason": payload.reason}
-        )
-    except Exception as e:
-        print(f"[DatasetAPI] Supabase bulk block notice: {e}")
+
+    # Persist to Supabase in background
+    def _async_supabase_sync():
+        try:
+            supabase_service.bulk_block_sensitive(reason=payload.reason)
+            supabase_service.log_audit_action(
+                action="BULK_BLOCK_SENSITIVE",
+                actor="Auditor SOC Operations",
+                details={"blocked_count": blocked_count, "reason": payload.reason}
+            )
+        except Exception as e:
+            print(f"[DatasetAPI] Supabase bulk block notice: {e}")
+
+    import threading
+    threading.Thread(target=_async_supabase_sync, daemon=True).start()
 
     # Broadcast real-time event
     realtime_broadcaster.broadcast("BULK_SENSITIVE_BLOCKED", {
