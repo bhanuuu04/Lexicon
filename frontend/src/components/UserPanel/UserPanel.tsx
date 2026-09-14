@@ -29,8 +29,10 @@ import {
   Users,
   Search,
   XCircle,
+  Wand2,
 } from "lucide-react";
 import { HIBPLiveModal } from "../HIBPCheck/HIBPLiveModal";
+import { generateUltraStrongPassword } from "../../lib/passwordGenerator";
 import {
   evaluatePasswordLive,
   fetchAccountDetail,
@@ -82,6 +84,25 @@ export const UserPanel: React.FC<UserPanelProps> = ({
   const [testPassword, setTestPassword] = useState("");
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<PasswordEvaluationResult | null>(null);
+
+  // Suggest Strong Password notification state
+  const [suggestedNotice, setSuggestedNotice] = useState<string | null>(null);
+
+  const handleSuggestStrongPassword = (target: "blocked" | "reset" | "precheck") => {
+    const generated = generateUltraStrongPassword(18);
+    if (target === "blocked" || target === "reset") {
+      setNewPassword(generated);
+      setConfirmPassword(generated);
+      setShowPassword(true);
+      setResetError(null);
+      setSuggestedNotice("✨ Generated ultra-strong password (18 chars, high cryptographic entropy)");
+      setTimeout(() => setSuggestedNotice(null), 4000);
+    } else if (target === "precheck") {
+      setTestPassword(generated);
+      setSuggestedNotice("✨ Generated candidate password for entropy analysis");
+      setTimeout(() => setSuggestedNotice(null), 4000);
+    }
+  };
 
   // Load active account data
   const loadAccount = async (username: string) => {
@@ -297,7 +318,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({
   return (
     <div className="w-full min-h-screen bg-[#F5F5F7] text-[#1D1D1F] pb-24">
       {/* Header Banner */}
-      <div className="bg-white border-b border-black/[0.06] sticky top-14 z-20 backdrop-blur-md bg-white/90">
+      <div className="bg-white border-b border-black/[0.06] sticky top-16 z-20 backdrop-blur-md bg-white/90">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-semibold text-sm ${
@@ -461,7 +482,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({
         )}
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         {/* ========================================================================= */}
         {/* SCREEN 1: BLOCKED REMEDIATION & RESTORATION SCREEN (WHEN is_blocked === true) */}
         {/* ========================================================================= */}
@@ -471,7 +492,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({
             animate={{ opacity: 1, scale: 1 }}
             className="space-y-6 max-w-3xl mx-auto"
           >
-            <div className="apple-card p-8 sm:p-10 bg-white border border-[#FF3B30]/30 rounded-3xl shadow-2xl space-y-6">
+            <div className="apple-card p-6 sm:p-10 bg-white border border-[#FF3B30]/30 rounded-3xl shadow-2xl space-y-6">
               {/* Header Status */}
               <div className="text-center space-y-3 pb-6 border-b border-black/[0.06]">
                 <div className="w-16 h-16 rounded-3xl bg-[#FF3B30]/10 border border-[#FF3B30]/30 text-[#FF3B30] flex items-center justify-center mx-auto shadow-inner">
@@ -518,9 +539,20 @@ export const UserPanel: React.FC<UserPanelProps> = ({
 
               {/* Embedded Remediation & Password Reset Form */}
               <div className="p-6 rounded-2xl bg-[#0071E3]/[0.03] border border-[#0071E3]/20 space-y-5">
-                <div className="flex items-center space-x-2 text-xs font-semibold text-[#0071E3] uppercase tracking-wider">
-                  <KeyRound className="w-4 h-4" />
-                  <span>Mandatory Account Remediation</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-xs font-semibold text-[#0071E3] uppercase tracking-wider">
+                    <KeyRound className="w-4 h-4" />
+                    <span>Mandatory Account Remediation</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSuggestStrongPassword("blocked")}
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold shadow-xs transition active:scale-95 cursor-pointer"
+                    title="Generate an ultra-strong high-entropy password (NIST 800-63B compliant)"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" />
+                    <span>Suggest Strong Password</span>
+                  </button>
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-[#1D1D1F]">
@@ -531,12 +563,25 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                   </p>
                 </div>
 
+                {suggestedNotice && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-xl bg-[#34C759]/10 text-[#248A3D] text-xs font-medium border border-[#34C759]/20 flex items-center space-x-2"
+                  >
+                    <Sparkles className="w-4 h-4 text-[#34C759] shrink-0" />
+                    <span>{suggestedNotice}</span>
+                  </motion.div>
+                )}
+
                 <form onSubmit={handleExecutePasswordReset} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
-                        New Enterprise Password
-                      </label>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block">
+                          New Enterprise Password
+                        </label>
+                      </div>
                       <div className="relative">
                         <input
                           type={showPassword ? "text" : "password"}
@@ -544,7 +589,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="e.g. Xk9#vP!qR7$wL2zM"
                           disabled={isResetting}
-                          className="w-full px-4 py-3 bg-white border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition"
+                          className="w-full px-4 py-3 bg-white border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition font-mono"
                         />
                         <button
                           type="button"
@@ -557,16 +602,18 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
-                        Confirm New Password
-                      </label>
+                      <div className="mb-1.5">
+                        <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block">
+                          Confirm New Password
+                        </label>
+                      </div>
                       <input
                         type={showPassword ? "text" : "password"}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Re-enter new password"
                         disabled={isResetting}
-                        className="w-full px-4 py-3 bg-white border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition"
+                        className="w-full px-4 py-3 bg-white border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition font-mono"
                       />
                     </div>
                   </div>
@@ -668,12 +715,34 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                   </div>
 
                   {/* Password Reset Form */}
+                  {suggestedNotice && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3 rounded-xl bg-[#34C759]/10 text-[#248A3D] text-xs font-medium border border-[#34C759]/20 flex items-center space-x-2"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#34C759] shrink-0" />
+                      <span>{suggestedNotice}</span>
+                    </motion.div>
+                  )}
+
                   <form onSubmit={handleExecutePasswordReset} className="space-y-5">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
-                          New Enterprise Password
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block">
+                            New Enterprise Password
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleSuggestStrongPassword("reset")}
+                            className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#0071E3]/10 hover:bg-[#0071E3]/15 text-[#0071E3] text-[11px] font-semibold border border-[#0071E3]/20 transition active:scale-95 cursor-pointer shadow-2xs"
+                            title="Generate an ultra-strong high-entropy password (NIST 800-63B compliant)"
+                          >
+                            <Wand2 className="w-3.5 h-3.5" />
+                            <span>Suggest Strong Password</span>
+                          </button>
+                        </div>
                         <div className="relative">
                           <input
                             type={showPassword ? "text" : "password"}
@@ -681,7 +750,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                             onChange={(e) => setNewPassword(e.target.value)}
                             placeholder="Enter compliant new password"
                             disabled={isResetting}
-                            className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                            className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition font-mono"
                           />
                           <button
                             type="button"
@@ -694,16 +763,18 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
-                          Confirm New Password
-                        </label>
+                        <div className="mb-1.5">
+                          <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block">
+                            Confirm New Password
+                          </label>
+                        </div>
                         <input
                           type={showPassword ? "text" : "password"}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Re-enter new password"
                           disabled={isResetting}
-                          className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                          className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition font-mono"
                         />
                       </div>
                     </div>
@@ -861,7 +932,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                   <div className="p-3.5 bg-[#FAFAFC] rounded-xl border border-black/[0.04]">
                     <span className="text-[11px] text-[#86868B] block">Entropy Strength</span>
                     <span className="text-base font-semibold text-[#1D1D1F] mt-1 block">
-                      {account?.entropy_score ? `${account.entropy_score.toFixed(1)} bits` : (account?.zxcvbn_score ? `${account.zxcvbn_score * 18} bits` : "58.4 bits")}
+                      {account?.zxcvbn_analysis?.entropy_bits ? `${account.zxcvbn_analysis.entropy_bits.toFixed(1)} bits` : (account?.zxcvbn_score ? `${account.zxcvbn_score * 18} bits` : "58.4 bits")}
                     </span>
                     <span className={`text-[10px] font-medium ${
                       (account?.zxcvbn_score ?? 3) >= 3
@@ -1068,9 +1139,20 @@ export const UserPanel: React.FC<UserPanelProps> = ({
 
               <form onSubmit={handleEvaluateTestPassword} className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold uppercase text-[#86868B] block mb-1.5">
-                    Candidate Password to Test
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold uppercase text-[#86868B] block">
+                      Candidate Password to Test
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleSuggestStrongPassword("precheck")}
+                      className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#0071E3]/10 hover:bg-[#0071E3]/15 text-[#0071E3] text-[11px] font-semibold border border-[#0071E3]/20 transition active:scale-95 cursor-pointer shadow-2xs"
+                      title="Generate an ultra-strong high-entropy candidate password"
+                    >
+                      <Wand2 className="w-3.5 h-3.5" />
+                      <span>Suggest Strong Password</span>
+                    </button>
+                  </div>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
                       <input
@@ -1078,7 +1160,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                         value={testPassword}
                         onChange={(e) => setTestPassword(e.target.value)}
                         placeholder="Try entering a password (e.g. LexiconDesign2026!)"
-                        className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                        className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition font-mono"
                       />
                       <Lock className="w-4 h-4 text-[#86868B] absolute right-3.5 top-1/2 -translate-y-1/2" />
                     </div>

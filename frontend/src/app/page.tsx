@@ -41,6 +41,12 @@ export default function HomePage() {
     loadInitialData();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }, [experienceMode]);
+
   const handleHeroClick = async () => {
     try {
       const hero = await fetchHeroAccount();

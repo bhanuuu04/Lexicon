@@ -32,6 +32,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* 1. Hero */}
       <LandingHero
         onExploreClick={onExploreAdmin}
+        onExploreUser={onExploreUser}
         onSecurityModelClick={handleScrollToSecurity}
       />
 

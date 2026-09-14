@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Globe, ShieldCheck, Search, Lock, Info, X } from "lucide-react";
+import { Globe, ShieldCheck, Search, Lock, Info, X, Wand2, Sparkles } from "lucide-react";
 import { checkHIBPPrefix } from "../../lib/api";
+import { generateUltraStrongPassword } from "../../lib/passwordGenerator";
 
 interface HIBPLiveModalProps {
   isOpen?: boolean;
@@ -99,16 +100,30 @@ export const HIBPLiveModal: React.FC<HIBPLiveModalProps> = ({
       <div className="apple-card p-6 max-w-2xl mx-auto space-y-6">
         <form onSubmit={handleCheck} className="space-y-4">
           <div>
-            <label className="text-xs uppercase text-[#86868B] block mb-1.5 font-semibold tracking-wider">
-              Sample Password to Verify via k-Anonymity
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs uppercase text-[#86868B] block font-semibold tracking-wider">
+                Sample Password to Verify via k-Anonymity
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const generated = generateUltraStrongPassword(18);
+                  setPasswordInput(generated);
+                }}
+                className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#0071E3]/10 hover:bg-[#0071E3]/15 text-[#0071E3] text-[11px] font-semibold border border-[#0071E3]/20 transition active:scale-95 cursor-pointer"
+                title="Generate a 100% clean, ultra-strong password candidate"
+              >
+                <Wand2 className="w-3.5 h-3.5" />
+                <span>Suggest Strong Password</span>
+              </button>
+            </div>
             <div className="relative">
               <input
                 type="text"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 placeholder="Enter password (e.g. password, Admin123!, Summer2026!)"
-                className="w-full px-4 py-3 rounded-xl bg-[#F5F5F7] border border-black/[0.08] text-sm text-[#1D1D1F] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] focus:bg-white focus:ring-2 focus:ring-[#0071E3]/15 font-sans transition"
+                className="w-full px-4 py-3 rounded-xl bg-[#F5F5F7] border border-black/[0.08] text-sm text-[#1D1D1F] placeholder-[#86868B] focus:outline-none focus:border-[#0071E3] focus:bg-white focus:ring-2 focus:ring-[#0071E3]/15 font-mono transition"
               />
               <Lock className="w-4 h-4 text-[#86868B] absolute right-3.5 top-1/2 -translate-y-1/2" />
             </div>

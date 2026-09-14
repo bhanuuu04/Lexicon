@@ -6,11 +6,13 @@ import { Shield, ArrowRight, ShieldCheck, Zap, Database, Layers, Lock, ShieldAle
 
 interface LandingHeroProps {
   onExploreClick: () => void;
+  onExploreUser?: () => void;
   onSecurityModelClick: () => void;
 }
 
 export const LandingHero: React.FC<LandingHeroProps> = ({
   onExploreClick,
+  onExploreUser,
   onSecurityModelClick,
 }) => {
   const [activeNode, setActiveNode] = useState<"shield" | "containment" | "governance">("shield");
@@ -65,11 +67,20 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             <span>Launch SOC Operations</span>
             <ArrowRight className="w-4 h-4" />
           </button>
+          {onExploreUser && (
+            <button
+              onClick={onExploreUser}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white hover:bg-[#FAFAFC] text-[#1D1D1F] font-medium text-sm border border-black/[0.08] shadow-xs flex items-center justify-center space-x-2 transition active:scale-[0.98]"
+            >
+              <ShieldCheck className="w-4 h-4 text-[#0071E3]" />
+              <span>Employee Shield (Alex)</span>
+            </button>
+          )}
           <button
             onClick={onSecurityModelClick}
-            className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white hover:bg-[#FAFAFC] text-[#1D1D1F] font-medium text-sm border border-black/[0.08] shadow-xs transition active:scale-[0.98]"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-[#6E6E73] hover:text-[#1D1D1F] font-medium text-sm border border-black/[0.06] transition active:scale-[0.98]"
           >
-            Explore Organization Defense Model
+            Explore Defense Model
           </button>
         </motion.div>
 
