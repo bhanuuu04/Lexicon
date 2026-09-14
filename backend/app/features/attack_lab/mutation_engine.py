@@ -6,13 +6,23 @@ Uses a Python generator (yield) to allow early termination upon match without
 pre-allocating large memory structures.
 """
 
-from typing import Generator, List, Optional, Set
+from typing import Generator, List, Optional, Set, Dict, Any
 import itertools
 
 DEFAULT_SEEDS = ["password", "welcome", "admin", "letmein", "qwerty"]
 YEARS = ["2026", "2025", "2024", "2023", "2022"]
 SEASONS = ["Spring", "Summer", "Autumn", "Winter"]
 SPECIALS = ["!", "@", "#", "$"]
+
+KEYBOARD_WALKS = [
+    "1qaz2wsx", "1qaz2wsx3edc", "qwer1234", "asdf1234", "zxcv1234",
+    "1234qwer", "qwerty123456", "asdfghjkl", "1q2w3e4r", "1qaz@WSX"
+]
+
+DICEWARE_SEEDS = [
+    "correct-horse", "battery-staple", "solar-flare", "blue-ocean",
+    "matrix-nexus", "quantum-leap", "iron-shield", "cyber-sentinel"
+]
 
 LEET_MAP = {
     "a": ["4", "@"],
@@ -36,7 +46,6 @@ def generate_leetspeak_variants(word: str, max_variants: int = 8) -> List[str]:
     variants: List[str] = []
     seen: Set[str] = set()
 
-    # Generate standard holistic transformations first
     # Transform 1: Primary leet (first mapping for all chars)
     t1 = list(word)
     for i in indices:
@@ -74,27 +83,54 @@ def generate_leetspeak_variants(word: str, max_variants: int = 8) -> List[str]:
 def generate_candidates(
     org_name: Optional[str] = None,
     max_candidates: int = 50000,
+    user_context: Optional[Dict[str, Any]] = None,
 ) -> Generator[str, None, None]:
     """
     Yield mutation candidates deterministically up to `max_candidates`.
 
     Candidate generation order:
-    1. Base case variants (lowercase, capitalized, uppercase)
+    1. Base case variants (exact, capitalized, lowercase, uppercase)
     2. Words + Special character appends (!, @, #, $)
     3. Words + Year suffixes (2026..2022, recent first)
-    4. Words + Year + Special character combinations (e.g. 2026!, 2026@, !2026)
-    5. Words + Seasons + Year + Specials (e.g. Summer2026!, Spring2025@)
-    6. Leetspeak base words + Year / Special combinations
-    7. Number increments and common patterns up to budget cap.
+    4. Words + Year + Special character combinations (e.g. Welcome2026!, Admin2026@)
+    5. Season Words & Suffixes with Years & Specials (e.g. Summer2026!, Spring2025@)
+    6. Spatial keyboard walks and sequences
+    7. Diceware multi-word combinations + Suffixes
+    8. Leetspeak base words + Year / Special combinations
+    9. Common numeric sequences & padding expansions
+    10. Number increments up to budget cap.
     """
     count = 0
     emitted: Set[str] = set()
 
     # Collect seed words
     seeds: List[str] = []
+    
+    # 1. Organization context
     if org_name and org_name.strip():
         cleaned_org = org_name.strip()
         seeds.append(cleaned_org)
+        
+    # 2. Targeted user context (if provided)
+    if user_context:
+        for field in ["username", "first_name", "last_name", "department", "role"]:
+            val = user_context.get(field)
+            if val and isinstance(val, str) and len(val.strip()) >= 3:
+                clean_val = val.strip()
+                if clean_val.lower() not in [s.lower() for s in seeds]:
+                    seeds.append(clean_val)
+                    
+        # Name combinations (e.g. AlexMorgan, AMorgan)
+        fn = user_context.get("first_name", "").strip()
+        ln = user_context.get("last_name", "").strip()
+        if fn and ln:
+            combo1 = f"{fn}{ln}"
+            combo2 = f"{fn[0]}{ln}"
+            for c in [combo1, combo2]:
+                if c.lower() not in [s.lower() for s in seeds]:
+                    seeds.append(c)
+
+    # 3. Default enterprise attack dictionary seeds
     for s in DEFAULT_SEEDS:
         if s.lower() not in [x.lower() for x in seeds]:
             seeds.append(s)
@@ -116,7 +152,7 @@ def generate_candidates(
         lower = seed.lower()
         cap = seed.capitalize()
         upper = seed.upper()
-        for w in [cap, lower, upper]:
+        for w in [seed, cap, lower, upper]:
             if w not in base_words:
                 base_words.append(w)
 
@@ -179,7 +215,31 @@ def generate_candidates(
                         if (yield from emit(f"{w}{sv}{yr}{sp}")):
                             return
 
-    # 6. Leetspeak Base Words + Exact, Specials, Years, Year+Specials
+    # 6. Spatial Keyboard Walks & Variations
+    for walk in KEYBOARD_WALKS:
+        if (yield from emit(walk)):
+            return
+        if (yield from emit(walk.upper())):
+            return
+        for sp in SPECIALS:
+            if (yield from emit(f"{walk}{sp}")):
+                return
+        for yr in YEARS:
+            for sp in SPECIALS:
+                if (yield from emit(f"{walk}{yr}{sp}")):
+                    return
+
+    # 7. Diceware Multi-word Passphrase Candidates
+    for dw in DICEWARE_SEEDS:
+        if (yield from emit(dw)):
+            return
+        for yr in YEARS:
+            if (yield from emit(f"{dw}-{yr}")):
+                return
+            if (yield from emit(f"{dw}{yr}!")):
+                return
+
+    # 8. Leetspeak Base Words + Exact, Specials, Years, Year+Specials
     for lw in leet_words:
         if (yield from emit(lw)):
             return
@@ -195,7 +255,7 @@ def generate_candidates(
                 if (yield from emit(f"{lw}{sp}{yr}")):
                     return
 
-    # 7. Common numeric sequences & padding expansions up to max_candidates
+    # 9. Common numeric sequences & padding expansions up to max_candidates
     common_num_suffixes = ["1", "12", "123", "1234", "12345", "123456", "01", "007", "99"]
     for w in itertools.chain(base_words, leet_words):
         for num in common_num_suffixes:
@@ -207,7 +267,7 @@ def generate_candidates(
                 if (yield from emit(f"{w}{sp}{num}")):
                     return
 
-    # 8. Numeric range increments (e.g., Word001 .. Word999) if budget remains
+    # 10. Numeric range increments (e.g., Word001 .. Word999) if budget remains
     for i in range(1, 2000):
         for w in base_words:
             if (yield from emit(f"{w}{i}")):
