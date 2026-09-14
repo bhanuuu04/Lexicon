@@ -33,6 +33,7 @@ module.exports = {
       },
       fontFamily: {
         sans: [
+          "var(--font-sans)",
           "-apple-system",
           "BlinkMacSystemFont",
           "'SF Pro Display'",
@@ -41,6 +42,7 @@ module.exports = {
           "sans-serif",
         ],
         mono: [
+          "var(--font-mono)",
           "'SF Mono'",
           "ui-monospace",
           "Menlo",
