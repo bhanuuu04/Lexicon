@@ -15,7 +15,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { AuditSummary, RemediationReport } from "../../types";
-import { generateRemediationReport } from "../../lib/api";
+import { generateRemediationReport, fetchAccounts } from "../../lib/api";
 
 interface AIAdvisoryStudioProps {
   summary: AuditSummary;
@@ -29,65 +29,45 @@ export const AIAdvisoryStudio: React.FC<AIAdvisoryStudioProps> = ({ summary }) =
   const handleGenerate = async () => {
     setLoading(true);
     try {
+      // Fetch live critical accounts for the report
+      let liveAccounts = [];
+      try {
+        const critRes = await fetchAccounts({ tier: "Critical", page_size: 5 });
+        if (critRes.accounts && critRes.accounts.length > 0) {
+          liveAccounts = critRes.accounts;
+        } else {
+          const highRes = await fetchAccounts({ tier: "High", page_size: 5 });
+          liveAccounts = highRes.accounts || [];
+        }
+      } catch (e) {
+        console.error("Failed to fetch live accounts for advisory report:", e);
+      }
+
+      const sampleFindings = liveAccounts.map((a) => ({
+        account_id: a.id,
+        username: a.username,
+        department: a.department,
+        role: a.role,
+        is_privileged: a.is_privileged,
+        risk_tier: a.final_tier || a.baseline_tier,
+        baseline_risk: a.baseline_risk,
+        final_risk: a.final_risk !== undefined ? a.final_risk : a.baseline_risk,
+        zxcvbn_score: a.zxcvbn_score,
+        breach_match: a.breach_match,
+        reuse_cluster_size: a.password_group_id ? 20 : 1,
+        policy_violations: a.policy_violations || [],
+        attack_matched: a.attack_adjustment > 0,
+        attack_elapsed_ms: a.attack_evidence?.elapsed_ms,
+        matched_rule: a.attack_evidence?.matched_rule,
+      }));
+
       const payload = {
         total_audited: summary.total_accounts,
         critical_count: summary.critical_count,
         high_risk_count: summary.high_risk_count,
         privileged_at_risk: summary.privileged_at_risk_count,
         breached_count: summary.breached_count,
-        sample_findings: [
-          {
-            account_id: "ACC-00042",
-            username: "alex.morgan",
-            department: "Information Technology",
-            role: "Enterprise Active Directory Admin",
-            is_privileged: true,
-            risk_tier: "Critical",
-            baseline_risk: 0.8167,
-            final_risk: 0.9667,
-            zxcvbn_score: 2,
-            breach_match: true,
-            reuse_cluster_size: 31,
-            policy_violations: [
-              "Contains predictable enterprise dictionary keyword or sequence ('company')",
-              "Contains predictable current/upcoming calendar year suffix",
-            ],
-            attack_matched: true,
-            attack_elapsed_ms: 310.5,
-            matched_rule: "year_and_special_suffix",
-          },
-          {
-            account_id: "ACC-29113",
-            username: "cthompson29113",
-            department: "Information Technology",
-            role: "Database Administrator",
-            is_privileged: true,
-            risk_tier: "Critical",
-            baseline_risk: 0.8917,
-            final_risk: 0.8917,
-            zxcvbn_score: 1,
-            breach_match: true,
-            reuse_cluster_size: 28,
-            policy_violations: [
-              "Fails character complexity requirement",
-              "Contains predictable dictionary keyword ('123')",
-            ],
-          },
-          {
-            account_id: "ACC-33583",
-            username: "rbrown33583",
-            department: "Finance",
-            role: "Chief Financial Officer",
-            is_privileged: true,
-            risk_tier: "High",
-            baseline_risk: 0.7417,
-            final_risk: 0.7417,
-            zxcvbn_score: 2,
-            breach_match: true,
-            reuse_cluster_size: 19,
-            policy_violations: ["Password length < 12", "Year suffix"],
-          },
-        ],
+        sample_findings: sampleFindings,
       };
 
       const res = await generateRemediationReport(payload);

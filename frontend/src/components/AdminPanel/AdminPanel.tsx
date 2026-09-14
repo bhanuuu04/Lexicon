@@ -18,6 +18,7 @@ import { GenerateDatasetModal } from "./GenerateDatasetModal";
 import { AuditSummary, Account, DatasetMetadata, GenerateDatasetResponse, DatabaseStatus } from "../../types";
 import {
   fetchAccountDetail,
+  fetchAccounts,
   fetchDatasetMetadata,
   runRealtimeSecurityAnalysis,
   syncDatasetToSupabase,
@@ -85,6 +86,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [metadata, setMetadata] = useState<DatasetMetadata | null>(null);
   const [dbStatus, setDbStatus] = useState<DatabaseStatus | null>(null);
   const [adminNotice, setAdminNotice] = useState<string | null>(null);
+  const [priorityAccounts, setPriorityAccounts] = useState<Account[]>([]);
+  const [isLoadingPriorities, setIsLoadingPriorities] = useState(false);
 
   React.useEffect(() => {
     async function loadMeta() {
@@ -99,6 +102,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
     loadMeta();
   }, []);
+
+  const loadPriorities = async () => {
+    setIsLoadingPriorities(true);
+    try {
+      const res = await fetchAccounts({ tier: "Critical", page_size: 3 });
+      if (res.accounts && res.accounts.length > 0) {
+        setPriorityAccounts(res.accounts);
+      } else {
+        const resHigh = await fetchAccounts({ tier: "High", page_size: 3 });
+        setPriorityAccounts(resHigh.accounts || []);
+      }
+    } catch (e) {
+      console.error("Failed to load priority accounts:", e);
+    } finally {
+      setIsLoadingPriorities(false);
+    }
+  };
+
+  React.useEffect(() => {
+    loadPriorities();
+  }, [summary.critical_count, summary.high_risk_count, summary.low_risk_count]);
 
   const handleDatasetGenerated = (res: GenerateDatasetResponse) => {
     setMetadata(res.metadata);
@@ -220,13 +244,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   Enterprise Identity Safeguard
                 </h2>
                 <p className="text-xs text-[#6E6E73] leading-relaxed">
-                  {isTopAdminCompromised ? (
+                  {summary.organization_health?.hero_compromised ? (
                     <span className="text-[#FF3B30] font-medium block">
                       ⚠️ Top-Level Domain Admin (alex.morgan / Root) is insecure or blocked — existential root takeover threat active.
                     </span>
+                  ) : isTopAdminCompromised ? (
+                    <span className="text-[#FF9500] font-medium block">
+                      ⚠️ Root Hero (alex.morgan) is secured. {summary.organization_health?.top_admin_compromised_count || 1} Domain Admin account(s) require policy rotation.
+                    </span>
                   ) : (
                     <span className="text-[#34C759] font-medium block">
-                      🛡️ Top-Level Domain Admins are secured — root infrastructure fully shielded.
+                      🛡️ Top-Level Domain Admins & Root infrastructure are fully secured — domain shielded.
                     </span>
                   )}
                   <span className="text-[11px] text-[#86868B] block mt-1">
@@ -419,104 +447,103 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Hero Account Priority */}
-                  <div className="p-4 rounded-2xl bg-[#FF3B30]/[0.04] border border-[#FF3B30]/20 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="px-2 py-0.5 rounded-full bg-[#FF3B30] text-white text-[9px] font-bold">
-                          CRITICAL HERO
-                        </span>
-                        <span className="text-xs font-bold text-[#FF3B30]">Risk 0.97</span>
-                      </div>
-                      <h4 className="text-sm font-semibold text-[#1D1D1F]">alex.morgan</h4>
-                      <p className="text-xs text-[#6E6E73] mt-0.5">
-                        Enterprise Active Directory Admin • IT Ops
-                      </p>
-                      <p className="text-[11px] text-[#86868B] mt-2">
-                        Compromised in 31-account reuse cluster #42 with predictable year suffix.
-                      </p>
-                    </div>
-                    <div className="pt-4 mt-3 border-t border-[#FF3B30]/10 flex items-center justify-between">
-                      <button
-                        onClick={onHeroClick}
-                        className="px-3 py-1.5 rounded-xl bg-[#FF3B30] hover:bg-[#E02E24] text-white text-xs font-semibold flex items-center space-x-1 transition active:scale-[0.98]"
-                      >
-                        <Zap className="w-3 h-3" />
-                        <span>Simulate Attack</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setActiveTierFilter("Critical");
-                          setActiveAdminTab("accounts");
-                        }}
-                        className="text-xs text-[#6E6E73] hover:text-[#1D1D1F]"
-                      >
-                        Inspect
-                      </button>
-                    </div>
-                  </div>
+                  {priorityAccounts.length > 0 ? (
+                    priorityAccounts.map((acc, idx) => {
+                      const isHero = acc.is_hero || acc.id === "ACC-00042" || acc.username === "alex.morgan";
+                      const risk = acc.final_risk !== undefined ? acc.final_risk : (acc.baseline_risk || 0);
+                      const isCritical = (acc.final_tier || acc.baseline_tier) === "Critical" || risk >= 0.70;
 
-                  {/* Priority 2 */}
-                  <div className="p-4 rounded-2xl bg-[#FAFAFC] border border-black/[0.06] flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="px-2 py-0.5 rounded-full bg-[#FF3B30]/10 text-[#FF3B30] text-[9px] font-bold border border-[#FF3B30]/20">
-                          DOMAIN ADMIN
-                        </span>
-                        <span className="text-xs font-bold text-[#FF3B30]">Risk 0.89</span>
-                      </div>
-                      <h4 className="text-sm font-semibold text-[#1D1D1F]">cthompson29113</h4>
-                      <p className="text-xs text-[#6E6E73] mt-0.5">
-                        Database Administrator • IT Infrastructure
-                      </p>
-                      <p className="text-[11px] text-[#86868B] mt-2">
-                        Known breach match + leetspeak dictionary violation in Cluster #12.
-                      </p>
-                    </div>
-                    <div className="pt-4 mt-3 border-t border-black/[0.04] flex items-center justify-between">
-                      <span className="text-[11px] text-[#FF9500] font-medium">FGPP Policy Queued</span>
-                      <button
-                        onClick={() => {
-                          setActiveTierFilter("Critical");
-                          setActiveAdminTab("accounts");
-                        }}
-                        className="text-xs text-[#0071E3] font-medium hover:underline"
-                      >
-                        View Account →
-                      </button>
-                    </div>
-                  </div>
+                      return (
+                        <div
+                          key={acc.id || idx}
+                          className={`p-4 rounded-2xl flex flex-col justify-between transition-all ${
+                            isHero
+                              ? "bg-[#FF3B30]/[0.04] border border-[#FF3B30]/20"
+                              : "bg-[#FAFAFC] border border-black/[0.06] hover:border-black/[0.12]"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                                <span
+                                  className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                                    isHero
+                                      ? "bg-[#FF3B30] text-white"
+                                      : isCritical
+                                      ? "bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20"
+                                      : "bg-[#FF9500]/10 text-[#FF9500] border border-[#FF9500]/20"
+                                  }`}
+                                >
+                                  {isHero ? "CRITICAL HERO" : acc.is_privileged ? "DOMAIN ADMIN" : "HIGH EXPOSURE"}
+                                </span>
+                                {acc.is_blocked && (
+                                  <span className="px-1.5 py-0.5 rounded-full bg-[#FF3B30]/10 text-[#FF3B30] text-[8px] font-bold border border-[#FF3B30]/20">
+                                    BLOCKED
+                                  </span>
+                                )}
+                              </div>
+                              <span
+                                className={`text-xs font-bold ${
+                                  risk >= 0.70 ? "text-[#FF3B30]" : risk >= 0.40 ? "text-[#FF9500]" : "text-[#34C759]"
+                                }`}
+                              >
+                                Risk {risk.toFixed(2)}
+                              </span>
+                            </div>
+                            <h4 className="text-sm font-semibold text-[#1D1D1F] font-mono">{acc.username}</h4>
+                            <p className="text-xs text-[#6E6E73] mt-0.5 truncate">
+                              {acc.role || "Staff"} • {acc.department || "Enterprise"}
+                            </p>
+                            <p className="text-[11px] text-[#86868B] mt-2 line-clamp-2">
+                              {acc.breach_match
+                                ? "⚠️ Known dark web breach dump match"
+                                : acc.password_group_id
+                                ? `Reused credential in cluster #${acc.password_group_id}`
+                                : acc.policy_violations?.length
+                                ? acc.policy_violations.slice(0, 2).join("; ")
+                                : "Compromised or non-compliant Active Directory credential."}
+                            </p>
+                          </div>
 
-                  {/* Priority 3 */}
-                  <div className="p-4 rounded-2xl bg-[#FAFAFC] border border-black/[0.06] flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="px-2 py-0.5 rounded-full bg-[#FF9500]/10 text-[#FF9500] text-[9px] font-bold border border-[#FF9500]/20">
-                          EXECUTIVE VIP
-                        </span>
-                        <span className="text-xs font-bold text-[#FF9500]">Risk 0.74</span>
+                          <div className="pt-4 mt-3 border-t border-black/[0.04] flex items-center justify-between">
+                            <button
+                              onClick={() => {
+                                if (isHero) {
+                                  onHeroClick();
+                                } else {
+                                  onLaunchAttack(acc);
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 transition active:scale-[0.98] ${
+                                isHero
+                                  ? "bg-[#FF3B30] hover:bg-[#E02E24] text-white"
+                                  : "bg-[#0071E3] hover:bg-[#0077ED] text-white"
+                              }`}
+                            >
+                              <Zap className="w-3 h-3" />
+                              <span>Simulate Attack</span>
+                            </button>
+                            <button
+                              onClick={() => onSelectAccount(acc)}
+                              className="text-xs text-[#6E6E73] hover:text-[#1D1D1F] font-medium cursor-pointer"
+                            >
+                              Inspect →
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="col-span-1 md:col-span-3 p-8 rounded-2xl bg-[#34C759]/[0.05] border border-[#34C759]/20 text-center space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-[#34C759]/10 text-[#34C759] flex items-center justify-center mx-auto">
+                        <CheckCircle2 className="w-5 h-5" />
                       </div>
-                      <h4 className="text-sm font-semibold text-[#1D1D1F]">rbrown33583</h4>
-                      <p className="text-xs text-[#6E6E73] mt-0.5">
-                        Chief Financial Officer • Finance
-                      </p>
-                      <p className="text-[11px] text-[#86868B] mt-2">
-                        Shared password family across 19 accounts + short password length.
+                      <h4 className="text-sm font-semibold text-[#1D1D1F]">All High-Risk Priorities Remediated</h4>
+                      <p className="text-xs text-[#6E6E73] max-w-md mx-auto">
+                        There are currently no critical Active Directory identity vulnerabilities detected. Enterprise credential hygiene is optimal.
                       </p>
                     </div>
-                    <div className="pt-4 mt-3 border-t border-black/[0.04] flex items-center justify-between">
-                      <span className="text-[11px] text-[#5856D6] font-medium">MFA Enforce Mandate</span>
-                      <button
-                        onClick={() => {
-                          setActiveTierFilter("High");
-                          setActiveAdminTab("accounts");
-                        }}
-                        className="text-xs text-[#0071E3] font-medium hover:underline"
-                      >
-                        View Account →
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 

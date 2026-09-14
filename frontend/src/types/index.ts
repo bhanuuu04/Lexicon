@@ -153,6 +153,7 @@ export interface OrganizationHealth {
   admin_exposure_pct: number;
   workforce_exposure_pct: number;
   top_admin_compromised: boolean;
+  hero_compromised?: boolean;
   top_admin_compromised_count: number;
   status: "Healthy" | "Elevated Risk" | "Critical Danger";
 }

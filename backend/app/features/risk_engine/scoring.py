@@ -320,6 +320,7 @@ def calculate_organization_health(accounts: List[Dict[str, Any]]) -> Dict[str, A
         "admin_exposure_pct": round(avg_admin_risk * 100.0, 1),
         "workforce_exposure_pct": round(avg_workforce_risk * 100.0, 1),
         "top_admin_compromised": hero_compromised or (top_admin_compromised_count > 0),
+        "hero_compromised": hero_compromised,
         "top_admin_compromised_count": top_admin_compromised_count,
         "status": status
     }
