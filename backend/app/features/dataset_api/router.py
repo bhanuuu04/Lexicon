@@ -2,11 +2,15 @@ import json
 import re
 import os
 import asyncio
+import threading
+import uuid
+import time
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
+
 
 from backend.app.config import AUDIT_RESULTS_FILE, ACCOUNTS_FILE, METADATA_FILE
 from backend.app.supabase_client import supabase_service
@@ -112,33 +116,50 @@ def get_dataset_metadata() -> Dict[str, Any]:
                 json.dump(_metadata_cache, f, indent=2)
     return _metadata_cache
 
+_disk_write_lock = threading.Lock()
+
 def invalidate_cache():
     global _accounts_cache, _audit_cache, _metadata_cache
     _accounts_cache = None
     _audit_cache = None
     _metadata_cache = None
 
+def get_accounts_cache_state() -> Tuple[Any, Any, Any]:
+    return _accounts_cache, _audit_cache, _metadata_cache
+
+def restore_accounts_cache_state(accs: Any, audit: Any, meta: Any):
+    global _accounts_cache, _audit_cache, _metadata_cache
+    _accounts_cache = accs
+    _audit_cache = audit
+    _metadata_cache = meta
+
 def save_accounts(accounts: List[Dict[str, Any]]):
     global _accounts_cache
     _accounts_cache = accounts
 
     def _async_write():
-        try:
-            temp_file = ACCOUNTS_FILE.with_suffix(f".tmp.{os.getpid()}")
-            with open(str(temp_file), "w", encoding="utf-8") as f:
-                json.dump(accounts, f)
-            if temp_file.exists():
-                try:
-                    temp_file.replace(ACCOUNTS_FILE)
-                except Exception:
-                    if ACCOUNTS_FILE.exists():
+        with _disk_write_lock:
+            temp_file = None
+            try:
+                import time
+                temp_file = ACCOUNTS_FILE.with_name(f"accounts_50k_{uuid.uuid4().hex[:8]}.tmp")
+                with open(str(temp_file), "w", encoding="utf-8") as f:
+                    json.dump(accounts, f)
+                if temp_file.exists():
+                    for _ in range(10):
                         try:
-                            ACCOUNTS_FILE.unlink()
+                            temp_file.replace(ACCOUNTS_FILE)
+                            break
                         except Exception:
-                            pass
-                    temp_file.rename(ACCOUNTS_FILE)
-        except Exception as e:
-            print(f"[DatasetAPI] Warning: disk save encountered {e}, in-memory state updated successfully.")
+                            time.sleep(0.05)
+            except Exception as e:
+                print(f"[DatasetAPI] Warning: disk save encountered {e}, in-memory state updated successfully.")
+            finally:
+                if temp_file and temp_file.exists():
+                    try:
+                        temp_file.unlink()
+                    except Exception:
+                        pass
 
     import threading
     threading.Thread(target=_async_write, daemon=True).start()
@@ -147,21 +168,25 @@ def save_audit_summary(summary: Dict[str, Any]):
     global _audit_cache
     _audit_cache = summary
     try:
-        temp_file = AUDIT_RESULTS_FILE.with_suffix(f".tmp.{os.getpid()}")
+        import time
+        temp_file = AUDIT_RESULTS_FILE.with_name(f"audit_results_{uuid.uuid4().hex[:8]}.tmp")
         with open(str(temp_file), "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
         if temp_file.exists():
-            try:
-                temp_file.replace(AUDIT_RESULTS_FILE)
-            except Exception:
-                if AUDIT_RESULTS_FILE.exists():
-                    try:
-                        AUDIT_RESULTS_FILE.unlink()
-                    except Exception:
-                        pass
-                temp_file.rename(AUDIT_RESULTS_FILE)
+            for _ in range(10):
+                try:
+                    temp_file.replace(AUDIT_RESULTS_FILE)
+                    break
+                except Exception:
+                    time.sleep(0.05)
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass
     except Exception as e:
         print(f"[DatasetAPI] Warning: audit summary disk save encountered {e}")
+
 
     try:
         supabase_service.sync_audit_summary(summary)

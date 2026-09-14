@@ -2,8 +2,8 @@
   "total_accounts": 50000,
   "critical_count": 3438,
   "high_risk_count": 16331,
-  "medium_risk_count": 16293,
-  "low_risk_count": 13938,
+  "medium_risk_count": 16309,
+  "low_risk_count": 13922,
   "breached_count": 21501,
   "reuse_cluster_count": 799,
   "total_reused_accounts": 30000,
@@ -13,99 +13,99 @@
   "risk_distribution": {
     "critical": 3438,
     "high": 16331,
-    "medium": 16293,
-    "low": 13938
+    "medium": 16309,
+    "low": 13922
   },
   "department_risk_summary": {
     "Information Technology": {
       "total": 6085,
-      "critical": 620,
-      "high": 2043,
-      "medium": 1987,
-      "low": 1435,
+      "critical": 577,
+      "high": 2019,
+      "medium": 1946,
+      "low": 1543,
       "privileged": 3815,
       "breached": 2589,
-      "avg_risk": 0.4504
+      "avg_risk": 0.4405
     },
     "Human Resources": {
       "total": 3952,
-      "critical": 241,
-      "high": 1280,
-      "medium": 1254,
-      "low": 1177,
+      "critical": 219,
+      "high": 1250,
+      "medium": 1255,
+      "low": 1228,
       "privileged": 1301,
       "breached": 1724,
-      "avg_risk": 0.4048
+      "avg_risk": 0.3944
     },
     "Operations": {
       "total": 8096,
-      "critical": 443,
-      "high": 2648,
-      "medium": 2673,
-      "low": 2332,
+      "critical": 409,
+      "high": 2584,
+      "medium": 2657,
+      "low": 2446,
       "privileged": 2754,
       "breached": 3438,
-      "avg_risk": 0.4056
+      "avg_risk": 0.3954
     },
     "Engineering": {
       "total": 10805,
-      "critical": 553,
-      "high": 3502,
-      "medium": 3588,
-      "low": 3162,
+      "critical": 492,
+      "high": 3428,
+      "medium": 3562,
+      "low": 3323,
       "privileged": 3072,
       "breached": 4718,
-      "avg_risk": 0.4002
+      "avg_risk": 0.3903
     },
     "Finance": {
       "total": 7558,
-      "critical": 586,
-      "high": 2466,
-      "medium": 2418,
-      "low": 2088,
+      "critical": 551,
+      "high": 2416,
+      "medium": 2393,
+      "low": 2198,
       "privileged": 3236,
       "breached": 3209,
-      "avg_risk": 0.4206
+      "avg_risk": 0.4106
     },
     "Legal": {
       "total": 2468,
-      "critical": 257,
-      "high": 824,
-      "medium": 775,
-      "low": 612,
+      "critical": 243,
+      "high": 810,
+      "medium": 772,
+      "low": 643,
       "privileged": 1481,
       "breached": 1064,
-      "avg_risk": 0.446
+      "avg_risk": 0.4365
     },
     "Sales": {
       "total": 6070,
-      "critical": 275,
-      "high": 1973,
-      "medium": 1960,
-      "low": 1862,
+      "critical": 255,
+      "high": 1923,
+      "medium": 1945,
+      "low": 1947,
       "privileged": 1281,
       "breached": 2646,
-      "avg_risk": 0.3913
+      "avg_risk": 0.3812
     },
     "Marketing": {
       "total": 2964,
-      "critical": 126,
-      "high": 911,
-      "medium": 1001,
-      "low": 926,
+      "critical": 116,
+      "high": 884,
+      "medium": 1004,
+      "low": 960,
       "privileged": 579,
       "breached": 1274,
-      "avg_risk": 0.3848
+      "avg_risk": 0.3746
     },
     "Executive": {
       "total": 2002,
-      "critical": 337,
-      "high": 684,
-      "medium": 637,
-      "low": 344,
+      "critical": 316,
+      "high": 679,
+      "medium": 623,
+      "low": 384,
       "privileged": 2002,
       "breached": 839,
-      "avg_risk": 0.5073
+      "avg_risk": 0.4964
     }
   },
   "top_reuse_clusters": [
@@ -786,5 +786,179 @@
       ]
     }
   ],
-  "hero_account_id": "ACC-00042"
+  "hero_account_id": "ACC-00042",
+  "organization_health": {
+    "organization_risk_score": 0.95,
+    "security_readiness_pct": 5.0,
+    "admin_exposure_pct": 67.6,
+    "workforce_exposure_pct": 54.7,
+    "top_admin_compromised": true,
+    "hero_compromised": true,
+    "top_admin_compromised_count": 642,
+    "status": "Critical Danger"
+  },
+  "compliance_scorecard": {
+    "overall_enterprise_grade": "C",
+    "frameworks": {
+      "nist_sp_800_63b": {
+        "name": "NIST SP 800-63B Guidelines",
+        "score": 78.5,
+        "status": "PARTIAL",
+        "controls": {
+          "min_8_char_length": "98.0% compliant",
+          "breach_corpus_filtering": "57.0% breach-free",
+          "no_mandatory_arbitrary_rotation": "Enforced in Policy",
+          "character_truncation_allowed": "Disabled (Up to 128 chars accepted)"
+        },
+        "findings": "Critical finding: 21,501 accounts match known compromised dictionaries and 987 accounts fail 8-char length minimum."
+      },
+      "cis_controls_v8": {
+        "name": "CIS Controls v8 (Identity & Access)",
+        "score": 53.0,
+        "status": "PARTIAL",
+        "controls": {
+          "privileged_mfa_coverage": "43.0% (8391/19521 privileged accounts)",
+          "centralized_directory_hygiene": "10.6% violation-free",
+          "privilege_account_isolation": "Audited via Lexicon Blast Radius"
+        },
+        "findings": "High risk: 11130 privileged accounts lack MFA enforcement."
+      },
+      "pci_dss_v4": {
+        "name": "PCI-DSS v4.0 Requirement 8",
+        "score": 59.8,
+        "status": "PARTIAL",
+        "controls": {
+          "min_12_char_enforcement": "70.9% compliant",
+          "multi_factor_authentication": "43.0% privileged coverage",
+          "compromised_credential_checks": "57.0% compliant"
+        },
+        "findings": "Requires remediation: 14,569 accounts do not meet the 12-character minimum standard."
+      },
+      "iso_27001": {
+        "name": "ISO/IEC 27001:2022 Control A.9",
+        "score": 65.2,
+        "status": "PARTIAL",
+        "controls": {
+          "password_management_system": "Automated via Lexicon Engine",
+          "access_rights_review": "Real-time risk scoring active",
+          "credential_entropy_hygiene": "82.5% high-entropy"
+        },
+        "findings": "Overall ISO/IEC 27001 authentication hygiene score: 65.2/100."
+      }
+    }
+  },
+  "active_directory_threat_surface": {
+    "kerberoasting_exposure": {
+      "vulnerable_accounts_count": 6424,
+      "percentage_of_privileged": 32.9,
+      "threat_description": "Privileged service/admin accounts with weak crackable hashes and no MFA vulnerable to offline TGS ticket cracking.",
+      "sample_target_ids": [
+        "ACC-00042",
+        "ACC-48257",
+        "ACC-68105",
+        "ACC-39543",
+        "ACC-56961",
+        "ACC-04895",
+        "ACC-11029",
+        "ACC-44931",
+        "ACC-09885",
+        "ACC-07655"
+      ]
+    },
+    "as_rep_roasting_exposure": {
+      "vulnerable_accounts_count": 15764,
+      "percentage_of_directory": 31.5,
+      "threat_description": "User accounts with weak credentials vulnerable to pre-authentication AS-REP offline brute-force attacks.",
+      "sample_target_ids": [
+        "ACC-55937",
+        "ACC-56997",
+        "ACC-48799",
+        "ACC-37795",
+        "ACC-23205",
+        "ACC-35069",
+        "ACC-50211",
+        "ACC-03901",
+        "ACC-37617",
+        "ACC-66302"
+      ]
+    },
+    "lateral_movement_blast_radius": {
+      "total_compromised_nodes_at_risk": 30000,
+      "percentage_of_directory": 60.0,
+      "critical_pivot_clusters_count": 799,
+      "threat_description": "Password reuse clusters spanning multiple departments that allow attackers with low-privilege initial access to pivot directly into Domain Admin credentials.",
+      "top_pivot_clusters": [
+        {
+          "group_id": 190,
+          "total_accounts": 65,
+          "privileged_accounts": 28,
+          "departments_bridged": 9,
+          "lateral_risk": "CRITICAL"
+        },
+        {
+          "group_id": 98,
+          "total_accounts": 65,
+          "privileged_accounts": 22,
+          "departments_bridged": 9,
+          "lateral_risk": "CRITICAL"
+        },
+        {
+          "group_id": 625,
+          "total_accounts": 65,
+          "privileged_accounts": 27,
+          "departments_bridged": 9,
+          "lateral_risk": "CRITICAL"
+        },
+        {
+          "group_id": 609,
+          "total_accounts": 65,
+          "privileged_accounts": 25,
+          "departments_bridged": 9,
+          "lateral_risk": "CRITICAL"
+        },
+        {
+          "group_id": 629,
+          "total_accounts": 65,
+          "privileged_accounts": 20,
+          "departments_bridged": 9,
+          "lateral_risk": "CRITICAL"
+        },
+        {
+          "group_id": 375,
+          "total_accounts": 65,
+          "privileged_accounts": 31,
+          "departments_bridged": 9,
+          "lateral_risk": "CRITICAL"
+        },
+        {
+          "group_id": 266,
+          "total_accounts": 65,
+          "privileged_accounts": 25,
+          "departments_bridged": 9,
+          "lateral_risk": "CRITICAL"
+        },
+        {
+          "group_id": 256,
+          "total_accounts": 65,
+          "privileged_accounts": 28,
+          "departments_bridged": 9,
+          "lateral_risk": "CRITICAL"
+        },
+        {
+          "group_id": 652,
+          "total_accounts": 65,
+          "privileged_accounts": 25,
+          "departments_bridged": 9,
+          "lateral_risk": "CRITICAL"
+        },
+        {
+          "group_id": 775,
+          "total_accounts": 65,
+          "privileged_accounts": 30,
+          "departments_bridged": 9,
+          "lateral_risk": "CRITICAL"
+        }
+      ]
+    }
+  }
 }

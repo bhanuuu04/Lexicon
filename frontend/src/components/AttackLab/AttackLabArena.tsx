@@ -175,13 +175,14 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
 
     const pwd = targetAccount.plaintext_password || "";
     // Determine if target credential is weak/predictable or hero target
-    const isWeakOrHero =
+    const isWeakOrHero: boolean = Boolean(
       targetAccount.is_hero ||
       targetAccount.hero_compromised ||
       targetAccount.is_breached ||
       targetAccount.breach_match ||
       targetAccount.password_group_id !== null ||
-      (pwd && (pwd.includes("202") || pwd.length <= 14 || /^[A-Z][a-z]+[0-9]+[!@#$%*]/.test(pwd)));
+      (pwd && (pwd.includes("202") || pwd.length <= 14 || /^[A-Z][a-z]+[0-9]+[!@#$%*]/.test(pwd)))
+    );
 
     const targetPassword = pwd || (targetAccount.is_hero ? "Company2026!" : "Lexicon2026!");
     const matchedRuleName = targetAccount.is_hero

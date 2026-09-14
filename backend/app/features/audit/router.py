@@ -65,15 +65,17 @@ def trigger_bulk_audit():
     Trigger full deterministic Active Directory audit across all existing accounts.
     Updates in-memory caches and persists precomputed results.
     """
-    from backend.app.features.dataset_api.router import save_audit_summary, invalidate_cache
-    summary = run_bulk_audit()
+    from backend.app.features.dataset_api.router import get_accounts, save_audit_summary
+    accounts = get_accounts()
+    summary = run_bulk_audit(accounts_data=accounts)
     save_audit_summary(summary)
-    invalidate_cache()
     return {
         "status": "success",
         "message": f"Audit complete for {summary['total_accounts']:,} accounts.",
         "summary": summary
     }
+
+
 
 
 @router.post("/evaluate-password")

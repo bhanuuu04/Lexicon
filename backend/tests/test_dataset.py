@@ -113,15 +113,23 @@ def test_admin_generate_dataset_endpoint(monkeypatch):
         if "dataset_api" in mod_name and hasattr(mod, "generate_and_save_dataset"):
             monkeypatch.setattr(mod, "generate_and_save_dataset", mock_generate_and_save)
 
+    from backend.app.features.dataset_api.router import get_accounts_cache_state, restore_accounts_cache_state
+    orig_accs, orig_audit, orig_meta = get_accounts_cache_state()
+
     from fastapi.testclient import TestClient
     from backend.app.main import app
 
     client = TestClient(app)
-    resp = client.post("/api/dataset/generate", json={"count": 250, "replace_supabase": False})
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["status"] == "success"
-    assert "metadata" in data
-    assert "summary" in data
-    assert data["metadata"]["total_accounts"] == 250
-    assert data["summary"]["total_accounts"] == 250
+    try:
+        resp = client.post("/api/dataset/generate", json={"count": 250, "replace_supabase": False})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "success"
+        assert "metadata" in data
+        assert "summary" in data
+        assert data["metadata"]["total_accounts"] == 250
+        assert data["summary"]["total_accounts"] == 250
+    finally:
+        restore_accounts_cache_state(orig_accs, orig_audit, orig_meta)
+
+
