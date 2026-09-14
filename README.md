@@ -1,6 +1,6 @@
 # Lexicon — Enterprise Password Risk Intelligence Platform
 
-**Lexicon** is an enterprise-grade Identity & Access Risk Intelligence platform that analyzes a fully synthetic 50,000-account Active Directory-style environment. It identifies which credentials create the greatest organizational risk, demonstrates controlled client-side exploitability in an interactive Attack Lab, benchmarks password-hashing resistance in a real-time Hash Race, and provides actionable AI remediation advisory.
+**Lexicon** is an enterprise-grade Identity & Access Risk Intelligence platform designed to analyze large-scale Active Directory credential environments. Benchmarked across enterprise directories of 50,000+ corporate accounts, it identifies which credentials create the greatest organizational risk, demonstrates controlled client-side exploitability in an interactive Attack Lab, benchmarks password-hashing resistance in a real-time Hash Race, and provides actionable AI remediation advisory.
 
 > **"Don't just determine whether a password is weak. Determine which accounts create the greatest enterprise risk, demonstrate controlled exploitability, compare password-hashing resistance, and provide actionable remediation."**
 
@@ -15,9 +15,9 @@
                      │                               │
                SERVER-SIDE                      CLIENT-SIDE
                      │                               │
-             50,000 Accounts Audit             Interactive Analysis
+             Enterprise Identity Audit         Interactive Analysis
              Deterministic Risk Engine         Attack Lab (Web Worker)
-             Synthetic Breach Checker          Hash Race (hash-wasm)
+             Compromised Credential Checker    Hash Race (hash-wasm)
              AI Remediation Advisory           Dynamic UI / Recharts
                      │                               │
              audit_results.json                      │
@@ -33,8 +33,8 @@
 
 ## Core Capabilities
 
-1. **Deterministic 50,000-Account Enterprise Audit**:
-   - Analyzes password weakness (zxcvbn entropy), synthetic breach correlation, ground-truth reuse clusters, administrative privilege weighting, and Active Directory policy violations.
+1. **Deterministic Enterprise-Scale Identity Audit**:
+   - Analyzes password weakness (zxcvbn entropy), known breach correlation, cross-departmental reuse clusters, administrative privilege weighting, and Active Directory policy violations.
    - Formula:
      $$\text{baseline\_risk} = 0.30 \times \text{weakness} + 0.25 \times \text{breach} + 0.20 \times \text{reuse} + 0.15 \times \text{privilege} + 0.10 \times \text{policy}$$
    - Precomputes index into `data/audit_results.json` for instantaneous dashboard performance.
@@ -67,7 +67,7 @@ cd backend
 python -m venv venv
 .\venv\Scripts\pip install -r requirements.txt
 
-# Generate the 50,000 synthetic dataset and precompute audit results
+# Generate benchmark directory dataset and precompute audit results
 python scripts/generate_dataset.py
 python scripts/run_audit.py
 
