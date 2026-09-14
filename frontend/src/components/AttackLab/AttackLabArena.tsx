@@ -182,16 +182,16 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="apple-card-static p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-rose-500/20 bg-gradient-to-r from-rose-950/25 via-slate-900/60 to-slate-900/40">
+      <div className="apple-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-[#FF3B30]/20 bg-gradient-to-r from-[#FF3B30]/[0.06] via-white to-white">
         <div>
-          <div className="flex items-center space-x-2 text-rose-400 text-xs font-semibold uppercase tracking-wider">
+          <div className="flex items-center space-x-2 text-[#FF3B30] text-xs font-semibold uppercase tracking-wider">
             <Zap className="w-4 h-4" />
             <span>Interactive Client-Side Bounded Attack Lab</span>
           </div>
-          <h2 className="text-xl font-bold text-white mt-1 font-sans">
+          <h2 className="text-xl font-semibold text-[#1D1D1F] mt-1 font-sans">
             Empirical Mutation Exploitability Engine
           </h2>
-          <p className="text-xs text-slate-300 max-w-2xl mt-1 font-normal">
+          <p className="text-xs text-[#6E6E73] max-w-2xl mt-1 font-normal">
             Bounded simulation running entirely in browser Web Workers. Tests deterministic password mutations against target hashes. Never exfiltrates candidate stream.
           </p>
         </div>
@@ -199,7 +199,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
         {!targetAccount && onSelectHeroAccount && (
           <button
             onClick={onSelectHeroAccount}
-            className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold flex items-center space-x-2 shadow-[0_2px_12px_rgba(244,63,94,0.35)] transition"
+            className="px-4 py-2 rounded-xl bg-[#FF3B30] hover:bg-[#E02E24] text-white text-xs font-semibold flex items-center space-x-2 shadow-sm transition active:scale-[0.98]"
           >
             <ShieldAlert className="w-4 h-4" />
             <span>Load Hero Account (alex.morgan)</span>
@@ -209,40 +209,40 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
 
       {/* Target Account Bar */}
       {targetAccount ? (
-        <div className="apple-card-static p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="apple-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4">
             <div className={`p-3 rounded-xl ${tierStyle.bg} border ${tierStyle.border}`}>
               <ShieldAlert className={`w-6 h-6 ${tierStyle.text}`} />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-white text-base font-sans">{targetAccount.username}</span>
-                <span className="text-xs font-mono text-slate-400">({targetAccount.id})</span>
+                <span className="font-semibold text-[#1D1D1F] text-base font-sans">{targetAccount.username}</span>
+                <span className="text-xs font-mono text-[#86868B]">({targetAccount.id})</span>
                 {targetAccount.is_hero && (
-                  <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-[0_0_6px_rgba(244,63,94,0.4)]">
+                  <span className="px-2 py-0.5 rounded-full bg-[#FF3B30] text-white text-[10px] font-semibold shadow-sm">
                     HERO TARGET
                   </span>
                 )}
                 {targetAccount.is_privileged && (
-                  <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 text-[10px] font-semibold">
+                  <span className="px-2 py-0.5 rounded-full bg-[#0071E3]/[0.08] text-[#0071E3] border border-[#0071E3]/20 text-[10px] font-semibold">
                     ADMIN
                   </span>
                 )}
               </div>
-              <div className="text-xs text-slate-400 mt-0.5">
+              <div className="text-xs text-[#6E6E73] mt-0.5">
                 {targetAccount.role} • {targetAccount.department} • Baseline Risk: {formatRiskScore(targetAccount.baseline_risk)} ({targetAccount.baseline_tier})
               </div>
             </div>
           </div>
 
           <div className="flex items-center space-x-3 text-xs">
-            {/* Algorithm selector */}
-            <div className="flex items-center space-x-1 p-1 rounded-xl bg-slate-800/80 border border-white/[0.08]">
+            {/* Algorithm selector - Apple Segmented Control */}
+            <div className="flex items-center space-x-1 p-1 rounded-xl bg-[#E5E5EA]">
               <button
                 disabled={status === "RUNNING"}
                 onClick={() => setAlgorithm("MD5")}
                 className={`px-3 py-1 rounded-lg transition font-medium ${
-                  algorithm === "MD5" ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
+                  algorithm === "MD5" ? "bg-white text-[#1D1D1F] shadow-sm font-semibold" : "text-[#6E6E73] hover:text-[#1D1D1F]"
                 }`}
               >
                 MD5
@@ -251,7 +251,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
                 disabled={status === "RUNNING"}
                 onClick={() => setAlgorithm("SHA-256")}
                 className={`px-3 py-1 rounded-lg transition font-medium ${
-                  algorithm === "SHA-256" ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
+                  algorithm === "SHA-256" ? "bg-white text-[#1D1D1F] shadow-sm font-semibold" : "text-[#6E6E73] hover:text-[#1D1D1F]"
                 }`}
               >
                 SHA-256
@@ -262,7 +262,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
             {status === "RUNNING" ? (
               <button
                 onClick={cancelAttack}
-                className="px-4 py-2 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 font-semibold flex items-center space-x-2 transition"
+                className="px-4 py-2 rounded-xl bg-[#FF3B30]/[0.1] border border-[#FF3B30]/30 text-[#FF3B30] hover:bg-[#FF3B30]/[0.2] font-semibold flex items-center space-x-2 transition"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Abort Attack</span>
@@ -270,7 +270,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
             ) : (
               <button
                 onClick={startAttack}
-                className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-semibold flex items-center space-x-2 shadow-[0_2px_12px_rgba(244,63,94,0.35)] transition"
+                className="px-4 py-2 rounded-xl bg-[#FF3B30] hover:bg-[#E02E24] text-white font-semibold flex items-center space-x-2 shadow-sm transition active:scale-[0.98]"
               >
                 <Play className="w-4 h-4" />
                 <span>Execute Bounded Attack</span>
@@ -279,7 +279,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
           </div>
         </div>
       ) : (
-        <div className="p-8 rounded-2xl border border-dashed border-white/[0.1] text-center text-slate-400 font-sans">
+        <div className="p-8 rounded-2xl border border-dashed border-black/[0.1] bg-white text-center text-[#86868B] font-sans">
           No account selected. Select an account from the Directory or click &quot;Target Hero Account&quot;.
         </div>
       )}
@@ -287,71 +287,71 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
       {/* Attack Telemetry Arena */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Live Telemetry Gauges & Odometer */}
-        <div className="lg:col-span-2 apple-card-static p-6 space-y-6 flex flex-col justify-between">
+        <div className="lg:col-span-2 apple-card p-6 space-y-6 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2 font-sans">
-                <Gauge className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
+              <h3 className="text-sm font-semibold text-[#1D1D1F] uppercase tracking-wider flex items-center space-x-2 font-sans">
+                <Gauge className="w-4 h-4 text-[#34C759]" />
                 <span>Live Candidate Stream & Telemetry</span>
               </h3>
               <div className="flex items-center space-x-2 text-xs">
-                <span className="text-slate-400">Budget Limit:</span>
-                <span className="text-slate-200 font-medium">{maxCandidates.toLocaleString()} cands / {timeBudgetMs / 1000}s</span>
+                <span className="text-[#6E6E73]">Budget Limit:</span>
+                <span className="text-[#1D1D1F] font-semibold">{maxCandidates.toLocaleString()} cands / {timeBudgetMs / 1000}s</span>
               </div>
             </div>
 
             {/* Live Metrics Grid */}
             <div className="grid grid-cols-3 gap-3.5 my-6">
-              <div className="p-4 rounded-xl bg-slate-800/40 border border-white/[0.06] text-center">
-                <span className="text-[11px] text-slate-400 uppercase block font-medium">Candidates Tested</span>
-                <span className="text-2xl sm:text-3xl font-bold text-white mt-1 block font-sans">
+              <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.04] text-center">
+                <span className="text-[11px] text-[#86868B] uppercase block font-medium">Candidates Tested</span>
+                <span className="text-2xl sm:text-3xl font-semibold text-[#1D1D1F] mt-1 block font-sans">
                   {progress.candidates_tested.toLocaleString()}
                 </span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                <span className="text-[10px] text-[#86868B] mt-0.5 block">
                   of {maxCandidates.toLocaleString()} Max
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-800/40 border border-white/[0.06] text-center">
-                <span className="text-[11px] text-slate-400 uppercase block font-medium">Elapsed Time</span>
-                <span className="text-2xl sm:text-3xl font-bold text-cyan-400 mt-1 block font-sans">
+              <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.04] text-center">
+                <span className="text-[11px] text-[#86868B] uppercase block font-medium">Elapsed Time</span>
+                <span className="text-2xl sm:text-3xl font-semibold text-[#0071E3] mt-1 block font-sans">
                   {(progress.elapsed_ms / 1000).toFixed(2)}s
                 </span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                <span className="text-[10px] text-[#86868B] mt-0.5 block">
                   of {timeBudgetMs / 1000}s Budget
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-800/40 border border-white/[0.06] text-center">
-                <span className="text-[11px] text-slate-400 uppercase block font-medium">Throughput Rate</span>
-                <span className="text-2xl sm:text-3xl font-bold text-amber-400 mt-1 block font-sans">
+              <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.04] text-center">
+                <span className="text-[11px] text-[#86868B] uppercase block font-medium">Throughput Rate</span>
+                <span className="text-2xl sm:text-3xl font-semibold text-[#FF9500] mt-1 block font-sans">
                   {progress.current_rate.toLocaleString()}
                 </span>
-                <span className="text-[10px] text-slate-400 mt-0.5 block">candidates / sec</span>
+                <span className="text-[10px] text-[#86868B] mt-0.5 block">candidates / sec</span>
               </div>
             </div>
 
             {/* Active Candidate Inspection Odometer */}
-            <div className="p-4 rounded-xl bg-slate-900/90 border border-white/[0.08] space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-400">
+            <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.06] space-y-2">
+              <div className="flex items-center justify-between text-xs text-[#6E6E73]">
                 <span>Active Candidate Probe:</span>
-                <span className="text-emerald-400 font-semibold">{algorithm} WASM Engine</span>
+                <span className="text-[#34C759] font-semibold">{algorithm} WASM Engine</span>
               </div>
-              <div className="p-3 rounded-lg bg-black/50 border border-white/[0.05] text-sm sm:text-base text-emerald-400 truncate tracking-wider font-mono">
+              <div className="p-3 rounded-lg bg-white border border-black/[0.06] text-sm sm:text-base text-[#1D1D1F] truncate tracking-wider font-mono shadow-inner">
                 {progress.current_candidate || (status === "RUNNING" ? "Generating..." : "Awaiting execution")}
               </div>
             </div>
           </div>
 
           {/* Progress bar */}
-          <div className="space-y-1.5 text-xs pt-4 border-t border-white/[0.08]">
-            <div className="flex justify-between text-slate-400">
+          <div className="space-y-1.5 text-xs pt-4 border-t border-black/[0.06]">
+            <div className="flex justify-between text-[#6E6E73]">
               <span className="font-medium">Budget Consumption</span>
-              <span className="font-semibold text-slate-200">{((progress.candidates_tested / maxCandidates) * 100).toFixed(1)}%</span>
+              <span className="font-semibold text-[#1D1D1F]">{((progress.candidates_tested / maxCandidates) * 100).toFixed(1)}%</span>
             </div>
-            <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+            <div className="h-2 w-full rounded-full bg-[#E5E5EA] overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-rose-500 transition-all duration-100"
+                className="h-full bg-gradient-to-r from-[#34C759] to-[#FF3B30] transition-all duration-100"
                 style={{ width: `${Math.min(100, (progress.candidates_tested / maxCandidates) * 100)}%` }}
               ></div>
             </div>
@@ -359,59 +359,59 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
         </div>
 
         {/* Right Column: Empirical Exploit Evidence & Risk Recalculation */}
-        <div className="apple-card-static p-6 flex flex-col justify-between space-y-6">
+        <div className="apple-card p-6 flex flex-col justify-between space-y-6">
           <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider pb-4 border-b border-white/[0.08] flex items-center space-x-2 font-sans">
-              <TrendingUp className="w-4 h-4 text-rose-400" />
+            <h3 className="text-sm font-semibold text-[#1D1D1F] uppercase tracking-wider pb-4 border-b border-black/[0.06] flex items-center space-x-2 font-sans">
+              <TrendingUp className="w-4 h-4 text-[#FF3B30]" />
               <span>Empirical Security Findings</span>
             </h3>
 
             {/* State-dependent result box */}
             <div className="mt-4">
               {status === "MATCHED" && (
-                <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-3">
-                  <div className="flex items-center space-x-2 text-rose-400 font-bold text-sm">
-                    <CheckCircle2 className="w-5 h-5 text-rose-400" />
+                <div className="p-4 rounded-xl bg-[#FF3B30]/[0.08] border border-[#FF3B30]/25 space-y-3">
+                  <div className="flex items-center space-x-2 text-[#FF3B30] font-semibold text-sm">
+                    <CheckCircle2 className="w-5 h-5 text-[#FF3B30]" />
                     <span>EMPIRICAL MATCH CRACKED!</span>
                   </div>
-                  <div className="text-xs text-slate-300 space-y-1.5">
+                  <div className="text-xs text-[#1D1D1F] space-y-1.5">
                     <div>
                       Recovered Credential:{" "}
-                      <span className="text-white font-bold bg-black/40 px-2 py-0.5 rounded border border-rose-500/30 font-mono">
+                      <span className="text-[#FF3B30] font-semibold bg-white px-2 py-0.5 rounded border border-[#FF3B30]/30 font-mono shadow-xs">
                         {progress.matched_password}
                       </span>
                     </div>
                     <div>
                       Matching Mutation Rule:{" "}
-                      <span className="text-amber-400 font-bold">{progress.matched_rule}</span>
+                      <span className="text-[#FF9500] font-semibold">{progress.matched_rule}</span>
                     </div>
                     <div>
                       Total Workload:{" "}
-                      <span className="text-white font-bold">{progress.candidates_tested.toLocaleString()}</span> probes in{" "}
-                      <span className="text-white font-bold">{progress.elapsed_ms}ms</span>
+                      <span className="text-[#1D1D1F] font-semibold">{progress.candidates_tested.toLocaleString()}</span> probes in{" "}
+                      <span className="text-[#1D1D1F] font-semibold">{progress.elapsed_ms}ms</span>
                     </div>
                   </div>
                 </div>
               )}
 
               {status === "BUDGET_EXHAUSTED" && (
-                <div className="p-4 rounded-xl bg-slate-800/40 border border-white/[0.08] space-y-3">
-                  <div className="flex items-center space-x-2 text-amber-400 font-bold text-sm">
-                    <XCircle className="w-5 h-5 text-amber-400" />
+                <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.06] space-y-3">
+                  <div className="flex items-center space-x-2 text-[#FF9500] font-semibold text-sm">
+                    <XCircle className="w-5 h-5 text-[#FF9500]" />
                     <span>NOT FOUND WITHIN BOUNDED BUDGET</span>
                   </div>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-[#6E6E73]">
                     No candidate matched within the configured search budget of {maxCandidates.toLocaleString()} candidates / {timeBudgetMs / 1000}s.
                   </p>
-                  <p className="text-[11px] text-slate-400 italic">
+                  <p className="text-[11px] text-[#86868B] italic">
                     Note: A failed bounded simulation only means the credential was not found within this specific dictionary rule budget.
                   </p>
                 </div>
               )}
 
               {(status === "IDLE" || status === "ACCOUNT_SELECTED" || status === "RUNNING") && (
-                <div className="p-6 rounded-xl bg-slate-800/30 border border-white/[0.06] text-center text-slate-400 space-y-2">
-                  <Cpu className="w-8 h-8 mx-auto text-slate-600 animate-pulse" />
+                <div className="p-6 rounded-xl bg-[#F5F5F7] border border-black/[0.04] text-center text-[#86868B] space-y-2">
+                  <Cpu className="w-8 h-8 mx-auto text-[#86868B] animate-pulse" />
                   <p className="text-xs">
                     {status === "RUNNING"
                       ? "Testing mutation rules in background Web Worker..."
@@ -423,21 +423,21 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
 
             {/* Risk Recalculation Card */}
             {updatedRiskInfo && (
-              <div className="mt-4 p-4 rounded-xl bg-slate-900/90 border border-white/[0.08] space-y-3 text-xs">
-                <div className="text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+              <div className="mt-4 p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.06] space-y-3 text-xs">
+                <div className="text-[#86868B] uppercase text-[10px] font-semibold tracking-wider">
                   Deterministic Score Adjustment Applied:
                 </div>
-                <div className="flex items-center justify-between text-slate-300">
+                <div className="flex items-center justify-between text-[#6E6E73]">
                   <span>Baseline Risk:</span>
-                  <span className="font-bold">{formatRiskScore(updatedRiskInfo.baseline_risk)}</span>
+                  <span className="font-semibold text-[#1D1D1F]">{formatRiskScore(updatedRiskInfo.baseline_risk)}</span>
                 </div>
-                <div className="flex items-center justify-between text-rose-400">
+                <div className="flex items-center justify-between text-[#FF3B30]">
                   <span>Empirical Exploit Modifier:</span>
-                  <span className="font-bold">+{(updatedRiskInfo.attack_adjustment * 100).toFixed(1)}%</span>
+                  <span className="font-semibold">+{(updatedRiskInfo.attack_adjustment * 100).toFixed(1)}%</span>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-white/[0.08] text-white font-bold text-sm">
+                <div className="flex items-center justify-between pt-2 border-t border-black/[0.06] text-[#1D1D1F] font-semibold text-sm">
                   <span>Final Risk Score:</span>
-                  <span className="text-rose-400">
+                  <span className="text-[#FF3B30]">
                     {formatRiskScore(updatedRiskInfo.final_risk)} ({updatedRiskInfo.final_tier})
                   </span>
                 </div>
@@ -445,7 +445,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
             )}
           </div>
 
-          <div className="text-[11px] text-slate-400 italic">
+          <div className="text-[11px] text-[#86868B] italic">
             Privacy Guarantee: Candidate stream is strictly confined to client memory. Only final execution metadata is recorded.
           </div>
         </div>
@@ -453,4 +453,5 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
     </div>
   );
 };
+
 

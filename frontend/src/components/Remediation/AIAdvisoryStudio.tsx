@@ -139,16 +139,16 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="apple-card-static p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-emerald-500/20 bg-gradient-to-r from-emerald-950/25 via-slate-900/60 to-slate-900/40">
+      <div className="apple-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-[#0071E3]/20 bg-gradient-to-r from-[#0071E3]/[0.06] via-white to-white">
         <div>
-          <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+          <div className="flex items-center space-x-2 text-[#0071E3] text-xs font-semibold uppercase tracking-wider">
             <Sparkles className="w-4 h-4" />
             <span>AI Remediation & Strategic Advisory</span>
           </div>
-          <h2 className="text-xl font-bold text-white mt-1 font-sans">
+          <h2 className="text-xl font-semibold text-[#1D1D1F] mt-1 font-sans">
             Enterprise Remediation Advisory Studio
           </h2>
-          <p className="text-xs text-slate-300 max-w-2xl mt-1 font-normal">
+          <p className="text-xs text-[#6E6E73] max-w-2xl mt-1 font-normal">
             AI explains the deterministic empirical evidence without altering calculated risk scores. Synthesizes prioritized account actions, custom password filters, and FIDO2 MFA rollout roadmap.
           </p>
         </div>
@@ -156,7 +156,7 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
         <button
           disabled={loading}
           onClick={handleGenerate}
-          className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold flex items-center space-x-2 shadow-[0_2px_15px_rgba(16,185,129,0.35)] shrink-0 transition"
+          className="px-5 py-2.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-50 text-white font-medium flex items-center space-x-2 shadow-sm shrink-0 transition active:scale-[0.98]"
         >
           {loading ? (
             <>
@@ -174,21 +174,21 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
 
       {/* Report Container */}
       {report ? (
-        <div className="apple-card-static p-8 space-y-8">
+        <div className="apple-card p-8 space-y-8">
           {/* Actions Toolbar */}
-          <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+          <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
             <div className="flex items-center space-x-2">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-              <span className="font-bold text-white text-sm uppercase tracking-wider font-sans">
+              <ShieldCheck className="w-5 h-5 text-[#34C759]" />
+              <span className="font-semibold text-[#1D1D1F] text-sm uppercase tracking-wider font-sans">
                 Enterprise Remediation Advisory Report
               </span>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={copyReportMarkdown}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center space-x-1.5 border border-white/[0.08] transition"
+                className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#F5F5F7] text-[#1D1D1F] text-xs font-medium flex items-center space-x-1.5 border border-black/[0.08] shadow-xs transition"
               >
-                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-4 h-4 text-[#34C759]" /> : <Copy className="w-4 h-4 text-[#6E6E73]" />}
                 <span>{copied ? "Copied Markdown" : "Copy Markdown"}</span>
               </button>
             </div>
@@ -196,35 +196,35 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
 
           {/* Executive Summary */}
           <div className="space-y-2">
-            <h3 className="text-xs uppercase text-emerald-400 font-bold tracking-wider flex items-center space-x-2">
+            <h3 className="text-xs uppercase text-[#0071E3] font-semibold tracking-wider flex items-center space-x-2">
               <FileText className="w-4 h-4" />
               <span>1. Executive Summary</span>
             </h3>
-            <p className="text-sm text-slate-200 leading-relaxed bg-slate-800/40 p-4 rounded-xl border border-white/[0.06] font-normal">
+            <p className="text-sm text-[#1D1D1F] leading-relaxed bg-[#F5F5F7] p-4 rounded-xl border border-black/[0.04] font-normal">
               {report.executive_summary}
             </p>
           </div>
 
           {/* Risk Explanation */}
           <div className="space-y-2">
-            <h3 className="text-xs uppercase text-cyan-400 font-bold tracking-wider flex items-center space-x-2">
+            <h3 className="text-xs uppercase text-[#5856D6] font-semibold tracking-wider flex items-center space-x-2">
               <ShieldAlert className="w-4 h-4" />
               <span>2. Risk Root Cause Explanation</span>
             </h3>
-            <p className="text-sm text-slate-300 leading-relaxed bg-slate-800/40 p-4 rounded-xl border border-white/[0.06] font-normal">
+            <p className="text-sm text-[#1D1D1F] leading-relaxed bg-[#F5F5F7] p-4 rounded-xl border border-black/[0.04] font-normal">
               {report.risk_explanation}
             </p>
           </div>
 
           {/* Priority Accounts Table */}
           <div className="space-y-3">
-            <h3 className="text-xs uppercase text-rose-400 font-bold tracking-wider flex items-center space-x-2">
+            <h3 className="text-xs uppercase text-[#FF3B30] font-semibold tracking-wider flex items-center space-x-2">
               <AlertOctagon className="w-4 h-4" />
               <span>3. Immediate Priority Account Interventions</span>
             </h3>
-            <div className="overflow-x-auto rounded-xl border border-white/[0.08]">
+            <div className="overflow-x-auto rounded-xl border border-black/[0.06]">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-900/90 text-slate-400 uppercase font-semibold text-[11px] border-b border-white/[0.08]">
+                <thead className="bg-[#F5F5F7] text-[#86868B] uppercase font-semibold text-[11px] border-b border-black/[0.06]">
                   <tr>
                     <th className="py-3 px-4">Account</th>
                     <th className="py-3 px-4">Department & Role</th>
@@ -233,18 +233,18 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
                     <th className="py-3 px-4">Recommended Policy</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.05] bg-slate-800/30">
+                <tbody className="divide-y divide-black/[0.04] bg-white">
                   {report.priority_accounts.map((a, i) => (
-                    <tr key={i} className="hover:bg-white/[0.03] transition-colors">
-                      <td className="py-3 px-4 font-bold text-white font-sans">{a.username}</td>
-                      <td className="py-3 px-4 text-slate-300">{a.role} ({a.department})</td>
+                    <tr key={i} className="hover:bg-[#F5F5F7]/80 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-[#1D1D1F] font-sans">{a.username}</td>
+                      <td className="py-3 px-4 text-[#6E6E73]">{a.role} ({a.department})</td>
                       <td className="py-3 px-4">
-                        <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-300 border border-rose-500/20 font-semibold text-[10px]">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#FF3B30]/[0.08] text-[#FF3B30] border border-[#FF3B30]/20 font-semibold text-[10px]">
                           {a.risk_tier}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-amber-300 font-medium">{a.immediate_action}</td>
-                      <td className="py-3 px-4 text-slate-400">{a.recommended_policy}</td>
+                      <td className="py-3 px-4 text-[#FF9500] font-medium">{a.immediate_action}</td>
+                      <td className="py-3 px-4 text-[#86868B]">{a.recommended_policy}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -255,15 +255,15 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
           {/* Policy & MFA Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Policy Recommendations */}
-            <div className="p-5 rounded-xl bg-slate-800/40 border border-white/[0.06] space-y-3">
-              <h4 className="text-xs uppercase text-indigo-400 font-bold flex items-center space-x-2">
+            <div className="p-5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] space-y-3">
+              <h4 className="text-xs uppercase text-[#0071E3] font-semibold flex items-center space-x-2">
                 <Key className="w-4 h-4" />
                 <span>4. Password Policy Revisions</span>
               </h4>
-              <ul className="space-y-2 text-xs text-slate-300">
+              <ul className="space-y-2 text-xs text-[#1D1D1F]">
                 {report.password_policy_recommendations.map((rec, i) => (
                   <li key={i} className="flex items-start space-x-2">
-                    <span className="text-indigo-400 font-bold">•</span>
+                    <span className="text-[#0071E3] font-bold">•</span>
                     <span>{rec}</span>
                   </li>
                 ))}
@@ -271,15 +271,15 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
             </div>
 
             {/* MFA Recommendations */}
-            <div className="p-5 rounded-xl bg-slate-800/40 border border-white/[0.06] space-y-3">
-              <h4 className="text-xs uppercase text-cyan-400 font-bold flex items-center space-x-2">
+            <div className="p-5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] space-y-3">
+              <h4 className="text-xs uppercase text-[#5856D6] font-semibold flex items-center space-x-2">
                 <Smartphone className="w-4 h-4" />
                 <span>5. Phishing-Resistant MFA Mandate</span>
               </h4>
-              <ul className="space-y-2 text-xs text-slate-300">
+              <ul className="space-y-2 text-xs text-[#1D1D1F]">
                 {report.mfa_recommendations.map((rec, i) => (
                   <li key={i} className="flex items-start space-x-2">
-                    <span className="text-cyan-400 font-bold">•</span>
+                    <span className="text-[#5856D6] font-bold">•</span>
                     <span>{rec}</span>
                   </li>
                 ))}
@@ -288,8 +288,8 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
           </div>
 
           {/* Blocklist Suggestions */}
-          <div className="p-5 rounded-xl bg-slate-800/40 border border-white/[0.06] space-y-3">
-            <h4 className="text-xs uppercase text-rose-400 font-bold flex items-center space-x-2">
+          <div className="p-5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] space-y-3">
+            <h4 className="text-xs uppercase text-[#FF3B30] font-semibold flex items-center space-x-2">
               <Ban className="w-4 h-4" />
               <span>6. Recommended Active Directory Custom Password Filter Blocklist</span>
             </h4>
@@ -297,7 +297,7 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
               {report.org_blocklist_suggestions.map((item, i) => (
                 <span
                   key={i}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900/80 border border-white/[0.08] text-rose-300 font-mono text-xs"
+                  className="px-2.5 py-1 rounded-lg bg-white border border-black/[0.08] text-[#FF3B30] font-mono text-xs shadow-xs"
                 >
                   {item}
                 </span>
@@ -306,14 +306,14 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
           </div>
 
           {/* Phased Roadmap */}
-          <div className="p-5 rounded-xl bg-slate-800/40 border border-white/[0.06] space-y-3">
-            <h4 className="text-xs uppercase text-emerald-400 font-bold flex items-center space-x-2">
+          <div className="p-5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] space-y-3">
+            <h4 className="text-xs uppercase text-[#34C759] font-semibold flex items-center space-x-2">
               <Calendar className="w-4 h-4" />
               <span>7. Phased Remediation Execution Roadmap</span>
             </h4>
-            <div className="space-y-2 text-xs text-slate-300">
+            <div className="space-y-2 text-xs text-[#1D1D1F]">
               {report.remediation_priorities.map((item, i) => (
-                <div key={i} className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.06]">
+                <div key={i} className="p-3 rounded-xl bg-white border border-black/[0.06] shadow-xs">
                   {item}
                 </div>
               ))}
@@ -321,8 +321,8 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
           </div>
         </div>
       ) : (
-        <div className="p-12 rounded-2xl border border-dashed border-white/[0.1] text-center text-slate-400 space-y-3">
-          <FileText className="w-10 h-10 mx-auto text-slate-500" />
+        <div className="p-12 rounded-2xl border border-dashed border-black/[0.1] bg-white text-center text-[#86868B] space-y-3">
+          <FileText className="w-10 h-10 mx-auto text-[#86868B]" />
           <p className="text-sm">
             Click &quot;Generate Executive Remediation Report&quot; to synthesize actionable guidance from the 50,000-account audit findings.
           </p>
@@ -331,4 +331,5 @@ ${report.remediation_priorities.map((r) => `* ${r}`).join("\n")}
     </div>
   );
 };
+
 

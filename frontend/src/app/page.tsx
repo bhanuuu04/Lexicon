@@ -80,13 +80,13 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-[0_4px_25px_rgba(16,185,129,0.4)] animate-pulse">
-          <Shield className="w-8 h-8 text-white" />
+      <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-[#0071E3] flex items-center justify-center shadow-md animate-pulse">
+          <Shield className="w-6 h-6 text-white" />
         </div>
-        <div className="text-center space-y-1.5">
-          <h2 className="text-base font-bold text-white tracking-tight font-sans">LEXICON SOC PLATFORM</h2>
-          <p className="text-xs text-slate-400 font-normal">Analyzing 50,000-Account Active Directory Telemetry...</p>
+        <div className="text-center space-y-1">
+          <h2 className="text-base font-semibold text-[#1D1D1F] tracking-tight font-sans">Lexicon Enterprise</h2>
+          <p className="text-xs text-[#6E6E73] font-normal">Analyzing 50,000-Account Active Directory Telemetry...</p>
         </div>
       </div>
     );
@@ -94,15 +94,15 @@ export default function HomePage() {
 
   if (error || !summary) {
     return (
-      <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-md p-6 rounded-2xl border border-rose-500/20 bg-rose-950/20 space-y-4">
-          <AlertCircle className="w-10 h-10 text-rose-400 mx-auto" />
-          <h3 className="text-base font-bold text-white font-sans">Backend Connection Required</h3>
-          <p className="text-xs text-slate-300 font-normal">{error}</p>
+      <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md p-6 rounded-2xl border border-black/[0.08] bg-white shadow-card space-y-4">
+          <AlertCircle className="w-10 h-10 text-[#FF3B30] mx-auto" />
+          <h3 className="text-base font-semibold text-[#1D1D1F] font-sans">Backend Connection Required</h3>
+          <p className="text-xs text-[#6E6E73] font-normal">{error}</p>
           <div className="pt-2">
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold shadow-[0_2px_10px_rgba(244,63,94,0.3)] transition"
+              className="px-4 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium shadow-sm transition active:scale-[0.98]"
             >
               Retry Connection
             </button>
@@ -113,7 +113,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-black">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col selection:bg-[#0071E3]/20 selection:text-[#0071E3]">
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -177,14 +177,14 @@ export default function HomePage() {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.08] bg-slate-900/40 backdrop-blur-md py-6 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-3">
+      <footer className="border-t border-black/[0.06] bg-white/75 backdrop-blur-md py-6 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-[#6E6E73] gap-3">
           <div className="flex items-center space-x-2">
-            <span className="font-semibold text-slate-200">LEXICON</span>
+            <span className="font-semibold text-[#1D1D1F]">Lexicon</span>
             <span>•</span>
-            <span>Enterprise Password Risk Intelligence Platform</span>
+            <span>Enterprise Password Risk Intelligence</span>
             <span>•</span>
-            <span className="text-emerald-400 font-medium">100% Synthetic Dataset</span>
+            <span className="text-[#34C759] font-medium">100% Synthetic Dataset</span>
           </div>
           <div className="flex items-center space-x-4">
             <span>Deterministic Risk Engine</span>
@@ -196,4 +196,5 @@ export default function HomePage() {
     </div>
   );
 }
+
 

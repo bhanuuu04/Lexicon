@@ -39,44 +39,44 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-md flex justify-end transition-opacity">
-      <div className="w-full max-w-xl bg-[#0f172a]/95 backdrop-blur-2xl border-l border-white/[0.08] h-full overflow-y-auto p-6 flex flex-col justify-between shadow-2xl">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/25 backdrop-blur-sm flex justify-end transition-opacity">
+      <div className="w-full max-w-xl bg-white/95 backdrop-blur-2xl border-l border-black/[0.08] h-full overflow-y-auto p-6 flex flex-col justify-between shadow-modal">
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-start justify-between pb-4 border-b border-white/[0.08]">
+          <div className="flex items-start justify-between pb-4 border-b border-black/[0.06]">
             <div>
               <div className="flex items-center space-x-2">
                 {account.is_hero && (
-                  <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold shadow-[0_0_8px_rgba(244,63,94,0.4)]">
+                  <span className="px-2 py-0.5 rounded-full bg-[#FF3B30] text-white text-[10px] font-semibold shadow-sm">
                     HERO SCENARIO TARGET
                   </span>
                 )}
-                <span className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">
+                <span className="text-xs text-[#0071E3] font-semibold uppercase tracking-wider">
                   Account Telemetry Profile
                 </span>
               </div>
-              <h2 className="text-xl font-bold text-white mt-1.5 flex items-center space-x-2 font-sans">
+              <h2 className="text-xl font-semibold text-[#1D1D1F] mt-1.5 flex items-center space-x-2 font-sans">
                 <span>{account.username}</span>
-                <span className="text-xs font-mono font-normal text-slate-400">({account.id})</span>
+                <span className="text-xs font-mono font-normal text-[#86868B]">({account.id})</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[#6E6E73] mt-0.5">
                 {account.role} • {account.department}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800/60 text-slate-400 hover:text-white border border-white/[0.08] transition"
+              className="p-2 rounded-xl bg-[#F5F5F7] text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#EBEBED] border border-black/[0.06] transition"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Risk Metric Banner */}
           <div className={`p-4 rounded-2xl border ${tierStyle.border} ${tierStyle.bg} flex items-center justify-between`}>
             <div>
-              <div className="text-xs text-slate-400 font-medium">Calculated Enterprise Risk</div>
+              <div className="text-xs text-[#6E6E73] font-medium">Calculated Enterprise Risk</div>
               <div className="flex items-baseline space-x-2.5 mt-1">
-                <span className={`text-3xl font-bold font-sans ${tierStyle.text}`}>
+                <span className={`text-3xl font-semibold font-sans ${tierStyle.text}`}>
                   {formatRiskScore(account.final_risk || account.baseline_risk)}
                 </span>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${tierStyle.badge}`}>
@@ -84,10 +84,10 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
                 </span>
               </div>
             </div>
-            <div className="text-right text-xs text-slate-400">
+            <div className="text-right text-xs text-[#6E6E73]">
               <div>Baseline: {formatRiskScore(account.baseline_risk)}</div>
               {account.attack_adjustment > 0 && (
-                <div className="text-rose-400 font-semibold mt-0.5">
+                <div className="text-[#FF3B30] font-semibold mt-0.5">
                   Attack Bonus: +{(account.attack_adjustment * 100).toFixed(1)}%
                 </div>
               )}
@@ -96,34 +96,34 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
 
           {/* Password Intelligence */}
           <div className="space-y-3">
-            <h4 className="text-xs uppercase text-slate-400 tracking-wider font-semibold">
+            <h4 className="text-xs uppercase text-[#86868B] tracking-wider font-semibold">
               Password Intelligence & Audit Telemetry
             </h4>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3.5 rounded-xl bg-slate-800/40 border border-white/[0.06]">
-                <span className="text-[11px] text-slate-400 block font-medium">zxcvbn Entropy Score</span>
-                <span className={`text-sm font-bold mt-1 block ${zxcvbnInfo.color}`}>
+              <div className="p-3.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
+                <span className="text-[11px] text-[#6E6E73] block font-medium">zxcvbn Entropy Score</span>
+                <span className={`text-sm font-semibold mt-1 block ${zxcvbnInfo.color}`}>
                   {zxcvbnInfo.label}
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-800/40 border border-white/[0.06]">
-                <span className="text-[11px] text-slate-400 block font-medium">Synthetic Breach Corpus</span>
+              <div className="p-3.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
+                <span className="text-[11px] text-[#6E6E73] block font-medium">Synthetic Breach Corpus</span>
                 <span
-                  className={`text-sm font-bold mt-1 block ${
-                    account.breach_match ? "text-rose-400" : "text-emerald-400"
+                  className={`text-sm font-semibold mt-1 block ${
+                    account.breach_match ? "text-[#FF3B30]" : "text-[#34C759]"
                   }`}
                 >
                   {account.breach_match ? "Compromised Match" : "No Breach Match"}
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-800/40 border border-white/[0.06]">
-                <span className="text-[11px] text-slate-400 block font-medium">Credential Reuse Blast Radius</span>
+              <div className="p-3.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
+                <span className="text-[11px] text-[#6E6E73] block font-medium">Credential Reuse Blast Radius</span>
                 <span
-                  className={`text-sm font-bold mt-1 block ${
-                    account.password_group_id !== null ? "text-indigo-400" : "text-slate-400"
+                  className={`text-sm font-semibold mt-1 block ${
+                    account.password_group_id !== null ? "text-[#5856D6]" : "text-[#86868B]"
                   }`}
                 >
                   {account.password_group_id !== null
@@ -132,11 +132,11 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-800/40 border border-white/[0.06]">
-                <span className="text-[11px] text-slate-400 block font-medium">Privilege Tier</span>
+              <div className="p-3.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
+                <span className="text-[11px] text-[#6E6E73] block font-medium">Privilege Tier</span>
                 <span
-                  className={`text-sm font-bold mt-1 block ${
-                    account.is_privileged ? "text-cyan-400" : "text-slate-400"
+                  className={`text-sm font-semibold mt-1 block ${
+                    account.is_privileged ? "text-[#0071E3]" : "text-[#86868B]"
                   }`}
                 >
                   {account.is_privileged ? "Domain Admin / Privileged" : "Standard User"}
@@ -145,21 +145,21 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
             </div>
 
             {/* Policy Violations */}
-            <div className="p-4 rounded-xl bg-slate-800/40 border border-white/[0.06]">
-              <span className="text-[11px] text-slate-400 block mb-2 font-medium">
+            <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
+              <span className="text-[11px] text-[#6E6E73] block mb-2 font-medium">
                 Active Directory Policy Violations ({account.policy_violations.length})
               </span>
               {account.policy_violations.length === 0 ? (
-                <div className="text-xs text-emerald-400 flex items-center space-x-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <div className="text-xs text-[#34C759] flex items-center space-x-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#34C759]" />
                   <span className="font-medium">Complies with baseline password policies</span>
                 </div>
               ) : (
                 <ul className="space-y-1.5">
                   {account.policy_violations.map((v, i) => (
-                    <li key={i} className="text-xs text-amber-300 flex items-start space-x-2">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                      <span>{v}</span>
+                    <li key={i} className="text-xs text-[#FF9500] flex items-start space-x-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-[#FF9500] shrink-0 mt-0.5" />
+                      <span className="text-[#1D1D1F] font-medium">{v}</span>
                     </li>
                   ))}
                 </ul>
@@ -168,19 +168,19 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
           </div>
 
           {/* Attack Evidence Section */}
-          <div className="p-4 rounded-xl border border-white/[0.06] bg-slate-800/30 space-y-3">
+          <div className="p-4 rounded-xl border border-black/[0.06] bg-[#F5F5F7] space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs uppercase text-slate-400 tracking-wider flex items-center space-x-1.5 font-semibold">
-                <Zap className="w-4 h-4 text-rose-400" />
+              <h4 className="text-xs uppercase text-[#86868B] tracking-wider flex items-center space-x-1.5 font-semibold">
+                <Zap className="w-4 h-4 text-[#FF3B30]" />
                 <span>Attack Lab Empirical Telemetry</span>
               </h4>
               <span
                 className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold ${
                   account.attack_evidence
                     ? account.attack_evidence.matched
-                      ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                      : "bg-slate-800 text-slate-300"
-                    : "bg-slate-800/80 text-slate-400 border border-white/[0.08]"
+                      ? "bg-[#FF3B30]/[0.1] text-[#FF3B30] border border-[#FF3B30]/20"
+                      : "bg-black/[0.05] text-[#1D1D1F]"
+                    : "bg-black/[0.05] text-[#86868B] border border-black/[0.06]"
                 }`}
               >
                 {account.attack_evidence
@@ -193,15 +193,15 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
 
             {account.attack_evidence ? (
               <div className="space-y-2 text-xs">
-                <div className="grid grid-cols-2 gap-2 text-slate-300">
-                  <div>Candidates Tested: <span className="text-white font-bold">{account.attack_evidence.candidates_tested.toLocaleString()}</span></div>
-                  <div>Elapsed Time: <span className="text-white font-bold">{account.attack_evidence.elapsed_ms}ms</span></div>
-                  <div>Algorithm: <span className="text-cyan-400 font-bold">{account.attack_evidence.algorithm}</span></div>
-                  <div>Matched Rule: <span className="text-amber-400 font-bold">{account.attack_evidence.matched_rule || "None"}</span></div>
+                <div className="grid grid-cols-2 gap-2 text-[#6E6E73]">
+                  <div>Candidates Tested: <span className="text-[#1D1D1F] font-semibold">{account.attack_evidence.candidates_tested.toLocaleString()}</span></div>
+                  <div>Elapsed Time: <span className="text-[#1D1D1F] font-semibold">{account.attack_evidence.elapsed_ms}ms</span></div>
+                  <div>Algorithm: <span className="text-[#0071E3] font-semibold">{account.attack_evidence.algorithm}</span></div>
+                  <div>Matched Rule: <span className="text-[#FF9500] font-semibold">{account.attack_evidence.matched_rule || "None"}</span></div>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-400 italic">
+              <p className="text-xs text-[#86868B] italic">
                 No bounded simulation performed yet for this account. Launch Attack Lab below to test deterministic mutation resistance.
               </p>
             )}
@@ -209,74 +209,74 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
 
           {/* Cryptographic Hashes Inspection */}
           <div className="space-y-2 text-xs">
-            <h4 className="text-xs uppercase text-slate-400 tracking-wider font-semibold">Cryptographic Hashes</h4>
+            <h4 className="text-xs uppercase text-[#86868B] tracking-wider font-semibold">Cryptographic Hashes</h4>
             
             {/* MD5 */}
-            <div className="p-2.5 rounded-xl bg-slate-800/40 border border-white/[0.06] flex items-center justify-between">
+            <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
               <div className="truncate mr-2">
-                <span className="text-slate-500 uppercase text-[10px] block font-semibold">MD5 Digest</span>
-                <span className="text-slate-300 font-mono truncate block text-[11px]">{account.hash_md5}</span>
+                <span className="text-[#86868B] uppercase text-[10px] block font-semibold">MD5 Digest</span>
+                <span className="text-[#1D1D1F] font-mono truncate block text-[11px]">{account.hash_md5}</span>
               </div>
               <button
                 onClick={() => copyToClipboard(account.hash_md5, "md5")}
-                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition"
+                className="p-1.5 rounded-lg bg-white text-[#6E6E73] hover:text-[#1D1D1F] border border-black/[0.06] shadow-xs transition"
               >
-                {copiedKey === "md5" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === "md5" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
 
             {/* SHA-256 */}
-            <div className="p-2.5 rounded-xl bg-slate-800/40 border border-white/[0.06] flex items-center justify-between">
+            <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
               <div className="truncate mr-2">
-                <span className="text-slate-500 uppercase text-[10px] block font-semibold">SHA-256 Digest</span>
-                <span className="text-slate-300 font-mono truncate block text-[11px]">{account.hash_sha256}</span>
+                <span className="text-[#86868B] uppercase text-[10px] block font-semibold">SHA-256 Digest</span>
+                <span className="text-[#1D1D1F] font-mono truncate block text-[11px]">{account.hash_sha256}</span>
               </div>
               <button
                 onClick={() => copyToClipboard(account.hash_sha256, "sha256")}
-                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition"
+                className="p-1.5 rounded-lg bg-white text-[#6E6E73] hover:text-[#1D1D1F] border border-black/[0.06] shadow-xs transition"
               >
-                {copiedKey === "sha256" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === "sha256" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
 
             {/* bcrypt */}
-            <div className="p-2.5 rounded-xl bg-slate-800/40 border border-white/[0.06] flex items-center justify-between">
+            <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
               <div className="truncate mr-2">
-                <span className="text-slate-500 uppercase text-[10px] block font-semibold">bcrypt Hash</span>
-                <span className="text-slate-300 font-mono truncate block text-[11px]">{account.hash_bcrypt}</span>
+                <span className="text-[#86868B] uppercase text-[10px] block font-semibold">bcrypt Hash</span>
+                <span className="text-[#1D1D1F] font-mono truncate block text-[11px]">{account.hash_bcrypt}</span>
               </div>
               <button
                 onClick={() => copyToClipboard(account.hash_bcrypt, "bcrypt")}
-                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition"
+                className="p-1.5 rounded-lg bg-white text-[#6E6E73] hover:text-[#1D1D1F] border border-black/[0.06] shadow-xs transition"
               >
-                {copiedKey === "bcrypt" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === "bcrypt" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
 
             {/* Argon2id */}
-            <div className="p-2.5 rounded-xl bg-slate-800/40 border border-white/[0.06] flex items-center justify-between">
+            <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
               <div className="truncate mr-2">
-                <span className="text-slate-500 uppercase text-[10px] block font-semibold">Argon2id Hash</span>
-                <span className="text-slate-300 font-mono truncate block text-[11px]">{account.hash_argon2id}</span>
+                <span className="text-[#86868B] uppercase text-[10px] block font-semibold">Argon2id Hash</span>
+                <span className="text-[#1D1D1F] font-mono truncate block text-[11px]">{account.hash_argon2id}</span>
               </div>
               <button
                 onClick={() => copyToClipboard(account.hash_argon2id, "argon2id")}
-                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition"
+                className="p-1.5 rounded-lg bg-white text-[#6E6E73] hover:text-[#1D1D1F] border border-black/[0.06] shadow-xs transition"
               >
-                {copiedKey === "argon2id" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedKey === "argon2id" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>
         </div>
 
         {/* Footer Action Button */}
-        <div className="pt-6 border-t border-white/[0.08] mt-6">
+        <div className="pt-6 border-t border-black/[0.06] mt-6">
           <button
             onClick={() => {
               onClose();
               onLaunchAttack(account);
             }}
-            className="w-full py-3 px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-semibold flex items-center justify-center space-x-2 transition shadow-[0_2px_15px_rgba(244,63,94,0.4)]"
+            className="w-full py-3 px-4 rounded-xl bg-[#FF3B30] hover:bg-[#E02E24] text-white font-semibold flex items-center justify-center space-x-2 transition shadow-sm active:scale-[0.98]"
           >
             <Zap className="w-4 h-4 text-white" />
             <span>Launch Account in Attack Lab</span>
@@ -286,4 +286,5 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
     </div>
   );
 };
+
 

@@ -8,36 +8,36 @@ export function getTierColor(tier: string): {
   switch (tier?.toLowerCase()) {
     case "critical":
       return {
-        bg: "bg-red-950/40",
-        text: "text-red-400",
-        border: "border-red-600/40",
-        badge: "bg-red-600/20 text-red-400 border border-red-500/30",
-        glow: "shadow-[0_0_15px_rgba(239,68,68,0.25)]",
+        bg: "bg-[#FF3B30]/[0.05]",
+        text: "text-[#FF3B30]",
+        border: "border-[#FF3B30]/20",
+        badge: "bg-[#FF3B30]/[0.08] text-[#FF3B30] border border-[#FF3B30]/25",
+        glow: "shadow-sm",
       };
     case "high":
       return {
-        bg: "bg-orange-950/40",
-        text: "text-orange-400",
-        border: "border-orange-600/40",
-        badge: "bg-orange-600/20 text-orange-400 border border-orange-500/30",
-        glow: "shadow-[0_0_15px_rgba(249,115,22,0.25)]",
+        bg: "bg-[#FF9500]/[0.05]",
+        text: "text-[#FF9500]",
+        border: "border-[#FF9500]/20",
+        badge: "bg-[#FF9500]/[0.08] text-[#FF9500] border border-[#FF9500]/25",
+        glow: "shadow-sm",
       };
     case "medium":
       return {
-        bg: "bg-yellow-950/40",
-        text: "text-yellow-400",
-        border: "border-yellow-600/40",
-        badge: "bg-yellow-600/20 text-yellow-400 border border-yellow-500/30",
-        glow: "shadow-[0_0_15px_rgba(234,179,8,0.25)]",
+        bg: "bg-[#E5A000]/[0.05]",
+        text: "text-[#E5A000]",
+        border: "border-[#E5A000]/20",
+        badge: "bg-[#E5A000]/[0.08] text-[#E5A000] border border-[#E5A000]/25",
+        glow: "shadow-sm",
       };
     case "low":
     default:
       return {
-        bg: "bg-emerald-950/40",
-        text: "text-emerald-400",
-        border: "border-emerald-600/40",
-        badge: "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30",
-        glow: "shadow-[0_0_15px_rgba(16,185,129,0.25)]",
+        bg: "bg-[#34C759]/[0.05]",
+        text: "text-[#34C759]",
+        border: "border-[#34C759]/20",
+        badge: "bg-[#34C759]/[0.08] text-[#34C759] border border-[#34C759]/25",
+        glow: "shadow-sm",
       };
   }
 }
@@ -49,16 +49,16 @@ export function formatRiskScore(score: number): string {
 export function getZxcvbnLabel(score: number): { label: string; color: string } {
   switch (score) {
     case 0:
-      return { label: "Very Weak (Score 0)", color: "text-red-500" };
+      return { label: "Very Weak (Score 0)", color: "text-[#FF3B30]" };
     case 1:
-      return { label: "Weak (Score 1)", color: "text-red-400" };
+      return { label: "Weak (Score 1)", color: "text-[#FF3B30]" };
     case 2:
-      return { label: "Fair (Score 2)", color: "text-yellow-400" };
+      return { label: "Fair (Score 2)", color: "text-[#FF9500]" };
     case 3:
-      return { label: "Good (Score 3)", color: "text-emerald-400" };
+      return { label: "Good (Score 3)", color: "text-[#34C759]" };
     case 4:
-      return { label: "Strong (Score 4)", color: "text-emerald-300" };
+      return { label: "Strong (Score 4)", color: "text-[#34C759]" };
     default:
-      return { label: "Unknown", color: "text-slate-400" };
+      return { label: "Unknown", color: "text-[#86868B]" };
   }
 }

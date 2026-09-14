@@ -17,8 +17,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
       value: summary.total_accounts.toLocaleString(),
       subtitle: "Active Directory Corpus",
       icon: Users,
-      valueColor: "text-white",
-      badgeColor: "bg-slate-800 text-slate-300 border-white/[0.08]",
+      valueColor: "text-[#1D1D1F]",
+      badgeColor: "bg-[#F5F5F7] text-[#6E6E73] border-black/[0.06]",
+      iconColor: "text-[#6E6E73]",
       filter: "ALL",
     },
     {
@@ -27,8 +28,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
       value: summary.critical_count.toLocaleString(),
       subtitle: `${((summary.critical_count / summary.total_accounts) * 100).toFixed(1)}% of total scope`,
       icon: ShieldAlert,
-      valueColor: "text-rose-400",
-      badgeColor: "bg-rose-500/10 text-rose-300 border-rose-500/20",
+      valueColor: "text-[#FF3B30]",
+      badgeColor: "bg-[#FF3B30]/[0.08] text-[#FF3B30] border-[#FF3B30]/20",
+      iconColor: "text-[#FF3B30]",
       filter: "Critical",
     },
     {
@@ -37,8 +39,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
       value: summary.high_risk_count.toLocaleString(),
       subtitle: `${((summary.high_risk_count / summary.total_accounts) * 100).toFixed(1)}% elevated tier`,
       icon: AlertTriangle,
-      valueColor: "text-amber-400",
-      badgeColor: "bg-amber-500/10 text-amber-300 border-amber-500/20",
+      valueColor: "text-[#FF9500]",
+      badgeColor: "bg-[#FF9500]/[0.08] text-[#FF9500] border-[#FF9500]/20",
+      iconColor: "text-[#FF9500]",
       filter: "High",
     },
     {
@@ -47,8 +50,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
       value: summary.breached_count.toLocaleString(),
       subtitle: "Compromised credential corpus",
       icon: Database,
-      valueColor: "text-rose-300",
-      badgeColor: "bg-rose-500/10 text-rose-300 border-rose-500/20",
+      valueColor: "text-[#FF2D55]",
+      badgeColor: "bg-[#FF2D55]/[0.08] text-[#FF2D55] border-[#FF2D55]/20",
+      iconColor: "text-[#FF2D55]",
       filter: "BREACHED",
     },
     {
@@ -57,8 +61,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
       value: summary.reuse_cluster_count.toLocaleString(),
       subtitle: `${summary.total_reused_accounts.toLocaleString()} shared accounts`,
       icon: Layers,
-      valueColor: "text-indigo-300",
-      badgeColor: "bg-indigo-500/10 text-indigo-300 border-indigo-500/20",
+      valueColor: "text-[#5856D6]",
+      badgeColor: "bg-[#5856D6]/[0.08] text-[#5856D6] border-[#5856D6]/20",
+      iconColor: "text-[#5856D6]",
       filter: "REUSED",
     },
     {
@@ -67,8 +72,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
       value: summary.privileged_at_risk_count.toLocaleString(),
       subtitle: `Out of ${summary.privileged_count.toLocaleString()} total admins`,
       icon: ShieldCheck,
-      valueColor: "text-emerald-400",
-      badgeColor: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
+      valueColor: "text-[#34C759]",
+      badgeColor: "bg-[#34C759]/[0.08] text-[#34C759] border-[#34C759]/20",
+      iconColor: "text-[#34C759]",
       filter: "PRIVILEGED",
     },
   ];
@@ -81,24 +87,24 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
           <div
             key={card.id}
             onClick={() => onCardClick && onCardClick(card.filter)}
-            className="apple-card p-4 cursor-pointer flex flex-col justify-between min-h-[128px] group"
+            className="apple-card p-4 cursor-pointer flex flex-col justify-between min-h-[128px] group active:scale-[0.99]"
           >
             {/* Header: Title + Icon Badge */}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-slate-400 font-sans tracking-tight">
+              <span className="text-xs font-medium text-[#6E6E73] font-sans tracking-tight">
                 {card.title}
               </span>
-              <div className={`p-1.5 rounded-lg border ${card.badgeColor} shrink-0 group-hover:scale-105 transition-transform`}>
-                <IconComponent className="w-3.5 h-3.5" />
+              <div className={`p-1.5 rounded-lg border ${card.badgeColor} shrink-0 group-hover:scale-105 transition-transform duration-200`}>
+                <IconComponent className={`w-3.5 h-3.5 ${card.iconColor}`} />
               </div>
             </div>
 
             {/* Value & Subtitle */}
             <div className="mt-3">
-              <div className={`text-2xl sm:text-3xl font-bold tracking-tight font-sans ${card.valueColor}`}>
+              <div className={`text-2xl sm:text-3xl font-semibold tracking-tight font-sans ${card.valueColor}`}>
                 {card.value}
               </div>
-              <p className="text-[11px] text-slate-400 mt-1 font-normal tracking-tight truncate">
+              <p className="text-[11px] text-[#86868B] mt-1 font-normal tracking-tight truncate">
                 {card.subtitle}
               </p>
             </div>
@@ -108,4 +114,5 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
     </div>
   );
 };
+
 
