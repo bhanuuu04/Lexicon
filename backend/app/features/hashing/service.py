@@ -19,6 +19,16 @@ argon2_hasher = PasswordHasher(
     type=argon2.Type.ID
 )
 
+# Lightweight hasher for rapid bulk dataset synthesis (valid argon2id, minimal latency)
+argon2_bulk_hasher = PasswordHasher(
+    time_cost=1,
+    memory_cost=8 * 1024,
+    parallelism=1,
+    hash_len=32,
+    salt_len=16,
+    type=argon2.Type.ID
+)
+
 # ---------------------------------------------------------------------------
 # Pure Python MD4 Fallback for NTLM
 # ---------------------------------------------------------------------------
@@ -86,14 +96,21 @@ def compute_argon2id(password: str) -> str:
     """Compute genuine Argon2id hash (Memory-Hard: 64MB, 4 Passes)."""
     return argon2_hasher.hash(password)
 
-def compute_all_hashes(password: str) -> dict:
+def compute_all_hashes(password: str, fast_mode: bool = False) -> dict:
     """Compute all 4 industry hashing standards (plus MD5 compatibility) for an account."""
+    if fast_mode:
+        bcrypt_hash = compute_bcrypt(password, cost=4)
+        argon2_hash = argon2_bulk_hasher.hash(password)
+    else:
+        bcrypt_hash = compute_bcrypt(password, cost=BCRYPT_COST)
+        argon2_hash = compute_argon2id(password)
+
     return {
         "hash_ntlm": compute_ntlm(password),
         "hash_md5": compute_md5(password),
         "hash_sha256": compute_sha256(password),
-        "hash_bcrypt": compute_bcrypt(password),
-        "hash_argon2id": compute_argon2id(password)
+        "hash_bcrypt": bcrypt_hash,
+        "hash_argon2id": argon2_hash
     }
 
 # ---------------------------------------------------------------------------

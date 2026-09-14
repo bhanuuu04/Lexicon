@@ -9,12 +9,19 @@ class PolicyViolation(BaseModel):
 class Account(BaseModel):
     id: str
     username: str
+    first_name: Optional[str] = ""
+    last_name: Optional[str] = ""
+    email: Optional[str] = ""
     department: str
     role: str
     is_privileged: bool = False
+    sid: Optional[str] = None
+    password_age_days: Optional[int] = None
+    mfa_enabled: Optional[bool] = False
+    failed_login_count: Optional[int] = 0
 
     password_group_id: Optional[int] = None
-    plaintext_password: str  # Present strictly because dataset is synthetic
+    plaintext_password: str  # Retained in memory/dataset for empirical security analysis
 
     hash_ntlm: str = ""
     hash_md5: str = ""
@@ -33,6 +40,10 @@ class Account(BaseModel):
     final_risk: float = 0.0
     final_tier: str = "Low"
 
+    factors: Optional[Dict[str, Any]] = None
+    radar: Optional[Dict[str, Any]] = None
+
+    is_hero: Optional[bool] = False
     is_blocked: bool = False
     blocked_reason: Optional[str] = None
     blocked_at: Optional[str] = None

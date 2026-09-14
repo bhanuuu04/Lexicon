@@ -1,12 +1,22 @@
+"""
+Enterprise Identity and Credential Constants
+Used by the Dataset Generator for Active Directory simulation.
+"""
+
 FIRST_NAMES = [
     "Alex", "Jordan", "Taylor", "Morgan", "Sam", "Chris", "Pat", "Riley", "Casey", "Jamie",
     "Avery", "Cameron", "Dakota", "Reese", "Quinn", "Skyler", "Kendall", "Peyton", "Logan", "Hayden",
     "David", "Sarah", "Michael", "Emily", "James", "Emma", "John", "Olivia", "Robert", "Sophia",
     "William", "Ava", "Joseph", "Isabella", "Thomas", "Mia", "Charles", "Charlotte", "Daniel", "Amelia",
-    "Matthew", "Harper", "Anthony", "Evelyn", "Donald", "Abigail", "Mark", "Emily", "Paul", "Elizabeth",
-    "Steven", "Mila", "Andrew", "Ella", "Kenneth", "Avery", "Joshua", "Sofia", "Kevin", "Camila",
-    "Brian", "Aria", "George", "Scarlett", "Edward", "Victoria", "Ronald", "Madison", "Timothy", "Luna",
-    "Jason", "Grace", "Jeffrey", "Chloe", "Ryan", "Penelope", "Jacob", "Layla", "Gary", "Riley"
+    "Matthew", "Harper", "Anthony", "Evelyn", "Donald", "Abigail", "Mark", "Elizabeth", "Steven", "Mila",
+    "Andrew", "Ella", "Kenneth", "Joshua", "Sofia", "Kevin", "Camila", "Brian", "Aria", "George",
+    "Scarlett", "Edward", "Victoria", "Ronald", "Madison", "Timothy", "Luna", "Jason", "Grace", "Jeffrey",
+    "Chloe", "Ryan", "Penelope", "Jacob", "Layla", "Gary", "Nicholas", "Nora", "Eric", "Hazel",
+    "Jonathan", "Zoey", "Stephen", "Riley", "Larry", "Stella", "Justin", "Ellie", "Scott", "Paisley",
+    "Brandon", "Audrey", "Benjamin", "Claire", "Samuel", "Skylar", "Gregory", "Bella", "Frank", "Aurora",
+    "Alexander", "Lucy", "Raymond", "Anna", "Patrick", "Samantha", "Jack", "Caroline", "Dennis", "Genesis",
+    "Jerry", "Aaliyah", "Tyler", "Kennedy", "Aaron", "Kinsley", "Jose", "Allison", "Adam", "Maya",
+    "Nathan", "Sarah", "Henry", "Madelyn", "Douglas", "Adeline", "Zachary", "Evelyn", "Peter", "Piper"
 ]
 
 LAST_NAMES = [
@@ -15,7 +25,12 @@ LAST_NAMES = [
     "Martin", "Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis",
     "Robinson", "Walker", "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill",
     "Flores", "Green", "Adams", "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell", "Carter",
-    "Roberts", "Gomez", "Phillips", "Evans", "Turner", "Diaz", "Parker", "Cruz", "Edwards", "Collins"
+    "Roberts", "Gomez", "Phillips", "Evans", "Turner", "Diaz", "Parker", "Cruz", "Edwards", "Collins",
+    "Reyes", "Stewart", "Morris", "Morales", "Murphy", "Cook", "Rogers", "Gutierrez", "Ortiz", "Morgan",
+    "Cooper", "Peterson", "Bailey", "Reed", "Kelly", "Howard", "Ramos", "Kim", "Cox", "Ward",
+    "Richardson", "Watson", "Brooks", "Chavez", "Wood", "James", "Bennett", "Gray", "Mendoza", "Ruiz",
+    "Hughes", "Price", "Alvarez", "Castillo", "Sanders", "Patel", "Myers", "Long", "Ross", "Foster",
+    "Jimenez", "Powell", "Jenkins", "Perry", "Russell", "Sullivan", "Bell", "Coleman", "Butler", "Henderson"
 ]
 
 DEPARTMENTS = {
@@ -122,7 +137,27 @@ DEPARTMENTS = {
 REUSE_ROOT_WORDS = [
     "Company", "Lexicon", "Enterprise", "Welcome", "Summer", "Winter", "Spring", "Autumn",
     "Admin", "Password", "Finance", "Engineering", "Operations", "Access", "Secure", "Login",
-    "Office", "Server", "Portal", "Master", "System", "Domain", "Global", "Cyber", "Cloud"
+    "Office", "Server", "Portal", "Master", "System", "Domain", "Global", "Cyber", "Cloud",
+    "Corporate", "Network", "Gateway", "Database", "Manager", "Service", "Central", "Direct",
+    "Connect", "Account", "Matrix", "Nexus", "Summit", "Shield", "Sentinel", "Horizon"
+]
+
+PASSPHRASE_WORDS = [
+    "correct", "horse", "battery", "staple", "blue", "mountain", "river", "falcon", "solar",
+    "forest", "whisper", "crimson", "silent", "beacon", "shadow", "summit", "timber", "canyon",
+    "harbor", "anchor", "silver", "planet", "galaxy", "rocket", "meadow", "cascade", "glacier",
+    "thunder", "crystal", "bridge", "tunnel", "island", "valley", "falcon", "badger", "dragon",
+    "phoenix", "griffin", "breeze", "aurora", "comet", "nebula", "radiant", "zenith", "vanguard"
+]
+
+KEYBOARD_WALKS = [
+    "1qaz2wsx", "1qaz!QAZ", "qwerty1234", "asdfgh123", "zxcvbn123", "!q@w#e$r", "qwer1234!",
+    "1234qwer", "12345678aA!", "qazwsxedc", "zaq12wsx", "0987654321", "1234567890!@"
+]
+
+DEFAULT_PROVISIONED_PREFIXES = [
+    "Welcome", "TempPass", "ChangeMe", "Initial", "Start", "NewUser", "Provision", "ResetMe",
+    "Default", "FirstLogin", "Setup", "WelcomeToLexicon", "Onboarding"
 ]
 
 COMMON_WEAK_PASSWORDS = [
@@ -130,5 +165,8 @@ COMMON_WEAK_PASSWORDS = [
     "Admin@123", "Finance2026!", "P@ssword2026", "Enterprise2026!", "Access2026!", "Lexicon2026!",
     "Password12345", "Welcome123!", "Summer2025!", "Company123!", "Office2026!", "Global2026!",
     "Secure123!", "Server2026!", "DomainAdmin1!", "Qwerty1234!", "ChangeMe2026!", "LetMeIn2026!",
-    "Testing123!", "Support2026!", "Corporate123!", "November2025!", "December2025!", "January2026!"
+    "Testing123!", "Support2026!", "Corporate123!", "November2025!", "December2025!", "January2026!",
+    "Autumn2025!", "Password2026!", "Welcome2025#", "LexiconSecure1!", "CompanySummer2026!"
 ]
+
+DOMAIN_NAME = "lexicon.corp"

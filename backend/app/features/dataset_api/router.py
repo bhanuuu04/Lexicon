@@ -1,5 +1,6 @@
 import json
 import re
+import os
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
@@ -99,11 +100,19 @@ def save_accounts(accounts: List[Dict[str, Any]]):
     global _accounts_cache
     _accounts_cache = accounts
     try:
-        temp_file = ACCOUNTS_FILE.with_suffix(".tmp")
+        temp_file = ACCOUNTS_FILE.with_suffix(f".tmp.{os.getpid()}")
         with open(str(temp_file), "w", encoding="utf-8") as f:
             json.dump(accounts, f)
         if temp_file.exists():
-            temp_file.replace(ACCOUNTS_FILE)
+            try:
+                temp_file.replace(ACCOUNTS_FILE)
+            except Exception:
+                if ACCOUNTS_FILE.exists():
+                    try:
+                        ACCOUNTS_FILE.unlink()
+                    except Exception:
+                        pass
+                temp_file.rename(ACCOUNTS_FILE)
     except Exception as e:
         print(f"[DatasetAPI] Warning: disk save encountered {e}, in-memory state updated successfully.")
 
@@ -111,11 +120,19 @@ def save_audit_summary(summary: Dict[str, Any]):
     global _audit_cache
     _audit_cache = summary
     try:
-        temp_file = AUDIT_RESULTS_FILE.with_suffix(".tmp")
+        temp_file = AUDIT_RESULTS_FILE.with_suffix(f".tmp.{os.getpid()}")
         with open(str(temp_file), "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
         if temp_file.exists():
-            temp_file.replace(AUDIT_RESULTS_FILE)
+            try:
+                temp_file.replace(AUDIT_RESULTS_FILE)
+            except Exception:
+                if AUDIT_RESULTS_FILE.exists():
+                    try:
+                        AUDIT_RESULTS_FILE.unlink()
+                    except Exception:
+                        pass
+                temp_file.rename(AUDIT_RESULTS_FILE)
     except Exception as e:
         print(f"[DatasetAPI] Warning: audit summary disk save encountered {e}")
 
@@ -132,8 +149,8 @@ def get_summary():
 @router.post("/dataset/generate")
 def generate_dataset_endpoint(payload: GenerateDatasetRequest):
     """
-    Admin-only: Explicitly regenerate synthetic dataset of specified size and re-run audit.
-    NEVER runs automatically.
+    Admin-only: Explicitly regenerate Active Directory credential dataset of specified size and re-run audit.
+    Executes in a high-speed unified single pass.
     """
     count = payload.count
     if count < 100 or count > 100_000:
@@ -142,18 +159,21 @@ def generate_dataset_endpoint(payload: GenerateDatasetRequest):
             detail="Account count must be between 100 and 100,000"
         )
     
-    # 1. Generate & save dataset and metadata
-    accounts, breach_corpus, metadata = generate_and_save_dataset(total_accounts=count)
+    # 1. High-speed single-pass synthesis & audit
+    accounts, breach_corpus, metadata, audit_summary = generate_and_save_dataset(total_accounts=count)
     
-    # 2. Run full deterministic audit on the new dataset
-    audit_summary = run_bulk_audit()
+    # 2. Reload breach checker corpus
+    breach_checker.load_corpus()
     
-    # 3. Invalidate and reload in-memory caches
-    invalidate_cache()
+    # 3. Update in-memory caches directly
+    global _accounts_cache, _audit_cache, _metadata_cache
+    _accounts_cache = accounts
+    _audit_cache = audit_summary
+    _metadata_cache = metadata
     
     return {
         "status": "success",
-        "message": f"Successfully generated and audited {count:,} synthetic accounts.",
+        "message": f"Successfully generated and audited {count:,} Active Directory accounts.",
         "metadata": metadata,
         "summary": audit_summary
     }

@@ -80,10 +80,10 @@ def check_policy_violations(
         violations.append("Password length below minimum 12 characters requirement")
         
     # 2. Complexity Policy
-    has_lower = bool(re.search(r"[a-z]", password))
-    has_upper = bool(re.search(r"[A-Z]", password))
-    has_digit = bool(re.search(r"\d", password))
-    has_special = bool(re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", password))
+    has_lower = any(c.islower() for c in password)
+    has_upper = any(c.isupper() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_special = any(not c.isalnum() for c in password)
     
     complexity_categories = sum([has_lower, has_upper, has_digit, has_special])
     if complexity_categories < 3 and not (is_passphrase and len(password) >= 16):
