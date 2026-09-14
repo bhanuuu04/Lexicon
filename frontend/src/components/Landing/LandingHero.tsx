@@ -27,13 +27,21 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           transition={{ duration: 0.4 }}
           className="flex justify-center"
         >
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white border border-black/[0.08] shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-[#34C759] animate-pulse"></span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#1D1D1F]">
-              Lexicon Enterprise
+          <div className="inline-flex items-center space-x-2.5 px-4 py-2 rounded-full bg-white border border-black/[0.08] shadow-xs">
+            <div className="w-5 h-5 min-w-[20px] max-w-[20px] min-h-[20px] max-h-[20px] rounded-md overflow-hidden shrink-0 flex items-center justify-center">
+              <img
+                src="/lexicon-logo.png"
+                alt="Lexicon"
+                className="w-5 h-5 object-contain block"
+                style={{ width: "20px", height: "20px", maxWidth: "20px", maxHeight: "20px" }}
+              />
+            </div>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#34C759] animate-pulse shrink-0"></span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#1D1D1F] whitespace-nowrap">
+              LEXICON ENTERPRISE
             </span>
-            <span className="text-[#86868B]">•</span>
-            <span className="text-xs text-[#6E6E73]">Continuous Identity Protection Platform</span>
+            <span className="text-[#86868B] shrink-0">•</span>
+            <span className="text-xs text-[#6E6E73] font-medium whitespace-nowrap">Password Risk Intelligence</span>
           </div>
         </motion.div>
 

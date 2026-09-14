@@ -147,3 +147,12 @@ def test_api_deterministic_password_reset_reject_and_accept():
     assert good_data["account"]["is_blocked"] is False
     assert good_data["account"]["final_tier"] == "Low"
 
+    # 4. Verify that summary and organization_health updated in real-time
+    sum_resp = client.get("/api/dataset/summary")
+    assert sum_resp.status_code == 200
+    sum_data = sum_resp.json()
+    assert "organization_health" in sum_data
+    assert "security_readiness_pct" in sum_data["organization_health"]
+    assert sum_data["organization_health"]["security_readiness_pct"] > 0
+
+

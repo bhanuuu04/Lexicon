@@ -10,7 +10,8 @@ from backend.app.features.breach_dictionary.service import breach_checker
 from backend.app.features.risk_engine.scoring import (
     calculate_baseline_risk_detailed,
     compute_risk_radar_vector,
-    calculate_baseline_risk
+    calculate_baseline_risk,
+    calculate_organization_health
 )
 from backend.app.features.risk_engine.policy import check_policy_violations
 
@@ -231,7 +232,8 @@ def run_bulk_audit() -> Dict[str, Any]:
         },
         "department_risk_summary": dict(dept_summary),
         "top_reuse_clusters": top_clusters,
-        "hero_account_id": hero_account_id
+        "hero_account_id": hero_account_id,
+        "organization_health": calculate_organization_health(audited_accounts)
     }
     
     print(f"[AuditEngine] Updating {ACCOUNTS_FILE} with audit attributes...")
@@ -239,6 +241,24 @@ def run_bulk_audit() -> Dict[str, Any]:
         
     print(f"[AuditEngine] Writing precomputed summary to {AUDIT_RESULTS_FILE}...")
     _atomic_write_json(AUDIT_RESULTS_FILE, audit_summary, indent=2)
+
+    # Persist summary to Supabase
+    try:
+        from backend.app.supabase_client import supabase_service
+        supabase_service.sync_audit_summary(audit_summary)
+        supabase_service.log_audit_action(
+            action="RUN_AUDIT",
+            actor="Auditor SOC Engine",
+            details={
+                "total_accounts": len(audited_accounts),
+                "critical_count": critical_count,
+                "breached_count": breached_count
+            }
+        )
+    except Exception as e:
+        print(f"[AuditEngine] Supabase sync notice: {e}")
         
     print("[AuditEngine] Audit complete!")
     return audit_summary
+
+

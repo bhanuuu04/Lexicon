@@ -14,8 +14,14 @@ import { AuditLogsView } from "./AuditLogsView";
 import { AdminSettings } from "./AdminSettings";
 import { CompromisedAccountsView } from "./CompromisedAccountsView";
 import { GenerateDatasetModal } from "./GenerateDatasetModal";
-import { AuditSummary, Account, DatasetMetadata, GenerateDatasetResponse } from "../../types";
-import { fetchAccountDetail, fetchDatasetMetadata } from "../../lib/api";
+import { AuditSummary, Account, DatasetMetadata, GenerateDatasetResponse, DatabaseStatus } from "../../types";
+import {
+  fetchAccountDetail,
+  fetchDatasetMetadata,
+  runRealtimeSecurityAnalysis,
+  syncDatasetToSupabase,
+  fetchDatabaseStatus
+} from "../../lib/api";
 import {
   Activity,
   Users,
@@ -42,7 +48,9 @@ import {
   Layers,
   ChevronRight,
   Database,
+  Cloud,
 } from "lucide-react";
+
 
 interface AdminPanelProps {
   summary: AuditSummary;
@@ -71,15 +79,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [isHIBPOpen, setIsHIBPOpen] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSyncingDb, setIsSyncingDb] = useState(false);
+  const [isRunningLiveAnalysis, setIsRunningLiveAnalysis] = useState(false);
   const [metadata, setMetadata] = useState<DatasetMetadata | null>(null);
+  const [dbStatus, setDbStatus] = useState<DatabaseStatus | null>(null);
+  const [adminNotice, setAdminNotice] = useState<string | null>(null);
 
   React.useEffect(() => {
     async function loadMeta() {
       try {
         const meta = await fetchDatasetMetadata();
         setMetadata(meta);
+        const db = await fetchDatabaseStatus();
+        setDbStatus(db);
       } catch (e) {
-        console.error("Failed to load dataset metadata:", e);
+        console.error("Failed to load metadata/db status:", e);
       }
     }
     loadMeta();
@@ -95,13 +109,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setActiveAdminTab("accounts");
   };
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-      window.location.reload();
-    }, 800);
+  const handleRefresh = async () => {
+    setIsRunningLiveAnalysis(true);
+    try {
+      await runRealtimeSecurityAnalysis();
+      setAdminNotice("✨ Real-time security analysis complete across all accounts.");
+      setTimeout(() => setAdminNotice(null), 4000);
+    } catch (e) {
+      console.error("Security analysis failed:", e);
+    } finally {
+      setIsRunningLiveAnalysis(false);
+    }
   };
+
+  const handleSyncToSupabase = async () => {
+    setIsSyncingDb(true);
+    try {
+      const res = await syncDatasetToSupabase(5000);
+      setAdminNotice(`⚡ Synced ${res.synced_accounts?.toLocaleString()} accounts to Supabase Cloud Database.`);
+      setTimeout(() => setAdminNotice(null), 5000);
+      const db = await fetchDatabaseStatus();
+      setDbStatus(db);
+    } catch (e) {
+      console.error("Supabase sync failed:", e);
+    } finally {
+      setIsSyncingDb(false);
+    }
+  };
+
 
   const adminSubNav = [
     { id: "overview", label: "Defense Overview", icon: Activity, badge: null },
@@ -116,10 +151,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     { id: "settings", label: "Settings", icon: Settings, badge: null },
   ];
 
-  // Calculate high level security readiness score
-  const defenseReadiness = Math.round(
-    100 - (summary.critical_count / summary.total_accounts) * 100 * 1.5
-  );
+  // Retrieve role-weighted organizational security readiness score
+  const defenseReadiness = summary.organization_health?.security_readiness_pct !== undefined
+    ? summary.organization_health.security_readiness_pct
+    : Math.round(100 - (summary.critical_count / summary.total_accounts) * 100 * 1.5);
+
+  const orgHealthStatus = summary.organization_health?.status || (defenseReadiness >= 75 ? "Healthy" : (defenseReadiness >= 40 ? "Elevated Risk" : "Critical Danger"));
+  const isTopAdminCompromised = summary.organization_health?.top_admin_compromised ?? (summary.critical_count > 0);
+  const adminExposurePct = summary.organization_health?.admin_exposure_pct ?? Math.round((summary.privileged_at_risk_count / Math.max(1, summary.privileged_count)) * 100);
+  const workforceExposurePct = summary.organization_health?.workforce_exposure_pct ?? 25.0;
+
+  const dialColor = defenseReadiness >= 75 ? "#34C759" : (defenseReadiness >= 40 ? "#FF9500" : "#FF3B30");
+  const refreshKey = summary.critical_count + summary.low_risk_count + Math.round(defenseReadiness * 10);
 
   return (
     <div className="space-y-6">
@@ -129,7 +172,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#0071E3]/[0.03] rounded-full blur-3xl -z-0 pointer-events-none"></div>
 
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left: Overall Health Dial & Defense Status (4 cols) */}
+          {/* Left: Overall Health Dial & Defense Status (5 cols) */}
           <div className="lg:col-span-5 flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 border-b lg:border-b-0 lg:border-r border-black/[0.06] pb-6 lg:pb-0 lg:pr-6">
             <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
@@ -141,11 +184,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 />
                 <path
-                  className="text-[#0071E3]"
+                  stroke={dialColor}
                   strokeDasharray={`${defenseReadiness}, 100`}
                   strokeWidth="3.2"
                   strokeLinecap="round"
-                  stroke="currentColor"
                   fill="none"
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 />
@@ -160,9 +202,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
             <div className="space-y-1.5 text-center sm:text-left">
               <div className="flex items-center justify-center sm:justify-start space-x-2">
-                <span className="w-2 h-2 rounded-full bg-[#34C759] animate-pulse"></span>
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#34C759]">
-                  Continuous Defense Active
+                <span className={`w-2 h-2 rounded-full animate-pulse ${defenseReadiness >= 75 ? "bg-[#34C759]" : (defenseReadiness >= 40 ? "bg-[#FF9500]" : "bg-[#FF3B30]")}`}></span>
+                <span className={`text-xs font-semibold uppercase tracking-wider ${defenseReadiness >= 75 ? "text-[#34C759]" : (defenseReadiness >= 40 ? "text-[#FF9500]" : "text-[#FF3B30]")}`}>
+                  {orgHealthStatus} Posture
                 </span>
                 {metadata && (
                   <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-black/[0.05] text-[#86868B]">
@@ -174,12 +216,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 Enterprise Identity Safeguard
               </h2>
               <p className="text-xs text-[#6E6E73] leading-relaxed">
-                Active Directory scope: <strong>{summary.total_accounts.toLocaleString()} accounts</strong> across {summary.reuse_cluster_count} credential reuse families.
-                {metadata?.created_at && (
-                  <span className="block text-[11px] text-[#86868B] mt-0.5">
-                    Persistent Dataset Synthesized: {new Date(metadata.created_at).toLocaleDateString()} {new Date(metadata.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {isTopAdminCompromised ? (
+                  <span className="text-[#FF3B30] font-medium block">
+                    ⚠️ Top-Level Domain Admin (alex.morgan / Root) is insecure or blocked — existential root takeover threat active.
+                  </span>
+                ) : (
+                  <span className="text-[#34C759] font-medium block">
+                    🛡️ Top-Level Domain Admins are secured — root infrastructure fully shielded.
                   </span>
                 )}
+                <span className="text-[11px] text-[#86868B] block mt-1">
+                  Admin Exposure: <strong>{adminExposurePct}%</strong> (75% domain weight) • Workforce Exposure: <strong>{workforceExposurePct}%</strong> (25% weight)
+                </span>
               </p>
             </div>
           </div>
@@ -223,30 +271,42 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
             {/* Action Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={handleRefresh}
-                  className="px-3.5 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-1.5 transition active:scale-[0.98]"
+                  disabled={isRunningLiveAnalysis}
+                  className="px-3.5 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-50 text-white text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition active:scale-[0.98] cursor-pointer"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 text-[#6E6E73] ${isRefreshing ? "animate-spin text-[#0071E3]" : ""}`} />
-                  <span>{isRefreshing ? "Auditing Dataset..." : "Re-evaluate Posture"}</span>
+                  <Zap className={`w-3.5 h-3.5 ${isRunningLiveAnalysis ? "animate-spin" : ""}`} />
+                  <span>{isRunningLiveAnalysis ? "Running Real-Time Analysis..." : "Run Security Analysis"}</span>
                 </button>
+
+                <button
+                  onClick={handleSyncToSupabase}
+                  disabled={isSyncingDb}
+                  className="px-3.5 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-1.5 transition active:scale-[0.98] cursor-pointer"
+                  title="Sync active dataset to Supabase PostgreSQL"
+                >
+                  <Database className={`w-3.5 h-3.5 text-[#34C759] ${isSyncingDb ? "animate-spin" : ""}`} />
+                  <span>{isSyncingDb ? "Syncing Supabase..." : "Sync Database"}</span>
+                </button>
+
                 <button
                   onClick={() => setIsGenerateModalOpen(true)}
                   className="px-3.5 py-2 rounded-xl bg-[#0071E3]/10 hover:bg-[#0071E3]/15 text-xs font-semibold text-[#0071E3] border border-[#0071E3]/20 flex items-center space-x-1.5 transition active:scale-[0.98]"
                   title="Generate new synthetic dataset with custom size"
                 >
-                  <Database className="w-3.5 h-3.5" />
-                  <span>Generate Synthetic Data</span>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Generate Dataset</span>
                 </button>
-                <button
-                  onClick={() => setIsHIBPOpen(true)}
-                  className="px-3.5 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-1.5 transition active:scale-[0.98]"
-                >
-                  <Globe className="w-3.5 h-3.5 text-[#0071E3]" />
-                  <span>k-Anonymity</span>
-                </button>
+
+                {/* Supabase Status Pill */}
+                <div className="px-3 py-1.5 rounded-full bg-[#34C759]/10 border border-[#34C759]/20 text-[11px] font-semibold text-[#248A3D] flex items-center space-x-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#34C759] animate-pulse" />
+                  <span>{dbStatus?.connected ? "Supabase Cloud Active" : "Supabase PostgreSQL Ready"}</span>
+                </div>
               </div>
+
 
               <div className="flex items-center space-x-2">
                 <button
@@ -474,6 +534,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   onSelectAccount={onSelectAccount}
                   onLaunchAttack={onLaunchAttack}
                   initialTierFilter={activeTierFilter}
+                  refreshTrigger={refreshKey}
                 />
               </div>
             </div>
@@ -486,6 +547,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 onSelectAccount={onSelectAccount}
                 onLaunchAttack={onLaunchAttack}
                 onAccountUpdated={onAccountUpdated}
+                refreshTrigger={refreshKey}
               />
             </div>
           )}
@@ -497,6 +559,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 onSelectAccount={onSelectAccount}
                 onLaunchAttack={onLaunchAttack}
                 initialTierFilter={activeTierFilter}
+                refreshTrigger={refreshKey}
               />
             </div>
           )}

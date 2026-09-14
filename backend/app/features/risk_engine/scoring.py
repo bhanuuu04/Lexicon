@@ -228,3 +228,99 @@ def get_risk_weights() -> Dict[str, Any]:
         "attack_modifier_baseline": 0.15,
         "attack_modifier_max": 0.20,
     }
+
+TOP_LEVEL_ADMIN_ROLES = {
+    "Domain Admin",
+    "Enterprise Admin",
+    "Global Admin",
+    "IT Administrator",
+    "Chief Information Security Officer",
+    "CISO",
+    "Chief Technology Officer",
+    "CTO",
+    "CIO",
+    "System Administrator",
+}
+
+def calculate_organization_health(accounts: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Compute domain-level organization risk and readiness scores with privilege-tier weighting.
+    - Top-Level Domain Admins & Tier-0 Root accounts (e.g. alex.morgan, Domain Admin) represent
+      the keys to the kingdom. If any top-level admin account has an insecure password,
+      breach exposure, or is blocked for compromise, an existential root domain compromise
+      penalty is applied (+0.35 risk / massive health drop), threatening enterprise security.
+    - General workforce accounts represent standard endpoint exposure (25% weight) where
+      individual employee compromises do not jeopardize the overall organization infrastructure.
+    - Once top-level admins are secured (strong password, clean breach record, unblocked),
+      the root penalty is eliminated and overall organization risk drops significantly.
+    """
+    if not accounts:
+        return {
+            "organization_risk_score": 0.0,
+            "security_readiness_pct": 100.0,
+            "admin_exposure_pct": 0.0,
+            "workforce_exposure_pct": 0.0,
+            "top_admin_compromised": False,
+            "top_admin_compromised_count": 0,
+            "status": "Healthy"
+        }
+
+    admin_scores = []
+    workforce_scores = []
+    top_admin_compromised_count = 0
+    total_top_admins = 0
+    hero_compromised = False
+
+    for acc in accounts:
+        role = acc.get("role", "")
+        is_hero = acc.get("is_hero", False) or acc.get("id") == "ACC-00042" or acc.get("username") == "alex.morgan"
+        is_top_admin = is_hero or role in TOP_LEVEL_ADMIN_ROLES or "Domain Admin" in role or "Enterprise Admin" in role
+        is_priv = acc.get("is_privileged", False) or is_top_admin
+        
+        is_blocked = acc.get("is_blocked", False)
+        is_breached = acc.get("breach_match", False) or acc.get("is_breached", False)
+        raw_risk = acc.get("final_risk") if acc.get("final_risk") is not None else acc.get("baseline_risk", 0.0)
+        
+        # Effective risk considers blocked state & breach
+        effective_risk = 1.0 if is_blocked else (max(raw_risk, 0.85) if is_breached else raw_risk)
+
+        if is_priv:
+            admin_scores.append(effective_risk)
+            if is_top_admin:
+                total_top_admins += 1
+                if is_blocked or is_breached or raw_risk >= 0.40:
+                    top_admin_compromised_count += 1
+                    if is_hero:
+                        hero_compromised = True
+        else:
+            workforce_scores.append(effective_risk)
+
+    avg_admin_risk = sum(admin_scores) / len(admin_scores) if admin_scores else 0.0
+    avg_workforce_risk = sum(workforce_scores) / len(workforce_scores) if workforce_scores else 0.0
+
+    # 70% Admin Risk + 30% Workforce Risk
+    composite_risk = (0.70 * avg_admin_risk) + (0.30 * avg_workforce_risk)
+
+    # Existential root admin compromise penalty
+    # If the Tier-0 Domain Root Admin (alex.morgan) or top admins are compromised, domain risk surges
+    if hero_compromised:
+        composite_risk = min(0.95, composite_risk + 0.35)
+    elif top_admin_compromised_count > 0:
+        top_admin_ratio = top_admin_compromised_count / max(1, total_top_admins)
+        composite_risk = min(0.90, composite_risk + (top_admin_ratio * 0.20))
+
+    org_risk = round(min(1.0, max(0.05, composite_risk)), 4)
+    readiness_pct = round(max(0.0, (1.0 - org_risk) * 100.0), 1)
+
+    status = "Healthy" if org_risk < 0.35 else ("Elevated Risk" if org_risk < 0.65 else "Critical Danger")
+
+    return {
+        "organization_risk_score": org_risk,
+        "security_readiness_pct": readiness_pct,
+        "admin_exposure_pct": round(avg_admin_risk * 100.0, 1),
+        "workforce_exposure_pct": round(avg_workforce_risk * 100.0, 1),
+        "top_admin_compromised": hero_compromised or (top_admin_compromised_count > 0),
+        "top_admin_compromised_count": top_admin_compromised_count,
+        "status": status
+    }
+

@@ -41,3 +41,10 @@ CORS_ORIGINS = [
 # AI Remediation Key (Optional)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+# Supabase Enterprise Database Config
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres.chqamrjacglwcxnoeamh:0wPqt4T82TE8U2q9@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://chqamrjacglwcxnoeamh.supabase.co")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+SUPABASE_ENABLED = os.getenv("SUPABASE_ENABLED", "true").lower() in ("true", "1", "yes")
+

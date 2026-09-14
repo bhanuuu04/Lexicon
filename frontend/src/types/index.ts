@@ -147,6 +147,16 @@ export interface DepartmentRiskStat {
   avg_risk: number;
 }
 
+export interface OrganizationHealth {
+  organization_risk_score: number;
+  security_readiness_pct: number;
+  admin_exposure_pct: number;
+  workforce_exposure_pct: number;
+  top_admin_compromised: boolean;
+  top_admin_compromised_count: number;
+  status: "Healthy" | "Elevated Risk" | "Critical Danger";
+}
+
 export interface AuditSummary {
   total_accounts: number;
   critical_count: number;
@@ -168,6 +178,7 @@ export interface AuditSummary {
   department_risk_summary: Record<string, DepartmentRiskStat>;
   top_reuse_clusters: PasswordGroupSummary[];
   hero_account_id: string;
+  organization_health?: OrganizationHealth;
 }
 
 export interface AttackCandidateProgress {
@@ -228,4 +239,44 @@ export interface RemediationReport {
   org_blocklist_suggestions: string[];
   remediation_priorities: string[];
 }
+
+export interface LoginResponse {
+  status: "authenticated" | "blocked" | "invalid_credentials";
+  message: string;
+  account?: Account | null;
+}
+
+export interface DatabaseStatus {
+  connected: boolean;
+  provider: string;
+  url: string;
+  total_local_accounts: number;
+  total_summary_accounts: number;
+  last_sync: string;
+}
+
+export interface AuditLogEntry {
+  id: number;
+  enterprise_id: string;
+  action: string;
+  actor: string;
+  target_account_id?: string | null;
+  details: Record<string, any>;
+  created_at: string;
+}
+
+export interface BlockAllSensitiveResponse {
+  status: string;
+  blocked_count: number;
+  total_sensitive: number;
+  message: string;
+}
+
+export interface RealtimeEvent {
+  type: "CONNECTED" | "ACCOUNT_BLOCKED" | "BULK_SENSITIVE_BLOCKED" | "PASSWORD_REMEDIATED" | "AUDIT_COMPLETED" | "DATABASE_SYNCED";
+  timestamp: string;
+  data?: any;
+  message?: string;
+}
+
 

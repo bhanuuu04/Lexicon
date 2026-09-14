@@ -34,20 +34,25 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center space-x-3 cursor-pointer shrink-0 group"
             onClick={() => setExperienceMode("landing")}
           >
-            <div className="w-8 h-8 rounded-xl bg-[#0071E3] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform duration-200">
-              <Shield className="w-4.5 h-4.5 text-white" />
+            <div className="w-8 h-8 min-w-[32px] max-w-[32px] min-h-[32px] max-h-[32px] rounded-xl bg-white border border-black/[0.08] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform duration-200 overflow-hidden shrink-0">
+              <img
+                src="/lexicon-logo.png"
+                alt="Lexicon"
+                className="w-8 h-8 object-contain block"
+                style={{ width: "32px", height: "32px", maxWidth: "32px", maxHeight: "32px" }}
+              />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center space-x-2">
-                <span className="font-semibold text-base tracking-tight text-[#1D1D1F] font-sans">
-                  Lexicon
+                <span className="font-bold text-base tracking-tight text-[#1D1D1F] font-sans">
+                  LEXICON
                 </span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#34C759]/10 text-[#34C759] border border-[#34C759]/20">
                   Protected
                 </span>
               </div>
-              <span className="text-[11px] text-[#86868B] font-normal hidden sm:block leading-tight">
-                Enterprise Identity Defense
+              <span className="text-[10px] uppercase font-semibold text-[#86868B] tracking-wider hidden sm:block leading-tight">
+                Enterprise Password Risk Intelligence
               </span>
             </div>
           </div>

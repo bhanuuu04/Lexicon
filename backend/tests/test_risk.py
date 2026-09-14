@@ -248,3 +248,48 @@ def test_risk_api_endpoints_and_batch():
     assert weights_resp.status_code == 200
     weights_data = weights_resp.json()
     assert weights_data["weights"]["password_weakness"] == 0.30
+
+def test_organization_health_admin_vs_employee_hierarchy():
+    """
+    Verify that an insecure top-level admin severely risks overall organization health,
+    while an insecure ordinary employee only affects workforce hygiene.
+    """
+    from backend.app.risk_scoring import calculate_organization_health
+
+    # Scenario 1: All accounts secure
+    all_secure = [
+        {"id": "ACC-00042", "username": "alex.morgan", "role": "Domain Admin", "is_privileged": True, "final_risk": 0.05, "is_blocked": False, "breach_match": False},
+        {"id": "ACC-00002", "username": "admin2", "role": "Enterprise Admin", "is_privileged": True, "final_risk": 0.05, "is_blocked": False, "breach_match": False},
+        {"id": "ACC-00003", "username": "emp1", "role": "Sales Rep", "is_privileged": False, "final_risk": 0.05, "is_blocked": False, "breach_match": False},
+        {"id": "ACC-00004", "username": "emp2", "role": "Marketing Specialist", "is_privileged": False, "final_risk": 0.05, "is_blocked": False, "breach_match": False},
+    ]
+    res_secure = calculate_organization_health(all_secure)
+    assert res_secure["security_readiness_pct"] >= 85.0
+    assert res_secure["top_admin_compromised"] is False
+    assert res_secure["status"] == "Healthy"
+
+    # Scenario 2: Top-level Domain Admin is insecure / blocked / breached -> existentially risks organization
+    admin_compromised = [
+        {"id": "ACC-00042", "username": "alex.morgan", "role": "Domain Admin", "is_privileged": True, "final_risk": 0.95, "is_blocked": True, "breach_match": True},
+        {"id": "ACC-00002", "username": "admin2", "role": "Enterprise Admin", "is_privileged": True, "final_risk": 0.05, "is_blocked": False, "breach_match": False},
+        {"id": "ACC-00003", "username": "emp1", "role": "Sales Rep", "is_privileged": False, "final_risk": 0.05, "is_blocked": False, "breach_match": False},
+        {"id": "ACC-00004", "username": "emp2", "role": "Marketing Specialist", "is_privileged": False, "final_risk": 0.05, "is_blocked": False, "breach_match": False},
+    ]
+    res_admin_comp = calculate_organization_health(admin_compromised)
+    assert res_admin_comp["top_admin_compromised"] is True
+    assert res_admin_comp["organization_risk_score"] > 0.60
+    assert res_admin_comp["security_readiness_pct"] < 40.0
+    assert res_admin_comp["status"] == "Critical Danger"
+
+    # Scenario 3: Only ordinary employee is insecure / blocked -> organization readiness remains high
+    employee_compromised = [
+        {"id": "ACC-00042", "username": "alex.morgan", "role": "Domain Admin", "is_privileged": True, "final_risk": 0.05, "is_blocked": False, "breach_match": False},
+        {"id": "ACC-00002", "username": "admin2", "role": "Enterprise Admin", "is_privileged": True, "final_risk": 0.05, "is_blocked": False, "breach_match": False},
+        {"id": "ACC-00003", "username": "emp1", "role": "Sales Rep", "is_privileged": False, "final_risk": 0.95, "is_blocked": True, "breach_match": True},
+        {"id": "ACC-00004", "username": "emp2", "role": "Marketing Specialist", "is_privileged": False, "final_risk": 0.05, "is_blocked": False, "breach_match": False},
+    ]
+    res_emp_comp = calculate_organization_health(employee_compromised)
+    assert res_emp_comp["top_admin_compromised"] is False
+    assert res_emp_comp["security_readiness_pct"] >= 75.0
+    assert res_emp_comp["status"] == "Healthy"
+

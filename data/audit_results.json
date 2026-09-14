@@ -1,41 +1,41 @@
 {
   "total_accounts": 250,
-  "critical_count": 23,
-  "high_risk_count": 125,
-  "medium_risk_count": 49,
-  "low_risk_count": 53,
-  "breached_count": 158,
+  "critical_count": 19,
+  "high_risk_count": 127,
+  "medium_risk_count": 44,
+  "low_risk_count": 60,
+  "breached_count": 159,
   "reuse_cluster_count": 5,
-  "total_reused_accounts": 149,
+  "total_reused_accounts": 150,
   "privileged_count": 89,
-  "privileged_at_risk_count": 52,
-  "policy_violations_count": 316,
+  "privileged_at_risk_count": 51,
+  "policy_violations_count": 318,
   "risk_distribution": {
-    "critical": 23,
-    "high": 125,
-    "medium": 49,
-    "low": 53
+    "critical": 19,
+    "high": 127,
+    "medium": 44,
+    "low": 60
   },
   "department_risk_summary": {
     "Information Technology": {
       "total": 25,
-      "critical": 5,
+      "critical": 4,
       "high": 13,
-      "medium": 2,
+      "medium": 3,
       "low": 5,
       "privileged": 16,
       "breached": 15,
-      "avg_risk": 0.5636
+      "avg_risk": 0.5426
     },
     "Finance": {
       "total": 46,
-      "critical": 7,
-      "high": 18,
-      "medium": 8,
-      "low": 13,
+      "critical": 6,
+      "high": 19,
+      "medium": 5,
+      "low": 16,
       "privileged": 20,
       "breached": 26,
-      "avg_risk": 0.4715
+      "avg_risk": 0.4503
     },
     "Marketing": {
       "total": 15,
@@ -45,67 +45,67 @@
       "low": 1,
       "privileged": 2,
       "breached": 11,
-      "avg_risk": 0.4603
+      "avg_risk": 0.4353
     },
     "Engineering": {
       "total": 59,
       "critical": 1,
-      "high": 37,
-      "medium": 8,
+      "high": 36,
+      "medium": 9,
       "low": 13,
       "privileged": 10,
       "breached": 39,
-      "avg_risk": 0.4785
+      "avg_risk": 0.4582
     },
     "Executive": {
       "total": 11,
-      "critical": 2,
-      "high": 2,
+      "critical": 1,
+      "high": 3,
       "medium": 2,
       "low": 5,
       "privileged": 11,
       "breached": 4,
-      "avg_risk": 0.4269
+      "avg_risk": 0.4132
     },
     "Operations": {
       "total": 36,
       "critical": 1,
       "high": 15,
-      "medium": 15,
-      "low": 5,
+      "medium": 12,
+      "low": 8,
       "privileged": 9,
       "breached": 23,
-      "avg_risk": 0.4591
+      "avg_risk": 0.4279
     },
     "Sales": {
       "total": 29,
-      "critical": 2,
-      "high": 21,
-      "medium": 2,
-      "low": 4,
+      "critical": 1,
+      "high": 22,
+      "medium": 1,
+      "low": 5,
       "privileged": 4,
       "breached": 24,
-      "avg_risk": 0.5549
+      "avg_risk": 0.5316
     },
     "Human Resources": {
       "total": 16,
       "critical": 2,
-      "high": 9,
-      "medium": 2,
+      "high": 8,
+      "medium": 3,
       "low": 3,
       "privileged": 6,
       "breached": 10,
-      "avg_risk": 0.5321
+      "avg_risk": 0.5087
     },
     "Legal": {
       "total": 13,
-      "critical": 4,
-      "high": 3,
-      "medium": 3,
-      "low": 3,
+      "critical": 3,
+      "high": 4,
+      "medium": 2,
+      "low": 4,
       "privileged": 11,
       "breached": 7,
-      "avg_risk": 0.509
+      "avg_risk": 0.4744
     }
   },
   "top_reuse_clusters": [
@@ -125,20 +125,20 @@
       },
       "account_ids": [
         "ACC-00042",
-        "ACC-00031",
-        "ACC-00007",
-        "ACC-00018",
-        "ACC-00030",
-        "ACC-00008",
-        "ACC-00024",
-        "ACC-00017",
+        "ACC-00061",
+        "ACC-00012",
+        "ACC-00034",
+        "ACC-00059",
         "ACC-00014",
+        "ACC-00047",
+        "ACC-00032",
+        "ACC-00026",
         "ACC-00002",
-        "ACC-00011",
-        "ACC-00019",
-        "ACC-00005",
-        "ACC-00028",
-        "ACC-00003"
+        "ACC-00020",
+        "ACC-00036",
+        "ACC-00008",
+        "ACC-00055",
+        "ACC-00004"
       ]
     },
     {
@@ -158,21 +158,21 @@
         "Executive": 2
       },
       "account_ids": [
-        "ACC-00104",
-        "ACC-00131",
-        "ACC-00108",
-        "ACC-00087",
-        "ACC-00091",
-        "ACC-00084",
-        "ACC-00081",
-        "ACC-00109",
-        "ACC-00134",
-        "ACC-00106",
-        "ACC-00133",
-        "ACC-00125",
-        "ACC-00088",
-        "ACC-00116",
-        "ACC-00111"
+        "ACC-00207",
+        "ACC-00261",
+        "ACC-00215",
+        "ACC-00173",
+        "ACC-00181",
+        "ACC-00167",
+        "ACC-00161",
+        "ACC-00217",
+        "ACC-00267",
+        "ACC-00211",
+        "ACC-00265",
+        "ACC-00249",
+        "ACC-00175",
+        "ACC-00231",
+        "ACC-00221"
       ]
     },
     {
@@ -192,21 +192,21 @@
         "Marketing": 3
       },
       "account_ids": [
-        "ACC-00079",
-        "ACC-00066",
-        "ACC-00074",
-        "ACC-00053",
-        "ACC-00042",
-        "ACC-00062",
-        "ACC-00076",
-        "ACC-00032",
-        "ACC-00046",
-        "ACC-00058",
-        "ACC-00069",
-        "ACC-00044",
-        "ACC-00052",
-        "ACC-00034",
-        "ACC-00048"
+        "ACC-00157",
+        "ACC-00131",
+        "ACC-00147",
+        "ACC-00105",
+        "ACC-00083",
+        "ACC-00123",
+        "ACC-00151",
+        "ACC-00063",
+        "ACC-00091",
+        "ACC-00115",
+        "ACC-00137",
+        "ACC-00087",
+        "ACC-00103",
+        "ACC-00067",
+        "ACC-00095"
       ]
     },
     {
@@ -222,15 +222,15 @@
         "Information Technology": 3
       },
       "account_ids": [
-        "ACC-00142",
-        "ACC-00139",
-        "ACC-00135",
-        "ACC-00136",
-        "ACC-00138",
-        "ACC-00140",
-        "ACC-00141",
-        "ACC-00137",
-        "ACC-00143"
+        "ACC-00283",
+        "ACC-00277",
+        "ACC-00269",
+        "ACC-00271",
+        "ACC-00275",
+        "ACC-00279",
+        "ACC-00281",
+        "ACC-00273",
+        "ACC-00285"
       ]
     },
     {
@@ -246,15 +246,24 @@
         "Engineering": 1
       },
       "account_ids": [
-        "ACC-00148",
-        "ACC-00144",
-        "ACC-00145",
-        "ACC-00150",
-        "ACC-00149",
-        "ACC-00147",
-        "ACC-00146"
+        "ACC-00295",
+        "ACC-00287",
+        "ACC-00289",
+        "ACC-00299",
+        "ACC-00297",
+        "ACC-00293",
+        "ACC-00291"
       ]
     }
   ],
-  "hero_account_id": "ACC-00042"
+  "hero_account_id": "ACC-00042",
+  "organization_health": {
+    "organization_risk_score": 0.95,
+    "security_readiness_pct": 5.0,
+    "admin_exposure_pct": 69.6,
+    "workforce_exposure_pct": 73.7,
+    "top_admin_compromised": true,
+    "top_admin_compromised_count": 4,
+    "status": "Critical Danger"
+  }
 }

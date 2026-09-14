@@ -19,12 +19,14 @@ interface AccountDirectoryProps {
   onSelectAccount: (account: Account) => void;
   onLaunchAttack: (account: Account) => void;
   initialTierFilter?: string;
+  refreshTrigger?: number;
 }
 
 export const AccountDirectory: React.FC<AccountDirectoryProps> = ({
   onSelectAccount,
   onLaunchAttack,
   initialTierFilter = "ALL",
+  refreshTrigger,
 }) => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export const AccountDirectory: React.FC<AccountDirectoryProps> = ({
 
   useEffect(() => {
     loadData();
-  }, [search, tierFilter, privFilter, breachFilter, page, pageSize]);
+  }, [search, tierFilter, privFilter, breachFilter, page, pageSize, refreshTrigger]);
 
   return (
     <div className="mt-8 apple-card p-6">

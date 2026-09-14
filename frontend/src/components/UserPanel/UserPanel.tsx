@@ -39,12 +39,14 @@ import {
   fetchAccounts,
   resetAccountPassword,
   blockAccount,
+  loginUser,
 } from "../../lib/api";
 import {
   Account,
   PasswordEvaluationResult,
   PasswordCheckDetail,
   ResetPasswordResponse,
+  LoginResponse,
 } from "../../types";
 
 interface UserPanelProps {
@@ -68,9 +70,18 @@ export const UserPanel: React.FC<UserPanelProps> = ({
   const [account, setAccount] = useState<Account | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
+  // Login Modal & Gateway State
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [loginUsernameInput, setLoginUsernameInput] = useState("alex.morgan");
+  const [loginPasswordInput, setLoginPasswordInput] = useState("Company2026!");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginNotice, setLoginNotice] = useState<string | null>(null);
+
   // Identity switcher state
   const [isSwitchingUser, setIsSwitchingUser] = useState(false);
   const [quickAccounts, setQuickAccounts] = useState<Account[]>([]);
+
 
   // Password Reset Flow State
   const [newPassword, setNewPassword] = useState("");
@@ -160,6 +171,38 @@ export const UserPanel: React.FC<UserPanelProps> = ({
     }
   };
 
+  const handleExecuteLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsLoggingIn(true);
+    setLoginError(null);
+    try {
+      const res = await loginUser(loginUsernameInput, loginPasswordInput);
+      if (res.status === "blocked") {
+        if (res.account) {
+          setAccount(res.account);
+          setCurrentUsername(res.account.username);
+        }
+        setIsLoginModalOpen(false);
+        setLoginNotice("🚨 Access Suspended: Your account is blocked by enterprise policy. Please set a new strong password to restore access.");
+        setTimeout(() => setLoginNotice(null), 6000);
+      } else if (res.status === "authenticated") {
+        if (res.account) {
+          setAccount(res.account);
+          setCurrentUsername(res.account.username);
+        }
+        setIsLoginModalOpen(false);
+        setLoginNotice(`✨ Welcome back, ${res.account?.username}! Identity authenticated.`);
+        setTimeout(() => setLoginNotice(null), 4000);
+      } else {
+        setLoginError(res.message || "Invalid credentials. Please verify your password.");
+      }
+    } catch (err: any) {
+      setLoginError(err.message || "Failed to authenticate.");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   const handleExecutePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!account) return;
@@ -181,6 +224,8 @@ export const UserPanel: React.FC<UserPanelProps> = ({
         setConfirmPassword("");
         onAccountRemediated?.(res.account);
         onSummaryUpdated?.();
+        setLoginNotice("🎉 Password hardened & updated in Supabase DB! Account unblocked.");
+        setTimeout(() => setLoginNotice(null), 5000);
       }
     } catch (err: any) {
       setResetError(err.message || "Failed to reset password.");
@@ -188,6 +233,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({
       setIsResetting(false);
     }
   };
+
 
   // Demo toggle block state for testing the blocked screen
   const handleSimulateBlockToggle = async () => {
@@ -215,11 +261,16 @@ export const UserPanel: React.FC<UserPanelProps> = ({
   if (loadingUser && !account) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-[#0071E3] flex items-center justify-center shadow-md animate-pulse">
-          <ShieldCheck className="w-6 h-6 text-white" />
+        <div className="w-16 h-16 min-w-[64px] max-w-[64px] min-h-[64px] max-h-[64px] rounded-2xl bg-white border border-black/[0.08] flex items-center justify-center shadow-md p-2 animate-pulse overflow-hidden shrink-0">
+          <img
+            src="/lexicon-logo.png"
+            alt="Lexicon"
+            className="w-full h-full object-contain block"
+            style={{ width: "48px", height: "48px", maxWidth: "48px", maxHeight: "48px" }}
+          />
         </div>
         <div className="text-center space-y-1">
-          <h2 className="text-base font-semibold text-[#1D1D1F]">
+          <h2 className="text-base font-bold text-[#1D1D1F]">
             Authenticating Employee Identity
           </h2>
           <p className="text-xs text-[#6E6E73]">
@@ -407,6 +458,16 @@ export const UserPanel: React.FC<UserPanelProps> = ({
               )}
             </div>
 
+            {/* Login Gateway Modal Button */}
+            <button
+              onClick={() => setIsLoginModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-xs font-semibold text-white flex items-center space-x-1.5 shadow-xs transition active:scale-[0.98] cursor-pointer"
+              title="Test Enterprise Active Directory Login & Blocked Credential Gateway"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>Login Portal</span>
+            </button>
+
             {/* Test Block Toggle */}
             <button
               onClick={handleSimulateBlockToggle}
@@ -422,6 +483,17 @@ export const UserPanel: React.FC<UserPanelProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Global Toast Notice */}
+        {loginNotice && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-2">
+            <div className="p-3 rounded-2xl bg-white border border-[#0071E3]/20 shadow-sm flex items-center space-x-2.5 text-xs text-[#1D1D1F] font-semibold animate-in fade-in">
+              <span className="w-2 h-2 rounded-full bg-[#0071E3] animate-pulse shrink-0" />
+              <span>{loginNotice}</span>
+            </div>
+          </div>
+        )}
+
 
         {/* Navigation Tabs */}
         {!isBlocked && (
@@ -1381,6 +1453,130 @@ export const UserPanel: React.FC<UserPanelProps> = ({
         )}
       </div>
 
+      {/* Enterprise Employee Login Gateway Modal */}
+      {isLoginModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl border border-black/[0.08] shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center">
+                <KeyRound className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#1D1D1F]">
+                  Employee Credential Gateway
+                </h3>
+                <p className="text-xs text-[#6E6E73]">
+                  Lexicon Active Directory Single Sign-On
+                </p>
+              </div>
+            </div>
+
+            {/* Demo Quick Account Chips */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] uppercase font-bold text-[#86868B] block">
+                Quick Select Identity:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginUsernameInput("alex.morgan");
+                    setLoginPasswordInput("Company2026!");
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-[#F5F5F7] hover:bg-[#EBEBED] text-[11px] font-semibold text-[#1D1D1F] border border-black/[0.06]"
+                >
+                  alex.morgan (Admin)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginUsernameInput("marcus.chen");
+                    setLoginPasswordInput("Summer2024!");
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-[#F5F5F7] hover:bg-[#EBEBED] text-[11px] font-semibold text-[#1D1D1F] border border-black/[0.06]"
+                >
+                  marcus.chen (Dev)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginUsernameInput("elena.rostova");
+                    setLoginPasswordInput("P@ssw0rd2025");
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-[#F5F5F7] hover:bg-[#EBEBED] text-[11px] font-semibold text-[#1D1D1F] border border-black/[0.06]"
+                >
+                  elena.rostova (SecOps)
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleExecuteLogin} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                  Corporate Username
+                </label>
+                <input
+                  type="text"
+                  value={loginUsernameInput}
+                  onChange={(e) => setLoginUsernameInput(e.target.value)}
+                  placeholder="e.g. alex.morgan"
+                  required
+                  className="w-full px-4 py-2.5 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={loginPasswordInput}
+                  onChange={(e) => setLoginPasswordInput(e.target.value)}
+                  placeholder="Enter corporate password"
+                  required
+                  className="w-full px-4 py-2.5 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                />
+              </div>
+
+              {loginError && (
+                <div className="p-3 rounded-xl bg-[#FF3B30]/10 text-[#FF3B30] text-xs font-medium border border-[#FF3B30]/20 flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsLoginModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoggingIn || !loginUsernameInput}
+                  className="px-5 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-50 text-white text-xs font-bold shadow-md transition active:scale-[0.98] flex items-center space-x-2"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Verifying Active Directory...</span>
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="w-3.5 h-3.5" />
+                      <span>Sign In / Authenticate</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* HIBP Live Modal */}
       <HIBPLiveModal
         isOpen={isHIBPOpen}
@@ -1389,4 +1585,5 @@ export const UserPanel: React.FC<UserPanelProps> = ({
     </div>
   );
 };
+
 

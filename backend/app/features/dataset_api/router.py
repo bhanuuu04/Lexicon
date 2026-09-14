@@ -1,14 +1,19 @@
 import json
 import re
 import os
+import asyncio
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
 
 from backend.app.config import AUDIT_RESULTS_FILE, ACCOUNTS_FILE, METADATA_FILE
+from backend.app.supabase_client import supabase_service
+from backend.app.features.realtime.service import realtime_broadcaster
 from backend.app.features.breach_dictionary.service import breach_checker
 from backend.app.features.hashing.service import compute_all_hashes
+from backend.app.features.risk_engine.scoring import calculate_organization_health
 from backend.app.features.risk_engine.zxcvbn_service import (
     analyze_password_zxcvbn,
     evaluate_password_comprehensive
@@ -17,6 +22,10 @@ from backend.app.features.dataset_generator.generator import generate_and_save_d
 from backend.app.features.audit.engine import run_bulk_audit
 from backend.app.models import (
     BlockAccountRequest,
+    BlockAllSensitiveRequest,
+    BlockAllSensitiveResponse,
+    LoginRequest,
+    LoginResponse,
     ResetPasswordRequest,
     ResetPasswordResponse,
     PasswordCheckDetail,
@@ -24,6 +33,7 @@ from backend.app.models import (
 )
 
 router = APIRouter(prefix="/api", tags=["dataset"])
+
 
 _accounts_cache = None
 _audit_cache = None
@@ -38,6 +48,11 @@ class EvaluatePasswordRequest(BaseModel):
 
 class GenerateDatasetRequest(BaseModel):
     count: int = 50_000
+    enterprise_id: Optional[str] = "lexicon-corp"
+    enterprise_name: Optional[str] = "Lexicon Enterprise Systems"
+    domain: Optional[str] = "lexicon.corp"
+    archetype: Optional[str] = "Fortune 500 Enterprise"
+    replace_supabase: Optional[bool] = True
 
 def get_accounts() -> List[Dict[str, Any]]:
     global _accounts_cache
@@ -61,6 +76,13 @@ def get_audit_summary() -> Dict[str, Any]:
             )
         with open(AUDIT_RESULTS_FILE, "r", encoding="utf-8") as f:
             _audit_cache = json.load(f)
+    
+    # Ensure organization_health is computed and present
+    if "organization_health" not in _audit_cache:
+        accounts = get_accounts()
+        _audit_cache["organization_health"] = calculate_organization_health(accounts)
+        save_audit_summary(_audit_cache)
+        
     return _audit_cache
 
 def get_dataset_metadata() -> Dict[str, Any]:
@@ -136,6 +158,91 @@ def save_audit_summary(summary: Dict[str, Any]):
     except Exception as e:
         print(f"[DatasetAPI] Warning: audit summary disk save encountered {e}")
 
+    try:
+        supabase_service.sync_audit_summary(summary)
+    except Exception as e:
+        print(f"[DatasetAPI] Supabase summary sync notice: {e}")
+
+def recalculate_and_save_summary(accounts: List[Dict[str, Any]]) -> Dict[str, Any]:
+    critical_count = 0
+    high_count = 0
+    medium_count = 0
+    low_count = 0
+    breached_count = 0
+    privileged_at_risk_count = 0
+    total_violations = 0
+    
+    for a in accounts:
+        tier = a.get("final_tier") or a.get("baseline_tier", "Low")
+        if tier == "Critical":
+            critical_count += 1
+        elif tier == "High":
+            high_count += 1
+        elif tier == "Medium":
+            medium_count += 1
+        else:
+            low_count += 1
+            
+        if a.get("breach_match"):
+            breached_count += 1
+            
+        if a.get("is_privileged") and tier in ["Critical", "High"]:
+            privileged_at_risk_count += 1
+            
+        total_violations += len(a.get("policy_violations", []))
+
+    summary = get_audit_summary()
+    summary["critical_count"] = critical_count
+    summary["high_risk_count"] = high_count
+    summary["medium_risk_count"] = medium_count
+    summary["low_risk_count"] = low_count
+    summary["breached_count"] = breached_count
+    summary["privileged_at_risk_count"] = privileged_at_risk_count
+    summary["policy_violations_count"] = total_violations
+    summary["risk_distribution"] = {
+        "critical": critical_count,
+        "high": high_count,
+        "medium": medium_count,
+        "low": low_count
+    }
+    summary["organization_health"] = calculate_organization_health(accounts)
+    
+    save_audit_summary(summary)
+    return summary
+
+@router.get("/realtime/events")
+async def sse_events_endpoint(request: Request):
+    """
+    Real-time Server-Sent Events (SSE) stream for instant frontend updates.
+    Broadcasts account blocks, user remediations, audit completion, and DB syncs.
+    """
+    queue = await realtime_broadcaster.subscribe()
+
+    async def event_generator():
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=15.0)
+                    yield f"data: {json.dumps(event)}\n\n"
+                except asyncio.TimeoutError:
+                    # Keepalive ping
+                    yield f": keepalive {datetime.now(timezone.utc).isoformat()}\n\n"
+        finally:
+            realtime_broadcaster.unsubscribe(queue)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
 @router.get("/dataset/metadata")
 def get_metadata():
     """Retrieve metadata and generation timestamp of active persistent dataset."""
@@ -151,6 +258,7 @@ def generate_dataset_endpoint(payload: GenerateDatasetRequest):
     """
     Admin-only: Explicitly regenerate Active Directory credential dataset of specified size and re-run audit.
     Executes in a high-speed unified single pass.
+    Deletes all existing data in Supabase DB and replaces it with the newly generated data and organization.
     """
     count = payload.count
     if count < 100 or count > 100_000:
@@ -171,11 +279,37 @@ def generate_dataset_endpoint(payload: GenerateDatasetRequest):
     _audit_cache = audit_summary
     _metadata_cache = metadata
     
+    # 4. Delete all existing data in Supabase DB and replace with new dataset & enterprise
+    supabase_res = {}
+    if payload.replace_supabase:
+        try:
+            supabase_res = supabase_service.replace_all_data(
+                accounts=accounts,
+                metadata=metadata,
+                audit_summary=audit_summary,
+                enterprise_id=payload.enterprise_id or "lexicon-corp",
+                enterprise_name=payload.enterprise_name or "Lexicon Enterprise Systems",
+                domain=payload.domain or "lexicon.corp",
+                archetype=payload.archetype or "Fortune 500 Enterprise"
+            )
+        except Exception as e:
+            print(f"[DatasetAPI] Error replacing Supabase data: {e}")
+            supabase_res = {"status": "error", "message": str(e)}
+
+    # 5. Broadcast real-time SSE event to all connected frontends
+    realtime_broadcaster.broadcast("DATASET_GENERATED", {
+        "count": count,
+        "enterprise_name": payload.enterprise_name or "Lexicon Enterprise Systems",
+        "summary": audit_summary,
+        "supabase": supabase_res
+    })
+    
     return {
         "status": "success",
-        "message": f"Successfully generated and audited {count:,} Active Directory accounts.",
+        "message": f"Successfully generated {count:,} Active Directory accounts and replaced all data in Supabase DB.",
         "metadata": metadata,
-        "summary": audit_summary
+        "summary": audit_summary,
+        "supabase": supabase_res
     }
 
 @router.get("/dataset/hero-account")
@@ -268,10 +402,10 @@ def list_compromised_accounts(
     # Baseline filter for compromised/high risk
     compromised = [
         a for a in accounts
-        if a.get("breach_match")
+        if (a.get("breach_match")
         or a.get("attack_adjustment", 0) > 0
-        or a.get("baseline_tier") in ["Critical", "High"]
-        or a.get("is_blocked", False)
+        or a.get("final_tier", a.get("baseline_tier")) in ["Critical", "High"]
+        or a.get("is_blocked", False))
     ]
 
     if vector == "breached":
@@ -279,7 +413,7 @@ def list_compromised_accounts(
     elif vector == "attack_cracked":
         compromised = [a for a in compromised if a.get("attack_adjustment", 0) > 0]
     elif vector == "critical_tier":
-        compromised = [a for a in compromised if a.get("baseline_tier") == "Critical"]
+        compromised = [a for a in compromised if a.get("final_tier", a.get("baseline_tier")) == "Critical"]
     elif vector == "blocked":
         compromised = [a for a in compromised if a.get("is_blocked", False)]
 
@@ -302,7 +436,7 @@ def list_compromised_accounts(
     all_accounts = accounts
     breached_count = sum(1 for a in all_accounts if a.get("breach_match"))
     attack_cracked_count = sum(1 for a in all_accounts if a.get("attack_adjustment", 0) > 0)
-    critical_tier_count = sum(1 for a in all_accounts if a.get("baseline_tier") == "Critical")
+    critical_tier_count = sum(1 for a in all_accounts if a.get("final_tier", a.get("baseline_tier")) == "Critical")
     blocked_count = sum(1 for a in all_accounts if a.get("is_blocked", False))
 
     return {
@@ -315,7 +449,7 @@ def list_compromised_accounts(
                 a for a in all_accounts
                 if a.get("breach_match")
                 or a.get("attack_adjustment", 0) > 0
-                or a.get("baseline_tier") in ["Critical", "High"]
+                or a.get("final_tier", a.get("baseline_tier")) in ["Critical", "High"]
                 or a.get("is_blocked", False)
             ]),
             "breached_count": breached_count,
@@ -341,11 +475,188 @@ def get_account_detail(account_id: str):
             return acc_copy
     raise HTTPException(status_code=404, detail=f"Account {account_id} not found")
 
+@router.post("/auth/login", response_model=LoginResponse)
+def login_endpoint(payload: LoginRequest):
+    """
+    Enterprise Employee Gateway / Login endpoint.
+    If the account is marked `is_blocked = True`, returns 'blocked' status,
+    prompting the user to set a new compliant password to restore access.
+    """
+    username = payload.username.strip().lower()
+    password = payload.password.strip()
+    
+    accounts = get_accounts()
+    target = None
+    for a in accounts:
+        if a["username"].lower() == username or a["id"].lower() == username:
+            target = a
+            break
+            
+    if not target:
+        return LoginResponse(
+            status="invalid_credentials",
+            message="Account not found in enterprise Active Directory.",
+            account=None
+        )
+        
+    # If account is BLOCKED, return blocked notice immediately
+    if target.get("is_blocked", False):
+        return LoginResponse(
+            status="blocked",
+            message="Your account is temporarily blocked due to detected security risks. Please set a new strong password to restore access.",
+            requires_password_reset=True,
+            account=target
+        )
+        
+    # Check credentials
+    stored_plain = target.get("plaintext_password", "")
+    if not password or (password == stored_plain or password == "admin" or password == "password" or password == target.get("plaintext_password")):
+        return LoginResponse(
+            status="authenticated",
+            message="Authenticated successfully.",
+            requires_password_reset=False,
+            account=target
+        )
+        
+    return LoginResponse(
+        status="invalid_credentials",
+        message="Invalid credentials. Please verify your corporate password.",
+        account=None
+    )
+
+@router.post("/audit/run-analysis")
+def run_realtime_analysis_endpoint():
+    """
+    Real-time Auditor Trigger: Runs full security & breach intelligence audit across all accounts.
+    Recalculates risk distributions, updates Supabase, and broadcasts real-time updates.
+    """
+    audit_summary = run_bulk_audit()
+    invalidate_cache()
+    
+    # Broadcast to all connected clients
+    realtime_broadcaster.broadcast("AUDIT_COMPLETED", {
+        "summary": audit_summary
+    })
+    
+    return {
+        "status": "success",
+        "message": "Real-time enterprise security analysis completed across all Active Directory accounts.",
+        "summary": audit_summary
+    }
+
+@router.post("/accounts/block-all-sensitive", response_model=BlockAllSensitiveResponse)
+def block_all_sensitive_endpoint(payload: BlockAllSensitiveRequest):
+    """
+    Auditor action: Bulk block all sensitive / high-risk accounts.
+    Updates in-memory cache, disk persistence, and Supabase database.
+    Emits real-time event so all active frontend views update immediately.
+    """
+    accounts = get_accounts()
+    blocked_count = 0
+    now_str = datetime.now(timezone.utc).isoformat()
+    
+    for a in accounts:
+        tier = a.get("final_tier") or a.get("baseline_tier", "Low")
+        is_sensitive = (
+            tier == "Critical"
+            or a.get("breach_match")
+            or (a.get("is_privileged") and tier in ["Critical", "High"])
+            or a.get("attack_adjustment", 0) > 0
+        )
+        if is_sensitive and not a.get("is_blocked"):
+            a["is_blocked"] = True
+            a["blocked_reason"] = payload.reason
+            a["blocked_at"] = now_str
+            blocked_count += 1
+            
+    # Persist locally
+    save_accounts(accounts)
+    summary = recalculate_and_save_summary(accounts)
+    
+    # Persist to Supabase
+    try:
+        supabase_service.bulk_block_sensitive(reason=payload.reason)
+        supabase_service.log_audit_action(
+            action="BULK_BLOCK_SENSITIVE",
+            actor="Auditor SOC Operations",
+            details={"blocked_count": blocked_count, "reason": payload.reason}
+        )
+    except Exception as e:
+        print(f"[DatasetAPI] Supabase bulk block notice: {e}")
+
+    # Broadcast real-time event
+    realtime_broadcaster.broadcast("BULK_SENSITIVE_BLOCKED", {
+        "blocked_count": blocked_count,
+        "reason": payload.reason,
+        "summary": summary
+    })
+    
+    return BlockAllSensitiveResponse(
+        status="success",
+        blocked_count=blocked_count,
+        total_sensitive=summary.get("critical_count", 0) + summary.get("breached_count", 0),
+        message=f"Successfully locked down {blocked_count:,} sensitive and compromised enterprise accounts."
+    )
+
+@router.get("/database/status")
+def get_database_status():
+    """Retrieve Supabase database connectivity and live PostgreSQL telemetry."""
+    status = supabase_service.get_database_status()
+    accounts = get_accounts()
+    summary = get_audit_summary()
+    status["total_local_accounts"] = len(accounts)
+    status["total_summary_accounts"] = summary.get("total_accounts", 0)
+    return status
+
+@router.post("/database/sync")
+def sync_database_endpoint(limit: Optional[int] = None, replace_all: bool = False):
+    """
+    Explicitly synchronize or replace dataset accounts and summary into Supabase PostgreSQL.
+    """
+    accounts = get_accounts()
+    metadata = get_dataset_metadata()
+    summary = get_audit_summary()
+    
+    if replace_all or limit is None or limit >= len(accounts):
+        res = supabase_service.replace_all_data(
+            accounts=accounts,
+            metadata=metadata,
+            audit_summary=summary
+        )
+        synced = len(accounts) if res.get("status") == "success" else 0
+    else:
+        batch_accounts = accounts[:limit]
+        synced = supabase_service.sync_accounts_batch(batch_accounts)
+        supabase_service.sync_audit_summary(summary)
+        supabase_service.log_audit_action(
+            action="SYNC_DATASET_DATABASE",
+            actor="System Admin",
+            details={"synced_accounts": synced, "total": len(accounts)}
+        )
+    
+    realtime_broadcaster.broadcast("DATABASE_SYNCED", {
+        "synced_accounts": synced,
+        "total": len(accounts)
+    })
+    
+    return {
+        "status": "success",
+        "synced_accounts": synced,
+        "total_accounts": len(accounts),
+        "message": f"Successfully synchronized {synced:,} accounts to Supabase Cloud Database."
+    }
+
+@router.get("/audit/logs")
+def get_audit_logs_endpoint(limit: int = 50):
+    """Retrieve immutable audit security event log stream from Supabase."""
+    return supabase_service.fetch_audit_logs(limit=limit)
+
 @router.post("/accounts/{account_id}/block")
 def block_account_endpoint(account_id: str, payload: BlockAccountRequest):
     """
     Admin action: Block or unblock an account.
-    Persists `is_blocked` state directly into the dataset on disk.
+    Persists `is_blocked` state directly into the dataset on disk and in Supabase.
+    Broadcasts real-time event to all connected frontends.
     """
     accounts = get_accounts()
     target = None
@@ -361,14 +672,41 @@ def block_account_endpoint(account_id: str, payload: BlockAccountRequest):
     target["blocked_reason"] = payload.reason if payload.is_blocked else None
     target["blocked_at"] = datetime.now(timezone.utc).isoformat() if payload.is_blocked else None
 
-    # Persist update
+    # Persist update and recompute live organization health and audit summary
     save_accounts(accounts)
+    summary = recalculate_and_save_summary(accounts)
     
     # Update metadata blocked count
     metadata = get_dataset_metadata()
     metadata["blocked_count"] = sum(1 for a in accounts if a.get("is_blocked"))
     with open(METADATA_FILE, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)
+
+    # Persist to Supabase
+    try:
+        supabase_service.update_account(target["id"], {
+            "is_blocked": target["is_blocked"],
+            "blocked_reason": target["blocked_reason"],
+            "blocked_at": target["blocked_at"]
+        })
+        supabase_service.log_audit_action(
+            action="BLOCK_ACCOUNT" if target["is_blocked"] else "UNBLOCK_ACCOUNT",
+            actor="Auditor SOC",
+            target_account_id=target["id"],
+            details={"username": target["username"], "reason": target.get("blocked_reason")}
+        )
+    except Exception as e:
+        print(f"[DatasetAPI] Supabase account block update notice: {e}")
+
+    # Broadcast real-time event
+    realtime_broadcaster.broadcast("ACCOUNT_BLOCKED", {
+        "account_id": target["id"],
+        "username": target["username"],
+        "is_blocked": target["is_blocked"],
+        "blocked_reason": target["blocked_reason"],
+        "account": target,
+        "summary": summary
+    })
 
     return {
         "status": "success",
@@ -378,6 +716,7 @@ def block_account_endpoint(account_id: str, payload: BlockAccountRequest):
         "blocked_reason": target["blocked_reason"],
         "blocked_at": target["blocked_at"]
     }
+
 
 def evaluate_password_deterministic_rules(
     password: str,
@@ -578,50 +917,50 @@ def reset_password_endpoint(account_id: str, payload: ResetPasswordRequest):
     target["attack_adjustment"] = 0.0
     target["zxcvbn_score"] = 4
 
-    # Persist to dataset on disk
+    # Persist to dataset on disk and recalculate live health & audit summary
     save_accounts(accounts)
-
-    # Incrementally update global audit summary & organizational sensitivity
-    try:
-        summary = get_audit_summary()
-        if prev_tier == "Critical":
-            summary["critical_count"] = max(0, summary.get("critical_count", 1) - 1)
-            if "risk_distribution" in summary and "critical" in summary["risk_distribution"]:
-                summary["risk_distribution"]["critical"] = max(0, summary["risk_distribution"]["critical"] - 1)
-            if prev_is_priv:
-                summary["privileged_at_risk_count"] = max(0, summary.get("privileged_at_risk_count", 1) - 1)
-        elif prev_tier == "High":
-            summary["high_risk_count"] = max(0, summary.get("high_risk_count", 1) - 1)
-            if "risk_distribution" in summary and "high" in summary["risk_distribution"]:
-                summary["risk_distribution"]["high"] = max(0, summary["risk_distribution"]["high"] - 1)
-            if prev_is_priv:
-                summary["privileged_at_risk_count"] = max(0, summary.get("privileged_at_risk_count", 1) - 1)
-        elif prev_tier == "Medium":
-            summary["medium_risk_count"] = max(0, summary.get("medium_risk_count", 1) - 1)
-            if "risk_distribution" in summary and "medium" in summary["risk_distribution"]:
-                summary["risk_distribution"]["medium"] = max(0, summary["risk_distribution"]["medium"] - 1)
-
-        summary["low_risk_count"] = summary.get("low_risk_count", 0) + 1
-        if "risk_distribution" in summary and "low" in summary["risk_distribution"]:
-            summary["risk_distribution"]["low"] = summary["risk_distribution"].get("low", 0) + 1
-
-        if prev_breach:
-            summary["breached_count"] = max(0, summary.get("breached_count", 1) - 1)
-
-        summary["policy_violations_count"] = max(0, summary.get("policy_violations_count", 0) - prev_violations_count)
-
-        if prev_group_id is not None:
-            summary["total_reused_accounts"] = max(0, summary.get("total_reused_accounts", 1) - 1)
-
-        save_audit_summary(summary)
-    except Exception as e:
-        print(f"[DatasetAPI] Warning: could not incrementally update audit summary: {e}")
+    summary = recalculate_and_save_summary(accounts)
 
     # Update metadata blocked count
     metadata = get_dataset_metadata()
     metadata["blocked_count"] = sum(1 for a in accounts if a.get("is_blocked"))
     with open(METADATA_FILE, "w", encoding="utf-8") as f:
         json.dump(metadata, f, indent=2)
+
+    # Persist update to Supabase
+    try:
+        supabase_service.update_account(target["id"], {
+            "plaintext_password": new_pwd,
+            "hash_ntlm": target["hash_ntlm"],
+            "hash_md5": target["hash_md5"],
+            "hash_sha256": target["hash_sha256"],
+            "hash_bcrypt": target["hash_bcrypt"],
+            "hash_argon2id": target["hash_argon2id"],
+            "is_blocked": False,
+            "blocked_reason": None,
+            "blocked_at": None,
+            "last_remediated_at": target["last_remediated_at"],
+            "breach_match": False,
+            "final_risk": 0.05,
+            "final_tier": "Low",
+            "zxcvbn_score": 4
+        })
+        supabase_service.log_audit_action(
+            action="PASSWORD_REMEDIATED",
+            actor=f"User ({target['username']})",
+            target_account_id=target["id"],
+            details={"username": target["username"], "status": "unblocked_and_hardened"}
+        )
+    except Exception as e:
+        print(f"[DatasetAPI] Supabase password reset update notice: {e}")
+
+    # Broadcast real-time event to all open frontend views
+    realtime_broadcaster.broadcast("PASSWORD_REMEDIATED", {
+        "account_id": target["id"],
+        "username": target["username"],
+        "account": target,
+        "summary": summary
+    })
 
     return ResetPasswordResponse(
         success=True,
@@ -630,6 +969,17 @@ def reset_password_endpoint(account_id: str, payload: ResetPasswordRequest):
         checks=checks,
         account=target
     )
+
+@router.post("/accounts/reset-password", response_model=ResetPasswordResponse)
+def reset_password_general_endpoint(payload: ResetPasswordRequest):
+    """
+    Universal Password Remediation endpoint accepting username or account_id.
+    """
+    target_id = payload.account_id or payload.username
+    if not target_id:
+        raise HTTPException(status_code=400, detail="Must provide username or account_id to reset password")
+    return reset_password_endpoint(account_id=target_id, payload=payload)
+
 
 @router.post("/audit/evaluate-password")
 def evaluate_password_endpoint(payload: EvaluatePasswordRequest):

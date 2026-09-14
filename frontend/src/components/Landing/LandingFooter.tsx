@@ -9,12 +9,22 @@ export const LandingFooter: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center space-x-3">
-            <div className="w-6 h-6 rounded-lg bg-[#0071E3] flex items-center justify-center text-white">
-              <Shield className="w-3.5 h-3.5" />
+            <div className="w-7 h-7 min-w-[28px] max-w-[28px] min-h-[28px] max-h-[28px] rounded-lg bg-white border border-black/[0.08] flex items-center justify-center p-0.5 overflow-hidden shadow-2xs shrink-0">
+              <img
+                src="/lexicon-logo.png"
+                alt="Lexicon"
+                className="w-full h-full object-contain block"
+                style={{ width: "24px", height: "24px", maxWidth: "24px", maxHeight: "24px" }}
+              />
             </div>
-            <span className="font-semibold text-[#1D1D1F]">
-              Lexicon Enterprise Password Risk Intelligence
-            </span>
+            <div className="flex flex-col">
+              <span className="font-bold text-[#1D1D1F] tracking-tight text-xs">
+                LEXICON
+              </span>
+              <span className="text-[10px] text-[#86868B]">
+                Enterprise Password Risk Intelligence
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center space-x-6 text-[#6E6E73]">

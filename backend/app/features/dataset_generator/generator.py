@@ -4,7 +4,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Tuple, Any, Set
+from typing import List, Dict, Tuple, Any, Set, Optional
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
@@ -195,6 +195,20 @@ def generate_accounts(total_accounts: int = TOTAL_ACCOUNTS) -> Tuple[List[Dict[s
         used_usernames.add(cand)
         return cand, f"{cand}@{DOMAIN_NAME}"
 
+    used_account_ids: Set[str] = set()
+
+    def get_next_account_id(preferred_id: Optional[str] = None) -> str:
+        nonlocal account_counter
+        if preferred_id and preferred_id not in used_account_ids:
+            used_account_ids.add(preferred_id)
+            return preferred_id
+        while True:
+            cand = f"ACC-{account_counter:05d}"
+            account_counter += 1
+            if cand not in used_account_ids:
+                used_account_ids.add(cand)
+                return cand
+
     account_counter = 1
     
     # 1. Reused Accounts
@@ -217,7 +231,7 @@ def generate_accounts(total_accounts: int = TOTAL_ACCOUNTS) -> Tuple[List[Dict[s
                 username = "alex.morgan"
                 email = f"alex.morgan@{DOMAIN_NAME}"
                 used_usernames.add(username)
-                account_id = "ACC-00042"
+                account_id = get_next_account_id("ACC-00042")
                 sid = "S-1-5-21-3829104-2918392-1042"
             else:
                 dept = random.choices(dept_names, weights=dept_weights, k=1)[0]
@@ -225,7 +239,7 @@ def generate_accounts(total_accounts: int = TOTAL_ACCOUNTS) -> Tuple[List[Dict[s
                 role = role_info[0]
                 is_privileged = role_info[1]
                 username, email = get_unique_username_and_email(fn, ln, account_counter)
-                account_id = f"ACC-{account_counter:05d}"
+                account_id = get_next_account_id()
                 sid = f"S-1-5-21-3829104-{random.randint(1000000, 9999999)}-{1000 + account_counter}"
                 
             accounts.append({
@@ -265,7 +279,7 @@ def generate_accounts(total_accounts: int = TOTAL_ACCOUNTS) -> Tuple[List[Dict[s
         role = role_info[0]
         is_privileged = role_info[1]
         username, email = get_unique_username_and_email(fn, ln, account_counter)
-        account_id = f"ACC-{account_counter:05d}"
+        account_id = get_next_account_id()
         sid = f"S-1-5-21-3829104-{random.randint(1000000, 9999999)}-{1000 + account_counter}"
         pwd = weak_unique_pool[idx % len(weak_unique_pool)]
         
@@ -290,7 +304,6 @@ def generate_accounts(total_accounts: int = TOTAL_ACCOUNTS) -> Tuple[List[Dict[s
             "blocked_at": None,
             "last_remediated_at": None
         })
-        account_counter += 1
 
     # 3. Strong Unique Accounts Pool (Scales up to 1,000 distinct high-entropy templates)
     strong_pool_size = min(num_strong_unique, 1000) if num_strong_unique > 0 else 0
@@ -304,7 +317,7 @@ def generate_accounts(total_accounts: int = TOTAL_ACCOUNTS) -> Tuple[List[Dict[s
         role = role_info[0]
         is_privileged = role_info[1]
         username, email = get_unique_username_and_email(fn, ln, account_counter)
-        account_id = f"ACC-{account_counter:05d}"
+        account_id = get_next_account_id()
         sid = f"S-1-5-21-3829104-{random.randint(1000000, 9999999)}-{1000 + account_counter}"
         pwd = strong_unique_pool[idx % len(strong_unique_pool)]
         

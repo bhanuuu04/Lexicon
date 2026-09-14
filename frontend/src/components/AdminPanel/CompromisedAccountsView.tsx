@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -20,19 +20,26 @@ import {
   UserCheck,
 } from "lucide-react";
 import { Account, CompromisedAccountsResponse } from "../../types";
-import { fetchCompromisedAccounts, blockAccount } from "../../lib/api";
+import {
+  fetchCompromisedAccounts,
+  blockAccount,
+  blockAllSensitiveAccounts,
+  runRealtimeSecurityAnalysis
+} from "../../lib/api";
 import { getTierColor } from "../../lib/riskFormat";
 
 interface CompromisedAccountsViewProps {
   onSelectAccount: (account: Account) => void;
   onLaunchAttack: (account: Account) => void;
   onAccountUpdated?: (account: Account) => void;
+  refreshTrigger?: number;
 }
 
 export const CompromisedAccountsView: React.FC<CompromisedAccountsViewProps> = ({
   onSelectAccount,
   onLaunchAttack,
   onAccountUpdated,
+  refreshTrigger,
 }) => {
   const [data, setData] = useState<CompromisedAccountsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +49,15 @@ export const CompromisedAccountsView: React.FC<CompromisedAccountsViewProps> = (
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
+
+  // Bulk Block State
+  const [isBulkBlockModalOpen, setIsBulkBlockModalOpen] = useState(false);
+  const [bulkBlockReason, setBulkBlockReason] = useState("Enterprise SOC High-Risk Lockdown");
+  const [isBulkBlocking, setIsBulkBlocking] = useState(false);
+  const [bulkBlockNotice, setBulkBlockNotice] = useState<string | null>(null);
+
+  // Live Audit State
+  const [isRunningLiveAudit, setIsRunningLiveAudit] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -61,9 +77,39 @@ export const CompromisedAccountsView: React.FC<CompromisedAccountsViewProps> = (
     }
   };
 
+  const handleRunLiveAudit = async () => {
+    setIsRunningLiveAudit(true);
+    try {
+      await runRealtimeSecurityAnalysis();
+      setBulkBlockNotice("✨ Live Real-Time Security Intelligence Analysis Complete!");
+      setTimeout(() => setBulkBlockNotice(null), 4000);
+      loadData();
+    } catch (e: any) {
+      console.error("Failed to run live audit:", e);
+    } finally {
+      setIsRunningLiveAudit(false);
+    }
+  };
+
+  const handleConfirmBulkBlock = async () => {
+    setIsBulkBlocking(true);
+    try {
+      const res = await blockAllSensitiveAccounts(bulkBlockReason);
+      setIsBulkBlockModalOpen(false);
+      setBulkBlockNotice(`🚨 Successfully locked down ${res.blocked_count} high-risk accounts in Supabase database.`);
+      setTimeout(() => setBulkBlockNotice(null), 5000);
+      loadData();
+    } catch (e: any) {
+      console.error("Failed to bulk block:", e);
+    } finally {
+      setIsBulkBlocking(false);
+    }
+  };
+
+
   useEffect(() => {
     loadData();
-  }, [search, vectorFilter, deptFilter, page, pageSize]);
+  }, [search, vectorFilter, deptFilter, page, pageSize, refreshTrigger]);
 
   const handleToggleBlock = async (account: Account) => {
     setActionInProgressId(account.id);
@@ -152,6 +198,26 @@ export const CompromisedAccountsView: React.FC<CompromisedAccountsViewProps> = (
 
           <div className="flex items-center space-x-2">
             <button
+              onClick={() => setIsBulkBlockModalOpen(true)}
+              disabled={isBulkBlocking}
+              className="px-3.5 py-1.5 rounded-xl bg-[#FF3B30] hover:bg-[#E0342B] disabled:opacity-50 text-white text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition active:scale-[0.98] cursor-pointer"
+              title="Lock down all critical, breached, and compromised accounts in Active Directory"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Block All Sensitive Accounts</span>
+            </button>
+
+            <button
+              onClick={handleRunLiveAudit}
+              disabled={isRunningLiveAudit}
+              className="px-3 py-1.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-50 text-white text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition active:scale-[0.98] cursor-pointer"
+              title="Execute full real-time credential security intelligence check"
+            >
+              <Zap className={`w-3.5 h-3.5 ${isRunningLiveAudit ? "animate-spin" : ""}`} />
+              <span>{isRunningLiveAudit ? "Analyzing..." : "Run Security Analysis"}</span>
+            </button>
+
+            <button
               onClick={loadData}
               className="px-3 py-1.5 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-1.5 transition active:scale-[0.98]"
             >
@@ -160,6 +226,7 @@ export const CompromisedAccountsView: React.FC<CompromisedAccountsViewProps> = (
             </button>
           </div>
         </div>
+
 
         {/* 5 Metric Badges */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -481,6 +548,94 @@ export const CompromisedAccountsView: React.FC<CompromisedAccountsViewProps> = (
           </div>
         )}
       </div>
+
+      {/* Real-time Notification Banner */}
+      {bulkBlockNotice && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-white border border-black/[0.08] shadow-2xl flex items-center space-x-3 animate-in fade-in slide-in-from-bottom-5">
+          <div className="w-8 h-8 rounded-xl bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center font-bold text-sm">
+            ⚡
+          </div>
+          <p className="text-xs font-semibold text-[#1D1D1F]">{bulkBlockNotice}</p>
+        </div>
+      )}
+
+      {/* Bulk Block Confirmation Modal */}
+      {isBulkBlockModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl border border-black/[0.08] shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center space-x-3 text-[#FF3B30]">
+              <div className="w-12 h-12 rounded-2xl bg-[#FF3B30]/10 flex items-center justify-center">
+                <Lock className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#1D1D1F]">
+                  Bulk Lockdown: Sensitive Accounts
+                </h3>
+                <p className="text-xs text-[#FF3B30] font-medium">
+                  Enterprise SOC Active Directory Defense Policy
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#FF3B30]/[0.04] border border-[#FF3B30]/20 space-y-2">
+              <p className="text-xs text-[#1D1D1F] font-semibold">
+                You are about to suspend access for all sensitive Active Directory identities:
+              </p>
+              <ul className="text-xs text-[#6E6E73] list-disc list-inside space-y-1">
+                <li><strong>{stats.critical_tier_count}</strong> Critical Tier (Risk ≥ 0.70) accounts</li>
+                <li><strong>{stats.breached_count}</strong> Dark Web Breach-correlated credentials</li>
+                <li>Privileged accounts flagged with high compound risk</li>
+              </ul>
+              <p className="text-[11px] text-[#86868B] pt-1">
+                * When blocked users attempt to sign in, they will be prompted to create a new strong compliant password to remediate and unblock their accounts.
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                Audit Log Reason
+              </label>
+              <input
+                type="text"
+                value={bulkBlockReason}
+                onChange={(e) => setBulkBlockReason(e.target.value)}
+                placeholder="Reason for bulk lockdown"
+                className="w-full px-3.5 py-2.5 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#FF3B30]/20 focus:bg-white transition"
+              />
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsBulkBlockModalOpen(false)}
+                disabled={isBulkBlocking}
+                className="px-4 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBulkBlock}
+                disabled={isBulkBlocking}
+                className="px-5 py-2 rounded-xl bg-[#FF3B30] hover:bg-[#E0342B] disabled:opacity-50 text-white text-xs font-bold shadow-md transition active:scale-[0.98] flex items-center space-x-2"
+              >
+                {isBulkBlocking ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Enforcing Lockdown in Supabase DB...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Confirm Bulk Lockdown</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

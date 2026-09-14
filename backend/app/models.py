@@ -62,8 +62,32 @@ class BlockAccountRequest(BaseModel):
     is_blocked: bool
     reason: Optional[str] = "Security Risk Detected"
 
+class BlockAllSensitiveRequest(BaseModel):
+    reason: Optional[str] = "Auditor Bulk Sensitive Lockdown"
+    scope: Optional[str] = "critical_and_breached"  # "all_critical", "critical_and_breached", "all_compromised"
+
+class BlockAllSensitiveResponse(BaseModel):
+    status: str
+    blocked_count: int
+    total_sensitive: int
+    message: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginResponse(BaseModel):
+    status: str  # "authenticated", "blocked", "invalid_credentials"
+    message: str
+    requires_password_reset: bool = False
+    account: Optional[Dict[str, Any]] = None
+
 class ResetPasswordRequest(BaseModel):
     new_password: str
+    username: Optional[str] = None
+    account_id: Optional[str] = None
+    confirm_password: Optional[str] = None
+
 
 class PasswordCheckDetail(BaseModel):
     rule_name: str

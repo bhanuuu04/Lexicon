@@ -132,11 +132,21 @@ export async function fetchDatasetMetadata(): Promise<import("../types").Dataset
   return res.json();
 }
 
-export async function generateNewDataset(count: number): Promise<import("../types").GenerateDatasetResponse> {
+export async function generateNewDataset(
+  params: number | {
+    count: number;
+    enterprise_id?: string;
+    enterprise_name?: string;
+    domain?: string;
+    archetype?: string;
+    replace_supabase?: boolean;
+  }
+): Promise<import("../types").GenerateDatasetResponse> {
+  const payload = typeof params === "number" ? { count: params, replace_supabase: true } : { replace_supabase: true, ...params };
   const res = await fetch(`${API_BASE}/api/dataset/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ count }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -230,4 +240,130 @@ export async function computeHashesAPI(password: string): Promise<any> {
   }
   return res.json();
 }
+
+export async function loginUser(
+  username: string,
+  password: string
+): Promise<import("../types").LoginResponse> {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Login request failed");
+  }
+  return res.json();
+}
+
+export async function runRealtimeSecurityAnalysis(): Promise<{
+  status: string;
+  message: string;
+  summary: AuditSummary;
+}> {
+  const res = await fetch(`${API_BASE}/api/audit/run-analysis`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to run real-time security analysis");
+  }
+  return res.json();
+}
+
+export async function blockAllSensitiveAccounts(
+  reason: string = "Auditor Bulk Sensitive Lockdown",
+  scope: string = "critical_and_breached"
+): Promise<import("../types").BlockAllSensitiveResponse> {
+  const res = await fetch(`${API_BASE}/api/accounts/block-all-sensitive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason, scope }),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to execute bulk sensitive lockdown");
+  }
+  return res.json();
+}
+
+export async function syncDatasetToSupabase(limit?: number): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/database/sync`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ limit }),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to synchronize dataset to Supabase");
+  }
+  return res.json();
+}
+
+export async function fetchDatabaseStatus(): Promise<import("../types").DatabaseStatus> {
+  const res = await fetch(`${API_BASE}/api/database/status`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch database status");
+  }
+  return res.json();
+}
+
+export async function fetchAuditLogs(limit: number = 50): Promise<import("../types").AuditLogEntry[]> {
+  const res = await fetch(`${API_BASE}/api/audit/logs?limit=${limit}`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch audit logs");
+  }
+  return res.json();
+}
+
+export function subscribeToRealtimeEvents(
+  onEvent: (event: import("../types").RealtimeEvent) => void
+): () => void {
+  if (typeof window === "undefined" || !("EventSource" in window)) {
+    return () => {};
+  }
+
+  let eventSource: EventSource | null = null;
+  let isClosed = false;
+
+  function connect() {
+    if (isClosed) return;
+    try {
+      eventSource = new EventSource(`${API_BASE}/api/realtime/events`);
+
+      eventSource.onmessage = (e) => {
+        try {
+          const parsed = JSON.parse(e.data);
+          onEvent(parsed);
+        } catch (err) {
+          // ignore non-json pings
+        }
+      };
+
+      eventSource.onerror = () => {
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+        }
+        if (!isClosed) {
+          setTimeout(connect, 3000);
+        }
+      };
+    } catch (e) {
+      if (!isClosed) {
+        setTimeout(connect, 5000);
+      }
+    }
+  }
+
+  connect();
+
+  return () => {
+    isClosed = true;
+    if (eventSource) {
+      eventSource.close();
+      eventSource = null;
+    }
+  };
+}
+
 

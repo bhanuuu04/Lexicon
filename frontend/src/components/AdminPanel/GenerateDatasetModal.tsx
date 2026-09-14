@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import { Database, AlertTriangle, Sparkles, CheckCircle2, X, RefreshCw } from "lucide-react";
@@ -20,6 +20,9 @@ export const GenerateDatasetModal: React.FC<GenerateDatasetModalProps> = ({
 }) => {
   const [selectedCount, setSelectedCount] = useState<number>(50000);
   const [customInput, setCustomInput] = useState<string>("");
+  const [orgName, setOrgName] = useState<string>("Lexicon Enterprise Systems");
+  const [domainName, setDomainName] = useState<string>("lexicon.corp");
+  const [archetype, setArchetype] = useState<string>("Fortune 500 Enterprise");
   const [confirmationInput, setConfirmationInput] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +30,14 @@ export const GenerateDatasetModal: React.FC<GenerateDatasetModalProps> = ({
   if (!isOpen) return null;
 
   const presets = [1000, 5000, 10000, 25000, 50000];
+  const archetypes = [
+    "Fortune 500 Enterprise",
+    "Financial Services & Banking",
+    "Healthcare Network & Hospital",
+    "Tech Unicorn & Cloud SaaS",
+    "Critical Infrastructure & Defense",
+    "Global Logistics & Retail",
+  ];
 
   const effectiveCount = customInput ? parseInt(customInput, 10) || selectedCount : selectedCount;
 
@@ -46,7 +57,13 @@ export const GenerateDatasetModal: React.FC<GenerateDatasetModalProps> = ({
     setIsGenerating(true);
 
     try {
-      const response = await generateNewDataset(effectiveCount);
+      const response = await generateNewDataset({
+        count: effectiveCount,
+        enterprise_name: orgName.trim() || "Lexicon Enterprise Systems",
+        domain: domainName.trim() || "lexicon.corp",
+        archetype: archetype,
+        replace_supabase: true,
+      });
       onDatasetGenerated(response);
       onClose();
     } catch (err: any) {
@@ -58,19 +75,19 @@ export const GenerateDatasetModal: React.FC<GenerateDatasetModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl border border-black/[0.08] shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg bg-white rounded-3xl border border-black/[0.08] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-black/[0.06] flex items-center justify-between">
+        <div className="p-6 pb-4 border-b border-black/[0.06] flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-2xl bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center">
               <Database className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-semibold text-[#1D1D1F]">
-                Generate Synthetic Dataset
+                Generate Enterprise Dataset
               </h3>
               <p className="text-xs text-[#6E6E73]">
-                Admin Lifecycle Management • Persistent On-Demand Synthesis
+                Multi-Enterprise Synthesis • Supabase DB Real-Time Replacement
               </p>
             </div>
           </div>
@@ -84,22 +101,71 @@ export const GenerateDatasetModal: React.FC<GenerateDatasetModalProps> = ({
         </div>
 
         {/* Warning Banner */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
           <div className="p-4 rounded-2xl bg-[#FF9500]/[0.08] border border-[#FF9500]/20 flex items-start space-x-3">
             <AlertTriangle className="w-5 h-5 text-[#FF9500] shrink-0 mt-0.5" />
             <div className="text-xs text-[#1D1D1F] space-y-1">
-              <p className="font-semibold text-[#FF9500]">Dataset Persistence Notice</p>
+              <p className="font-semibold text-[#FF9500]">Supabase Database Replacement Notice</p>
               <p className="text-[#6E6E73] leading-relaxed">
-                Generating a new dataset will replace the active <strong>{currentCount.toLocaleString()}</strong> Active Directory records, recalculate the complete security audit, and reset all attack and remediation states.
+                Generating a new dataset will <strong>delete all existing data in Supabase PostgreSQL</strong> and replace it with the new organization records, <strong>{effectiveCount.toLocaleString()}</strong> Active Directory accounts, and fresh audit summaries.
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleGenerate} className="space-y-5">
+          <form onSubmit={handleGenerate} className="space-y-4">
+            {/* Enterprise Organization Name */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                  Organization Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Acme Corp"
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  disabled={isGenerating}
+                  className="w-full px-3.5 py-2 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                  Domain Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. acme.corp"
+                  value={domainName}
+                  onChange={(e) => setDomainName(e.target.value)}
+                  disabled={isGenerating}
+                  className="w-full px-3.5 py-2 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                />
+              </div>
+            </div>
+
+            {/* Archetype */}
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                Enterprise Archetype
+              </label>
+              <select
+                value={archetype}
+                onChange={(e) => setArchetype(e.target.value)}
+                disabled={isGenerating}
+                className="w-full px-3.5 py-2 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+              >
+                {archetypes.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Account Count Selector */}
             <div>
               <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-2">
-                Select Synthetic Account Volume
+                Select Account Volume
               </label>
               <div className="grid grid-cols-5 gap-2">
                 {presets.map((count) => (
@@ -136,7 +202,7 @@ export const GenerateDatasetModal: React.FC<GenerateDatasetModalProps> = ({
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
                 disabled={isGenerating}
-                className="w-full px-4 py-2.5 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                className="w-full px-3.5 py-2 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
               />
             </div>
 
@@ -151,7 +217,7 @@ export const GenerateDatasetModal: React.FC<GenerateDatasetModalProps> = ({
                 value={confirmationInput}
                 onChange={(e) => setConfirmationInput(e.target.value)}
                 disabled={isGenerating}
-                className="w-full px-4 py-2.5 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#FF3B30]/20 focus:bg-white transition font-mono"
+                className="w-full px-3.5 py-2 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#FF3B30]/20 focus:bg-white transition font-mono"
               />
             </div>
 
@@ -167,7 +233,7 @@ export const GenerateDatasetModal: React.FC<GenerateDatasetModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={isGenerating}
-                className="px-4 py-2.5 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] transition"
+                className="px-4 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] transition"
               >
                 Cancel
               </button>
@@ -179,12 +245,12 @@ export const GenerateDatasetModal: React.FC<GenerateDatasetModalProps> = ({
                 {isGenerating ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Synthesizing {effectiveCount.toLocaleString()} accounts...</span>
+                    <span>Generating & Replacing Supabase Data ({effectiveCount.toLocaleString()})...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Generate & Persist Dataset</span>
+                    <span>Generate & Replace in Supabase</span>
                   </>
                 )}
               </button>
