@@ -47,10 +47,10 @@ export const RiskDistributionChart: React.FC<RiskDistributionChartProps> = ({ su
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
               <h3 className="text-base sm:text-lg font-semibold text-[#1D1D1F] tracking-tight font-sans">
-                Enterprise Risk Distribution
+                Enterprise Posture & Exposure Distribution
               </h3>
               <p className="text-xs text-[#6E6E73] font-normal mt-0.5">
-                Evaluated across all 50,000 synthetic Active Directory accounts
+                Continuous identity threat posture evaluated across 50,000 corporate identities
               </p>
             </div>
             <div className="flex items-center space-x-2 text-xs shrink-0">

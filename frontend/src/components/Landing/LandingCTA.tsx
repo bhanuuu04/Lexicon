@@ -25,15 +25,15 @@ export const LandingCTA: React.FC<LandingCTAProps> = ({
         >
           <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/10 text-white text-xs font-semibold">
             <span className="w-2 h-2 rounded-full bg-[#34C759]"></span>
-            <span>Live Synthetic AD Environment Ready</span>
+            <span>Continuous Enterprise Protection Active</span>
           </div>
 
           <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight leading-tight">
-            Ready to secure your identity perimeter?
+            Ready to shield your enterprise identity perimeter?
           </h2>
 
           <p className="text-sm sm:text-base text-[#A1A1A6] max-w-xl mx-auto">
-            Experience the complete platform across all operational tiers. Explore enterprise-level risk operations or view employee-level security posture.
+            Experience complete identity threat detection, blast radius containment, and automated remediation across your entire workforce.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Network, AlertCircle, ShieldAlert, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Network, ShieldAlert, CheckCircle2, ShieldCheck, Lock } from "lucide-react";
 
 export const BlastRadiusStory: React.FC = () => {
   const [selectedCluster, setSelectedCluster] = useState<number>(0);
@@ -17,7 +17,8 @@ export const BlastRadiusStory: React.FC = () => {
       privilegeAccounts: 3,
       privilegeRoles: ["Domain Admin (svc_backup)", "IT Helpdesk Lead", "DBA Admin"],
       riskScore: 84.5,
-      path: "Initial Workstation Compromise -> Shared LAPS/Staging Password -> Backup Service Account -> Domain Admin Escalation",
+      path: "Initial Workstation Phish -> Staging Shared Password -> Backup Service Account -> Domain Admin Escalation",
+      containmentAction: "FGPP fine-grained password policy deployed; service account decoupled; blast radius reduced to 0.",
     },
     {
       id: 1,
@@ -26,9 +27,10 @@ export const BlastRadiusStory: React.FC = () => {
       rootRole: "Junior Developer",
       compromisedAccounts: 32,
       privilegeAccounts: 2,
-      privilegeRoles: ["DevOps Lead", "Production AWS Access"],
+      privilegeRoles: ["DevOps Lead", "Production AWS Deployer"],
       riskScore: 79.2,
-      path: "Dev Laptop Phish -> Internal Git Repo Credential -> Shared Staging Cluster -> AWS Production Deployer",
+      path: "Dev Laptop Phish -> Internal Repo Credential -> Shared Staging Cluster -> AWS Production Deployer",
+      containmentAction: "Cloud IAM access keys rotated; developer credential isolated; blast radius neutralized.",
     },
   ];
 
@@ -42,34 +44,34 @@ export const BlastRadiusStory: React.FC = () => {
           <div className="lg:col-span-5 space-y-6">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#5856D6]/10 text-[#5856D6] text-xs font-semibold">
               <Network className="w-3.5 h-3.5" />
-              <span>Blast Radius Intelligence</span>
+              <span>Lateral Threat Containment</span>
             </div>
             
             <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1D1D1F] leading-tight">
-              One compromised password never stays isolated.
+              Stop lateral movement before an incident becomes a catastrophe.
             </h2>
             
             <p className="text-sm sm:text-base text-[#6E6E73] leading-relaxed">
-              Lexicon discovers <strong>805 credential reuse families</strong> spanning over 30,000 Active Directory accounts. When a low-privilege user shares an identical or mutated password with privileged services, lateral escalation is instantaneous.
+              In modern enterprise attacks, <strong>lateral privilege escalation</strong> is how attackers move from a single compromised marketing laptop to full Domain Controller control. Lexicon detects and neutralizes <strong>805 credential reuse families</strong> before attackers can leverage them.
             </p>
 
             <div className="space-y-3 pt-2">
               <div className="flex items-start space-x-3">
                 <CheckCircle2 className="w-4 h-4 text-[#34C759] mt-0.5 shrink-0" />
                 <span className="text-xs text-[#1D1D1F]">
-                  <strong>Graph-based lateral movement analysis</strong> revealing hidden privilege escalation paths.
+                  <strong>Graph-based lateral movement analysis</strong> revealing and severing hidden privilege escalation paths.
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <CheckCircle2 className="w-4 h-4 text-[#34C759] mt-0.5 shrink-0" />
                 <span className="text-xs text-[#1D1D1F]">
-                  <strong>Cross-departmental linkage tracking</strong> between corporate workstations and cloud credentials.
+                  <strong>Active Directory service account decoupling</strong> protecting high-value assets and backup servers.
                 </span>
               </div>
               <div className="flex items-start space-x-3">
                 <CheckCircle2 className="w-4 h-4 text-[#34C759] mt-0.5 shrink-0" />
                 <span className="text-xs text-[#1D1D1F]">
-                  <strong>Targeted isolation instructions</strong> prioritizing high-impact multi-account clusters.
+                  <strong>Automated blast radius quarantine</strong> safeguarding organizational continuity and insurance compliance.
                 </span>
               </div>
             </div>
@@ -104,7 +106,7 @@ export const BlastRadiusStory: React.FC = () => {
               <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-[#86868B] tracking-wider block">
-                    Active Cluster Simulation
+                    Active Threat Path Analysis
                   </span>
                   <h4 className="text-base font-semibold text-[#1D1D1F]">
                     {current.family}
@@ -120,18 +122,18 @@ export const BlastRadiusStory: React.FC = () => {
               {/* Stats Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 my-5">
                 <div className="bg-white p-3 rounded-xl border border-black/[0.04]">
-                  <span className="text-[11px] text-[#86868B] block">Initial Compromise</span>
+                  <span className="text-[11px] text-[#86868B] block">Initial Exposure Point</span>
                   <span className="text-xs font-semibold text-[#1D1D1F] truncate block">
                     {current.rootUser}
                   </span>
                   <span className="text-[10px] text-[#6E6E73]">{current.rootRole}</span>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-black/[0.04]">
-                  <span className="text-[11px] text-[#86868B] block">Total Accounts Exposed</span>
+                  <span className="text-[11px] text-[#86868B] block">Exposed Accounts</span>
                   <span className="text-base font-bold text-[#1D1D1F]">
                     {current.compromisedAccounts} accounts
                   </span>
-                  <span className="text-[10px] text-[#FF9500]">Lateral Spread</span>
+                  <span className="text-[10px] text-[#FF9500]">Lateral Risk Target</span>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-black/[0.04] col-span-2 sm:col-span-1">
                   <span className="text-[11px] text-[#86868B] block">Privileged Escalations</span>
@@ -162,6 +164,15 @@ export const BlastRadiusStory: React.FC = () => {
                       {role}
                     </span>
                   ))}
+                </div>
+
+                {/* Lexicon Containment Action */}
+                <div className="p-3 bg-[#34C759]/[0.08] rounded-lg border border-[#34C759]/20 flex items-start space-x-2 text-xs text-[#1D1D1F] mt-2">
+                  <ShieldCheck className="w-4 h-4 text-[#34C759] mt-0.5 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-[#34C759] block">Lexicon Automated Safeguard:</span>
+                    <span className="text-[#6E6E73]">{current.containmentAction}</span>
+                  </div>
                 </div>
               </div>
             </motion.div>

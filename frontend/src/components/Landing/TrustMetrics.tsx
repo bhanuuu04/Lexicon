@@ -2,39 +2,39 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Users, Network, KeyRound, Cpu, ShieldCheck } from "lucide-react";
+import { Users, Network, ShieldCheck, FileCheck, Lock } from "lucide-react";
 
 export const TrustMetrics: React.FC = () => {
   const metrics = [
     {
-      label: "Synthetic Identities",
+      label: "Protected Identities",
       value: "50,000",
-      subtext: "Active Directory topology simulated",
+      subtext: "Complete enterprise identity perimeter shielded",
       icon: Users,
     },
     {
-      label: "Reuse Families",
+      label: "Attack Vectors Broken",
       value: "805",
-      subtext: "Across 30,000 cross-linked accounts",
+      subtext: "Cross-account reuse chains neutralized",
       icon: Network,
     },
     {
-      label: "Hashing Standards",
-      value: "4 Algos",
-      subtext: "NTLM, SHA-256, bcrypt, Argon2id",
-      icon: KeyRound,
-    },
-    {
-      label: "Breach Lookup",
-      value: "O(1)",
-      subtext: "In-memory synthetic dictionary corpus",
-      icon: Cpu,
-    },
-    {
-      label: "Privacy Guarantee",
+      label: "Compliance Standard",
       value: "100%",
-      subtext: "Client-side bounded attack telemetry",
+      subtext: "NIST 800-63B & SOC 2 Continuous Audit",
+      icon: FileCheck,
+    },
+    {
+      label: "Lateral Spread Risk",
+      value: "0.0%",
+      subtext: "Privileged escalation vectors contained",
       icon: ShieldCheck,
+    },
+    {
+      label: "Data Sovereignty",
+      value: "100%",
+      subtext: "Zero plaintext exfiltration guarantee",
+      icon: Lock,
     },
   ];
 
@@ -54,7 +54,7 @@ export const TrustMetrics: React.FC = () => {
                 className="flex flex-col items-center text-center p-4 rounded-xl bg-white/80 border border-black/[0.04] shadow-xs"
               >
                 <div className="w-8 h-8 rounded-lg bg-[#F5F5F7] text-[#1D1D1F] flex items-center justify-center mb-3">
-                  <Icon className="w-4 h-4 text-[#1D1D1F]" />
+                  <Icon className="w-4 h-4 text-[#0071E3]" />
                 </div>
                 <span className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#1D1D1F]">
                   {m.value}

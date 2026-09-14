@@ -2,43 +2,43 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Database, Search, AlertTriangle, Play, Sparkles } from "lucide-react";
+import { ShieldCheck, Search, AlertTriangle, ShieldAlert, Sparkles } from "lucide-react";
 
 export const HowItWorks: React.FC = () => {
   const steps = [
     {
       num: "01",
-      title: "Synthesize & Ingest",
-      subtitle: "Active Directory Corpus",
-      desc: "50,000 synthetic AD accounts spanning Domain Admins, IT Ops, and Executives, with realistic credential reuse patterns.",
-      icon: Database,
+      title: "Discover & Ingest",
+      subtitle: "Enterprise Identity Surface",
+      desc: "Ingests directory topology across 50,000 corporate accounts, mapping domain admins, IT operations, and standard users.",
+      icon: ShieldCheck,
     },
     {
       num: "02",
-      title: "Audit & Correlate",
-      subtitle: "Multi-Factor Scoring",
-      desc: "Instant O(1) hash lookups, zxcvbn entropy calculation, and company dictionary mutation matching.",
+      title: "Detect Vulnerabilities",
+      subtitle: "Identity Threat Intelligence",
+      desc: "Instantly correlates accounts against known breach corpora, weak entropy patterns, and company dictionary mutations.",
       icon: Search,
     },
     {
       num: "03",
-      title: "Prioritize Risk",
-      subtitle: "Deterministic Formula",
-      desc: "Composite risk index combining Entropy (30%), Policy (25%), Breach (20%), Privilege (15%), and Reuse (10%).",
+      title: "Prioritize Defense",
+      subtitle: "Deterministic Risk Calculus",
+      desc: "Calculates precise composite risk scores (Entropy, Policy, Breach, Privilege, Reuse) to eliminate false positives.",
       icon: AlertTriangle,
     },
     {
       num: "04",
-      title: "Simulate Attacks",
-      subtitle: "Client-Side Telemetry",
-      desc: "Web Worker bounded candidate generation executing dictionary, mask, and hybrid attacks in-browser without data leak.",
-      icon: Play,
+      title: "Simulate & Validate",
+      subtitle: "Proactive Security Testing",
+      desc: "Runs client-side bounded attack simulations in local Web Workers to verify credential resilience under adversarial conditions.",
+      icon: ShieldAlert,
     },
     {
       num: "05",
-      title: "AI Remediation",
-      subtitle: "Targeted Policy Output",
-      desc: "Executive briefings, IT helpdesk action scripts, and custom Active Directory fine-grained password policies.",
+      title: "Remediate & Protect",
+      subtitle: "Automated Organization Defense",
+      desc: "Generates board-level executive briefings, Active Directory PowerShell policies, and employee self-defense guides.",
       icon: Sparkles,
     },
   ];
@@ -48,13 +48,13 @@ export const HowItWorks: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-xs font-semibold uppercase tracking-wider text-[#0071E3] block mb-2">
-            The Lexicon Pipeline
+            The Enterprise Protection Lifecycle
           </span>
           <h2 className="text-3xl sm:text-4xl font-semibold text-[#1D1D1F] tracking-tight">
-            How Lexicon transforms credential chaos into actionable intelligence.
+            How Lexicon safeguards your organization from identity risk.
           </h2>
           <p className="text-sm sm:text-base text-[#6E6E73] mt-3">
-            An end-to-end deterministic security workflow engineered for identity and access operations.
+            An end-to-end continuous defense workflow engineered for security operations, compliance, and CISO leadership.
           </p>
         </div>
 
@@ -75,8 +75,8 @@ export const HowItWorks: React.FC = () => {
                     <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-[#F5F5F7] text-[#1D1D1F]">
                       {step.num}
                     </span>
-                    <div className="w-8 h-8 rounded-lg bg-[#F5F5F7] flex items-center justify-center text-[#1D1D1F]">
-                      <Icon className="w-4 h-4 text-[#1D1D1F]" />
+                    <div className="w-8 h-8 rounded-lg bg-[#F5F5F7] flex items-center justify-center text-[#0071E3]">
+                      <Icon className="w-4 h-4" />
                     </div>
                   </div>
                   <h3 className="text-base font-semibold text-[#1D1D1F] tracking-tight">

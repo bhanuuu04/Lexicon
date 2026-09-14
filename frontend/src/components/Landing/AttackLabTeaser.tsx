@@ -2,28 +2,28 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Zap, Terminal, ShieldCheck, Play, Sparkles } from "lucide-react";
+import { Zap, Terminal, ShieldCheck, ShieldAlert } from "lucide-react";
 
 export const AttackLabTeaser: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"dictionary" | "mask" | "hybrid">("hybrid");
 
   const attackModes = {
     dictionary: {
-      title: "Dictionary & Mutation Engine",
-      speed: "1,250,000 c/s",
-      desc: "Tests 10,000 common passwords with 8 permutation rules (leetspeak, titlecase, suffixes).",
+      title: "Dictionary & Permutation Audit",
+      speed: "1,250,000 checks/sec",
+      desc: "Simulates adversarial dictionary spray with 8 corporate mutation rules (leetspeak, titlecase, suffixes).",
       sample: "Password -> P@ssw0rd2024! -> p@$$w0rd#",
     },
     mask: {
-      title: "Targeted Mask Exhaustion",
-      speed: "4,800,000 c/s",
-      desc: "Simulates structured patterns like ?u?l?l?l?d?d?s matching corporate seasonal password formats.",
+      title: "Structured Mask Vulnerability Scan",
+      speed: "4,800,000 checks/sec",
+      desc: "Detects predictable employee habits like seasonal patterns (?u?l?l?l?d?d?s) before attackers crack them.",
       sample: "Winter2024! -> Summer2023# -> Spring2022$",
     },
     hybrid: {
-      title: "Hybrid Company Context Attack",
-      speed: "2,100,000 c/s",
-      desc: "Combines corporate keywords (Lexicon, IT, Admin) with date increments and special character masks.",
+      title: "Targeted Brand & Keyword Emulation",
+      speed: "2,100,000 checks/sec",
+      desc: "Tests enterprise resistance against attackers weaponizing company names, department terms, and years.",
       sample: "Lexicon#2024 -> LexiconIT99! -> LexiconAdmin123",
     },
   };
@@ -36,13 +36,13 @@ export const AttackLabTeaser: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#FF9500]/10 text-[#FF9500] text-xs font-semibold mb-3">
             <Zap className="w-3.5 h-3.5" />
-            <span>Attack Telemetry Engine</span>
+            <span>Continuous Threat Exposure Validation</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1D1D1F]">
-            See the risk. Don&apos;t just score it.
+            Validate your defenses before adversaries test them.
           </h2>
           <p className="text-sm sm:text-base text-[#6E6E73] mt-3">
-            Interactive, client-side bounded attack telemetry proving exactly how quickly weak credentials collapse under targeted dictionary, mask, and hybrid permutations.
+            Simulate realistic adversary password spray, dictionary permutations, and mask attacks in real-time within sandboxed client-side Web Workers—without exposing raw credentials or disrupting operations.
           </p>
         </div>
 
@@ -78,7 +78,7 @@ export const AttackLabTeaser: React.FC = () => {
             <div className="p-4 rounded-xl bg-white border border-black/[0.06] flex items-center space-x-3 text-xs text-[#6E6E73]">
               <ShieldCheck className="w-5 h-5 text-[#34C759] shrink-0" />
               <span>
-                <strong>Zero Server Exfiltration:</strong> Attack simulation executes 100% in local browser Web Workers. Raw credentials never leave client RAM.
+                <strong>Enterprise Data Sovereignty:</strong> Simulation runs 100% locally in browser memory. Sensitive hash data is bounded and never transmitted over external networks.
               </span>
             </div>
           </div>
@@ -98,21 +98,21 @@ export const AttackLabTeaser: React.FC = () => {
                   <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]"></div>
                   <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F]"></div>
                   <span className="ml-2 text-[11px] text-[#A1A1A6]">
-                    lexicon-worker://telemetry-stream
+                    lexicon-defense://adversary-simulation-stream
                   </span>
                 </div>
                 <span className="text-[10px] text-[#34C759] font-sans font-semibold">
-                  THREAD ACTIVE
+                  AUDIT ENGINE RUNNING
                 </span>
               </div>
 
               <div className="space-y-2 text-[#E5E5EA]">
                 <div className="text-[#86868B] flex items-center space-x-2">
                   <Terminal className="w-3.5 h-3.5 text-[#0071E3]" />
-                  <span>Target: Domain User (jdoe@lexicon.corp) [NTLM Hash: 8846f7ea...]</span>
+                  <span>Target: Domain Account (jdoe@lexicon.corp) [NTLM Hash: 8846f7ea...]</span>
                 </div>
                 <div>
-                  <span className="text-[#0071E3]">&gt;</span> Initializing {current.title}...
+                  <span className="text-[#0071E3]">&gt;</span> Executing {current.title}...
                 </div>
                 <div>
                   <span className="text-[#0071E3]">&gt;</span> Candidate mutation pattern:{" "}
@@ -120,20 +120,23 @@ export const AttackLabTeaser: React.FC = () => {
                 </div>
                 <div className="p-3 bg-black/40 rounded-lg border border-white/5 space-y-1">
                   <div className="text-[11px] text-[#A1A1A6]">
-                    [Worker 1] Checked 480,210 candidates (384.1k/s)
+                    [Worker 1] Evaluated 480,210 permutations (384.1k/s)
                   </div>
                   <div className="text-[11px] text-[#A1A1A6]">
-                    [Worker 2] Checked 492,000 candidates (393.6k/s)
+                    [Worker 2] Evaluated 492,000 permutations (393.6k/s)
                   </div>
-                  <div className="text-[11px] text-[#34C759] font-bold">
-                    [MATCH FOUND] Elapsed: 2.14s | Complexity: 36.2 bits | Status: COMPROMISED
+                  <div className="text-[11px] text-[#FF3B30] font-bold">
+                    [VULNERABILITY IDENTIFIED] Elapsed: 2.14s | Entropy: 36.2 bits | Action: Policy Remediation Queued
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-2 text-[11px] text-[#86868B] font-sans">
-                <span>Simulation Bounded (Max 10s / 1M hashes)</span>
-                <span className="text-white font-medium">Safe POC Demonstration</span>
+                <span>Safe Bounded Audit (Max 10s / 1M candidates)</span>
+                <span className="text-[#34C759] font-medium flex items-center space-x-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Zero Network Exposure</span>
+                </span>
               </div>
             </motion.div>
           </div>

@@ -2,29 +2,29 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, Lock, Cpu, EyeOff, Server, Database } from "lucide-react";
+import { ShieldCheck, Lock, Cpu, EyeOff, Server, Database, CheckCircle2 } from "lucide-react";
 
 export const SecurityArchitecture: React.FC = () => {
   const securityPillars = [
     {
       icon: EyeOff,
-      title: "Zero-Exfiltration Telemetry",
-      desc: "All attack candidate generation and hash resistance testing execute inside sandboxed Web Workers in the user's browser. Raw passwords are never transmitted over network boundaries.",
+      title: "Zero-Exfiltration Architecture",
+      desc: "All attack candidate generation and hash resistance testing execute inside sandboxed Web Workers in local browser RAM. Raw corporate passwords never leave your secure perimeter.",
     },
     {
       icon: Lock,
-      title: "k-Anonymity HIBP Verification",
-      desc: "Live breach verification leverages Cloudflare/HIBP k-anonymity. Only the first 5 characters of SHA-1 digests are queried, guaranteeing full password privacy.",
+      title: "k-Anonymity Privacy Model",
+      desc: "Live external breach verification leverages strict cryptographic k-anonymity. Only the first 5 characters of SHA-1 digests are queried, ensuring complete organizational confidentiality.",
     },
     {
       icon: Cpu,
-      title: "Deterministic Risk Calculus",
-      desc: "Zero black-box AI hallucinations in core risk scoring. Risk indices are mathematically computed via weighted linear combination of entropy, policy, breach, privilege, and reuse.",
+      title: "Deterministic Risk Intelligence",
+      desc: "Zero generative AI hallucinations in risk scoring. Security scores are mathematically computed through deterministic linear models combining entropy, policy, breach history, privilege, and reuse.",
     },
     {
-      icon: Database,
-      title: "100% Synthetic AD Topology",
-      desc: "Engineered from ground up with 50,000 synthetic identities representing authentic enterprise departments, privilege tiers, and realistic password reuse clusters.",
+      icon: Server,
+      title: "Full Directory Topology Protection",
+      desc: "Architected to ingest and monitor 50,000+ corporate identities across Active Directory, Azure Entra ID, and Okta, preserving granular departmental privilege hierarchies.",
     },
   ];
 
@@ -37,10 +37,10 @@ export const SecurityArchitecture: React.FC = () => {
             <span>Enterprise Security Model</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1D1D1F]">
-            Built with mathematical rigor and zero trust architecture.
+            Engineered with Zero-Trust principles and data sovereignty.
           </h2>
           <p className="text-sm sm:text-base text-[#6E6E73] mt-3">
-            Designed to meet the stringent security, auditability, and privacy standards of modern enterprise cybersecurity teams.
+            Designed to exceed the rigorous security, privacy, and auditability requirements of enterprise CISOs and regulatory frameworks.
           </p>
         </div>
 

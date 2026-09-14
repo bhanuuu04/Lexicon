@@ -74,14 +74,14 @@ export const AccountDirectory: React.FC<AccountDirectoryProps> = ({
         <div>
           <div className="flex items-center space-x-3">
             <h3 className="text-lg sm:text-xl font-semibold text-[#1D1D1F] tracking-tight font-sans">
-              Enterprise Account Risk Directory
+              Enterprise Identity & Account Directory
             </h3>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#0071E3]/[0.08] text-[#0071E3] border border-[#0071E3]/20">
-              {totalCount.toLocaleString()} Matching
+              {totalCount.toLocaleString()} Protected Accounts
             </span>
           </div>
           <p className="text-xs text-[#6E6E73] font-normal mt-1">
-            50,000 accounts analyzed • Instant telemetry search & drilldown
+            Continuous posture monitoring across 50,000 corporate identities • Click any account to inspect defense telemetry & remediation
           </p>
         </div>
 

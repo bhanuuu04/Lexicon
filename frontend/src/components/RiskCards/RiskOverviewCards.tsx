@@ -13,9 +13,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
   const cards = [
     {
       id: "total",
-      title: "Total Accounts",
+      title: "Identities Monitored",
       value: summary.total_accounts.toLocaleString(),
-      subtitle: "Active Directory Corpus",
+      subtitle: "Enterprise AD & IAM scope",
       icon: Users,
       valueColor: "text-[#1D1D1F]",
       badgeColor: "bg-[#F5F5F7] text-[#6E6E73] border-black/[0.06]",
@@ -24,9 +24,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
     },
     {
       id: "critical",
-      title: "Critical Tier",
+      title: "Critical Defense Tier",
       value: summary.critical_count.toLocaleString(),
-      subtitle: `${((summary.critical_count / summary.total_accounts) * 100).toFixed(1)}% of total scope`,
+      subtitle: `${((summary.critical_count / summary.total_accounts) * 100).toFixed(1)}% immediate priority`,
       icon: ShieldAlert,
       valueColor: "text-[#FF3B30]",
       badgeColor: "bg-[#FF3B30]/[0.08] text-[#FF3B30] border-[#FF3B30]/20",
@@ -35,9 +35,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
     },
     {
       id: "high",
-      title: "High Risk Tier",
+      title: "Elevated Risk Tier",
       value: summary.high_risk_count.toLocaleString(),
-      subtitle: `${((summary.high_risk_count / summary.total_accounts) * 100).toFixed(1)}% elevated tier`,
+      subtitle: `${((summary.high_risk_count / summary.total_accounts) * 100).toFixed(1)}% scheduled remediation`,
       icon: AlertTriangle,
       valueColor: "text-[#FF9500]",
       badgeColor: "bg-[#FF9500]/[0.08] text-[#FF9500] border-[#FF9500]/20",
@@ -48,7 +48,7 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
       id: "breach",
       title: "Breach Matches",
       value: summary.breached_count.toLocaleString(),
-      subtitle: "Compromised credential corpus",
+      subtitle: "Known compromised credentials",
       icon: Database,
       valueColor: "text-[#FF2D55]",
       badgeColor: "bg-[#FF2D55]/[0.08] text-[#FF2D55] border-[#FF2D55]/20",
@@ -57,9 +57,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
     },
     {
       id: "reuse",
-      title: "Reuse Clusters",
+      title: "Lateral Reuse Chains",
       value: summary.reuse_cluster_count.toLocaleString(),
-      subtitle: `${summary.total_reused_accounts.toLocaleString()} shared accounts`,
+      subtitle: `${summary.total_reused_accounts.toLocaleString()} cross-linked accounts`,
       icon: Layers,
       valueColor: "text-[#5856D6]",
       badgeColor: "bg-[#5856D6]/[0.08] text-[#5856D6] border-[#5856D6]/20",
@@ -68,9 +68,9 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
     },
     {
       id: "privileged",
-      title: "Admins At Risk",
+      title: "Privilege Tier Exposed",
       value: summary.privileged_at_risk_count.toLocaleString(),
-      subtitle: `Out of ${summary.privileged_count.toLocaleString()} total admins`,
+      subtitle: `Out of ${summary.privileged_count.toLocaleString()} Domain Admins`,
       icon: ShieldCheck,
       valueColor: "text-[#34C759]",
       badgeColor: "bg-[#34C759]/[0.08] text-[#34C759] border-[#34C759]/20",
@@ -87,7 +87,7 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
           <div
             key={card.id}
             onClick={() => onCardClick && onCardClick(card.filter)}
-            className="apple-card p-4 cursor-pointer flex flex-col justify-between min-h-[128px] group active:scale-[0.99]"
+            className="apple-card p-4 cursor-pointer flex flex-col justify-between min-h-[128px] group active:scale-[0.99] border border-black/[0.06] bg-white shadow-card hover:shadow-card-hover transition-all"
           >
             {/* Header: Title + Icon Badge */}
             <div className="flex items-center justify-between gap-2">
@@ -114,5 +114,3 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
     </div>
   );
 };
-
-

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { KeyRound, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
+import { KeyRound, ShieldAlert, ShieldCheck } from "lucide-react";
 
 export const HashRaceTeaser: React.FC = () => {
   const algorithms = [
@@ -10,41 +10,37 @@ export const HashRaceTeaser: React.FC = () => {
       name: "NTLM (Windows Active Directory Default)",
       timePerHash: "0.00002 ms",
       gpuRate: "120 Billion / sec",
-      status: "Vulnerable",
+      status: "Critical Risk (Legacy)",
       statusColor: "text-[#FF3B30] bg-[#FF3B30]/10 border-[#FF3B30]/20",
-      barWidth: "100%",
-      barColor: "bg-[#FF3B30]",
-      desc: "Fast single-iteration MD4. Easily exhaustible by off-the-shelf GPU rigs in seconds.",
+      defenseRating: "Vulnerable to Offline Extraction",
+      desc: "Fast single-round MD4 digest. Easily cracked by attackers within seconds if NTDS.dit is accessed.",
     },
     {
-      name: "SHA-256 (Raw Digest)",
+      name: "SHA-256 (Single Digest)",
       timePerHash: "0.00015 ms",
       gpuRate: "15 Billion / sec",
-      status: "Insecure for Passwords",
+      status: "Insufficient for Passwords",
       statusColor: "text-[#FF9500] bg-[#FF9500]/10 border-[#FF9500]/20",
-      barWidth: "85%",
-      barColor: "bg-[#FF9500]",
-      desc: "Unsalted or single-round cryptographic digest lacking adaptive computational hardness.",
+      defenseRating: "Low Computational Resistance",
+      desc: "Lacks adaptive work factor. Vulnerable to fast consumer GPU array brute force.",
     },
     {
       name: "bcrypt (Cost Factor 12)",
       timePerHash: "240 ms",
       gpuRate: "12,000 / sec",
-      status: "Secure Standard",
+      status: "Enterprise Standard",
       statusColor: "text-[#0071E3] bg-[#0071E3]/10 border-[#0071E3]/20",
-      barWidth: "15%",
-      barColor: "bg-[#0071E3]",
-      desc: "Eksblowfish-based adaptive work factor providing solid resistance against mass GPU cracking.",
+      defenseRating: "High Protection",
+      desc: "Adaptive work factor slows down offline cracking attacks by orders of magnitude.",
     },
     {
       name: "Argon2id (64MB, 4 Passes)",
       timePerHash: "1,200 ms",
       gpuRate: "250 / sec",
-      status: "State of the Art",
+      status: "Zero-Trust Hardened",
       statusColor: "text-[#34C759] bg-[#34C759]/10 border-[#34C759]/20",
-      barWidth: "3%",
-      barColor: "bg-[#34C759]",
-      desc: "Memory-hard winner of the Password Hashing Competition. Highly ASIC and GPU resistant.",
+      defenseRating: "Maximum Resistance",
+      desc: "Memory-hard winner of the Password Hashing Competition. Defeats ASIC and massive GPU clusters.",
     },
   ];
 
@@ -54,13 +50,13 @@ export const HashRaceTeaser: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#0071E3]/10 text-[#0071E3] text-xs font-semibold mb-3">
             <KeyRound className="w-3.5 h-3.5" />
-            <span>Cryptographic Benchmarks</span>
+            <span>Cryptographic Hardening & Defense</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[#1D1D1F]">
-            Cryptographic hardness: NTLM vs Modern Standards
+            Cryptographic defense: Why algorithm choice defines breach survival.
           </h2>
           <p className="text-sm sm:text-base text-[#6E6E73] mt-3">
-            Compare real-time computation speeds across enterprise hashing algorithms. See why migrating away from legacy NTLM is an enterprise imperative.
+            Understand how hashing resistance protects enterprise data when database snapshots are compromised. Lexicon guides your organization to modernize beyond vulnerable legacy protocols.
           </p>
         </div>
 
@@ -93,21 +89,21 @@ export const HashRaceTeaser: React.FC = () => {
               {/* Metrics */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 text-xs border-t border-black/[0.04]">
                 <div>
-                  <span className="text-[#86868B] block">Execution Time</span>
+                  <span className="text-[#86868B] block">Execution Hardness</span>
                   <span className="font-semibold text-[#1D1D1F] font-mono">
                     {algo.timePerHash}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[#86868B] block">Cracking Throughput (RTX 4090)</span>
+                  <span className="text-[#86868B] block">Adversary Cracking Rate (RTX 4090)</span>
                   <span className="font-semibold text-[#1D1D1F] font-mono">
                     {algo.gpuRate}
                   </span>
                 </div>
                 <div className="hidden sm:block">
-                  <span className="text-[#86868B] block">Relative Defense Level</span>
+                  <span className="text-[#86868B] block">Enterprise Defense Posture</span>
                   <span className="font-semibold text-[#1D1D1F]">
-                    {algo.status === "State of the Art" ? "Maximum" : algo.status === "Secure Standard" ? "High" : "Negligible"}
+                    {algo.defenseRating}
                   </span>
                 </div>
               </div>
