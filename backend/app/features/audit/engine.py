@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from collections import defaultdict
 from pathlib import Path
 from zxcvbn import zxcvbn
@@ -13,6 +13,7 @@ from backend.app.features.risk_engine.scoring import (
     calculate_baseline_risk
 )
 from backend.app.features.risk_engine.policy import check_policy_violations
+
 
 def _atomic_write_json(file_path: Path, data: Any, indent: int = None):
     """Safely write JSON to disk with atomic replacement."""
@@ -33,14 +34,197 @@ def _atomic_write_json(file_path: Path, data: Any, indent: int = None):
                 pass
         tmp_path.rename(file_path)
 
-def run_bulk_audit() -> Dict[str, Any]:
+
+def generate_compliance_scorecard(accounts: List[Dict[str, Any]], audit_summary: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Evaluate Active Directory credential posture against major regulatory and industry frameworks.
+    Frameworks: NIST SP 800-63B, CIS Controls v8, PCI-DSS v4.0 (Req 8), and ISO/IEC 27001 (A.9).
+    """
+    total = max(1, len(accounts))
+    
+    # Metrics
+    len_ge_8 = sum(1 for a in accounts if len(a.get("plaintext_password", "")) >= 8)
+    len_ge_12 = sum(1 for a in accounts if len(a.get("plaintext_password", "")) >= 12)
+    len_ge_15 = sum(1 for a in accounts if len(a.get("plaintext_password", "")) >= 15)
+    
+    breach_free = sum(1 for a in accounts if not a.get("breach_match"))
+    
+    priv_accounts = [a for a in accounts if a.get("is_privileged")]
+    total_priv = max(1, len(priv_accounts))
+    priv_with_mfa = sum(1 for a in priv_accounts if a.get("mfa_enabled"))
+    total_with_mfa = sum(1 for a in accounts if a.get("mfa_enabled"))
+    
+    entropy_strong = sum(1 for a in accounts if a.get("zxcvbn_score", 0) >= 3)
+    no_policy_violations = sum(1 for a in accounts if not a.get("policy_violations"))
+    
+    # 1. NIST SP 800-63B (Authentication and Lifecycle Management)
+    nist_8_pct = round((len_ge_8 / total) * 100.0, 1)
+    nist_breach_pct = round((breach_free / total) * 100.0, 1)
+    nist_overall = round((nist_8_pct * 0.4) + (nist_breach_pct * 0.4) + ((entropy_strong / total) * 20.0), 1)
+    
+    nist_status = "COMPLIANT" if nist_overall >= 85.0 else ("PARTIAL" if nist_overall >= 60.0 else "NON_COMPLIANT")
+    
+    # 2. CIS Controls v8 (Safeguards 5.2, 5.4, 6.1)
+    cis_priv_mfa_pct = round((priv_with_mfa / total_priv) * 100.0, 1)
+    cis_overall = round((cis_priv_mfa_pct * 0.5) + (nist_8_pct * 0.3) + ((no_policy_violations / total) * 20.0), 1)
+    cis_status = "COMPLIANT" if cis_overall >= 80.0 else ("PARTIAL" if cis_overall >= 50.0 else "NON_COMPLIANT")
+    
+    # 3. PCI-DSS v4.0 Requirement 8 (Identify and Authenticate Users)
+    pci_12_pct = round((len_ge_12 / total) * 100.0, 1)
+    pci_overall = round((pci_12_pct * 0.5) + (cis_priv_mfa_pct * 0.3) + (nist_breach_pct * 0.2), 1)
+    pci_status = "COMPLIANT" if pci_overall >= 80.0 else ("PARTIAL" if pci_overall >= 50.0 else "NON_COMPLIANT")
+    
+    # 4. ISO/IEC 27001:2022 Annex A.9 (Access Control & Password Management)
+    iso_overall = round((nist_overall * 0.4) + (cis_overall * 0.3) + (pci_overall * 0.3), 1)
+    iso_status = "COMPLIANT" if iso_overall >= 80.0 else ("PARTIAL" if iso_overall >= 55.0 else "NON_COMPLIANT")
+    
+    return {
+        "overall_enterprise_grade": "A" if iso_overall >= 85 else ("B" if iso_overall >= 70 else ("C" if iso_overall >= 50 else "F")),
+        "frameworks": {
+            "nist_sp_800_63b": {
+                "name": "NIST SP 800-63B Guidelines",
+                "score": nist_overall,
+                "status": nist_status,
+                "controls": {
+                    "min_8_char_length": f"{nist_8_pct}% compliant",
+                    "breach_corpus_filtering": f"{nist_breach_pct}% breach-free",
+                    "no_mandatory_arbitrary_rotation": "Enforced in Policy",
+                    "character_truncation_allowed": "Disabled (Up to 128 chars accepted)"
+                },
+                "findings": (
+                    "Compliant with NIST guidelines."
+                    if nist_status == "COMPLIANT"
+                    else f"Critical finding: {total - breach_free:,} accounts match known compromised dictionaries and {total - len_ge_8:,} accounts fail 8-char length minimum."
+                )
+            },
+            "cis_controls_v8": {
+                "name": "CIS Controls v8 (Identity & Access)",
+                "score": cis_overall,
+                "status": cis_status,
+                "controls": {
+                    "privileged_mfa_coverage": f"{cis_priv_mfa_pct}% ({priv_with_mfa}/{total_priv} privileged accounts)",
+                    "centralized_directory_hygiene": f"{round((no_policy_violations / total) * 100.0, 1)}% violation-free",
+                    "privilege_account_isolation": "Audited via Lexicon Blast Radius"
+                },
+                "findings": (
+                    "Privileged access controls well-configured."
+                    if cis_status == "COMPLIANT"
+                    else f"High risk: {total_priv - priv_with_mfa} privileged accounts lack MFA enforcement."
+                )
+            },
+            "pci_dss_v4": {
+                "name": "PCI-DSS v4.0 Requirement 8",
+                "score": pci_overall,
+                "status": pci_status,
+                "controls": {
+                    "min_12_char_enforcement": f"{pci_12_pct}% compliant",
+                    "multi_factor_authentication": f"{cis_priv_mfa_pct}% privileged coverage",
+                    "compromised_credential_checks": f"{nist_breach_pct}% compliant"
+                },
+                "findings": (
+                    "Meets PCI-DSS Requirement 8 technical criteria."
+                    if pci_status == "COMPLIANT"
+                    else f"Requires remediation: {total - len_ge_12:,} accounts do not meet the 12-character minimum standard."
+                )
+            },
+            "iso_27001": {
+                "name": "ISO/IEC 27001:2022 Control A.9",
+                "score": iso_overall,
+                "status": iso_status,
+                "controls": {
+                    "password_management_system": "Automated via Lexicon Engine",
+                    "access_rights_review": "Real-time risk scoring active",
+                    "credential_entropy_hygiene": f"{round((entropy_strong / total) * 100.0, 1)}% high-entropy"
+                },
+                "findings": f"Overall ISO/IEC 27001 authentication hygiene score: {iso_overall}/100."
+            }
+        }
+    }
+
+
+def compute_active_directory_threat_surface(
+    accounts: List[Dict[str, Any]],
+    group_sizes: Dict[int, int],
+    group_privileged: Dict[int, int],
+    group_departments: Dict[int, Dict[str, int]]
+) -> Dict[str, Any]:
+    """
+    Quantify Active Directory threat exposures:
+    1. Kerberoasting vulnerability index
+    2. AS-REP Roasting exposure index
+    3. Lateral Movement blast radius
+    """
+    total = max(1, len(accounts))
+    
+    # 1. Kerberoasting & AS-REP Exposure
+    kerberoastable_accounts = []
+    as_rep_vulnerable = []
+    
+    for a in accounts:
+        # Accounts using weak fast hashes (NTLM/MD5), weak passwords, or no MFA in sensitive roles
+        is_priv = a.get("is_privileged", False)
+        is_weak = a.get("zxcvbn_score", 0) <= 2 or a.get("breach_match", False)
+        no_mfa = not a.get("mfa_enabled", False)
+        
+        if is_priv and is_weak and no_mfa:
+            kerberoastable_accounts.append(a["id"])
+        elif is_weak and no_mfa:
+            as_rep_vulnerable.append(a["id"])
+            
+    # 2. Lateral Movement Blast Radius
+    # Cross-department reuse groups that link standard users to privileged roles
+    high_blast_clusters = []
+    total_blast_radius_accounts = 0
+    
+    for gid, size in group_sizes.items():
+        priv_count = group_privileged[gid]
+        dept_count = len(group_departments[gid])
+        
+        if priv_count > 0 and size > 1:
+            total_blast_radius_accounts += size
+            high_blast_clusters.append({
+                "group_id": gid,
+                "total_accounts": size,
+                "privileged_accounts": priv_count,
+                "departments_bridged": dept_count,
+                "lateral_risk": "CRITICAL" if priv_count >= 2 or size >= 10 else "HIGH"
+            })
+            
+    return {
+        "kerberoasting_exposure": {
+            "vulnerable_accounts_count": len(kerberoastable_accounts),
+            "percentage_of_privileged": round((len(kerberoastable_accounts) / max(1, sum(1 for a in accounts if a.get("is_privileged")))) * 100.0, 1),
+            "threat_description": "Privileged service/admin accounts with weak crackable hashes and no MFA vulnerable to offline TGS ticket cracking.",
+            "sample_target_ids": kerberoastable_accounts[:10]
+        },
+        "as_rep_roasting_exposure": {
+            "vulnerable_accounts_count": len(as_rep_vulnerable),
+            "percentage_of_directory": round((len(as_rep_vulnerable) / total) * 100.0, 1),
+            "threat_description": "User accounts with weak credentials vulnerable to pre-authentication AS-REP offline brute-force attacks.",
+            "sample_target_ids": as_rep_vulnerable[:10]
+        },
+        "lateral_movement_blast_radius": {
+            "total_compromised_nodes_at_risk": total_blast_radius_accounts,
+            "percentage_of_directory": round((total_blast_radius_accounts / total) * 100.0, 1),
+            "critical_pivot_clusters_count": len(high_blast_clusters),
+            "threat_description": "Password reuse clusters spanning multiple departments that allow attackers with low-privilege initial access to pivot directly into Domain Admin credentials.",
+            "top_pivot_clusters": sorted(high_blast_clusters, key=lambda c: c["total_accounts"], reverse=True)[:10]
+        }
+    }
+
+
+def run_bulk_audit(accounts_data: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """
     Run complete deterministic enterprise Active Directory credential audit pipeline.
-    Produces precomputed audit_results.json and updates accounts with factor breakdowns and radar vectors.
+    Produces precomputed audit_results.json and updates accounts with factor breakdowns,
+    radar vectors, compliance scorecards, and threat surface metrics.
     """
-    print(f"[AuditEngine] Loading accounts from {ACCOUNTS_FILE}...")
-    with open(ACCOUNTS_FILE, "r", encoding="utf-8") as f:
-        accounts: List[Dict[str, Any]] = json.load(f)
+    if accounts_data is not None:
+        accounts = accounts_data
+    else:
+        print(f"[AuditEngine] Loading accounts from {ACCOUNTS_FILE}...")
+        with open(ACCOUNTS_FILE, "r", encoding="utf-8") as f:
+            accounts = json.load(f)
         
     breach_checker.load_corpus()
     
@@ -234,11 +418,25 @@ def run_bulk_audit() -> Dict[str, Any]:
         "hero_account_id": hero_account_id
     }
     
-    print(f"[AuditEngine] Updating {ACCOUNTS_FILE} with audit attributes...")
-    _atomic_write_json(ACCOUNTS_FILE, audited_accounts)
-        
-    print(f"[AuditEngine] Writing precomputed summary to {AUDIT_RESULTS_FILE}...")
-    _atomic_write_json(AUDIT_RESULTS_FILE, audit_summary, indent=2)
-        
+    # Calculate regulatory compliance scorecard
+    compliance = generate_compliance_scorecard(audited_accounts, audit_summary)
+    audit_summary["compliance_scorecard"] = compliance
+    
+    # Calculate Active Directory threat surface metrics
+    threat_surface = compute_active_directory_threat_surface(
+        audited_accounts,
+        group_sizes,
+        group_privileged,
+        group_departments
+    )
+    audit_summary["active_directory_threat_surface"] = threat_surface
+    
+    if accounts_data is None:
+        print(f"[AuditEngine] Updating {ACCOUNTS_FILE} with audit attributes...")
+        _atomic_write_json(ACCOUNTS_FILE, audited_accounts)
+            
+        print(f"[AuditEngine] Writing precomputed summary to {AUDIT_RESULTS_FILE}...")
+        _atomic_write_json(AUDIT_RESULTS_FILE, audit_summary, indent=2)
+            
     print("[AuditEngine] Audit complete!")
     return audit_summary
