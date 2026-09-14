@@ -210,7 +210,89 @@ export const UserPanel: React.FC<UserPanelProps> = ({
   }
 
   const isBlocked = account?.is_blocked;
-  const userScore = account ? Math.max(10, Math.round((1 - account.final_risk) * 100)) : 85;
+
+  // Dynamic Risk Theme Calculus based on authentic backend final_risk & final_tier
+  const getAccountRiskTheme = () => {
+    if (!account) {
+      return {
+        tier: "Low",
+        score: 85,
+        color: "#34C759",
+        textColor: "text-[#34C759]",
+        bgColor: "bg-[#34C759]/10",
+        borderColor: "border-[#34C759]/20",
+        strokeColor: "#34C759",
+        badgeText: "Shielded Identity",
+        statusLabel: "Healthy Organizational Posture",
+        subtext: "Continuous monitoring active",
+        icon: ShieldCheck,
+      };
+    }
+
+    const score = Math.max(5, Math.min(100, Math.round((1 - account.final_risk) * 100)));
+    const tier = account.final_tier || (account.final_risk < 0.25 ? "Low" : account.final_risk < 0.5 ? "Medium" : account.final_risk < 0.75 ? "High" : "Critical");
+
+    if (tier === "Critical" || account.final_risk >= 0.75) {
+      return {
+        tier: "Critical",
+        score,
+        color: "#FF3B30",
+        textColor: "text-[#FF3B30]",
+        bgColor: "bg-[#FF3B30]/10",
+        borderColor: "border-[#FF3B30]/20",
+        strokeColor: "#FF3B30",
+        badgeText: "Critical Risk • Action Required",
+        statusLabel: "Critical Exposure Detected",
+        subtext: "Compounding Active Directory vulnerabilities",
+        icon: ShieldAlert,
+      };
+    } else if (tier === "High" || account.final_risk >= 0.5) {
+      return {
+        tier: "High",
+        score,
+        color: "#FF9500",
+        textColor: "text-[#FF9500]",
+        bgColor: "bg-[#FF9500]/10",
+        borderColor: "border-[#FF9500]/20",
+        strokeColor: "#FF9500",
+        badgeText: "High Risk • Action Queued",
+        statusLabel: "Elevated Security Exposure",
+        subtext: "Credential update recommended by SOC",
+        icon: AlertTriangle,
+      };
+    } else if (tier === "Medium" || account.final_risk >= 0.25) {
+      return {
+        tier: "Medium",
+        score,
+        color: "#F59E0B",
+        textColor: "text-[#D97706]",
+        bgColor: "bg-[#F59E0B]/10",
+        borderColor: "border-[#F59E0B]/20",
+        strokeColor: "#F59E0B",
+        badgeText: "Moderate Risk • Policy Review",
+        statusLabel: "Moderate Exposure Posture",
+        subtext: "Password hardening suggested",
+        icon: AlertTriangle,
+      };
+    } else {
+      return {
+        tier: "Low",
+        score,
+        color: "#34C759",
+        textColor: "text-[#34C759]",
+        bgColor: "bg-[#34C759]/10",
+        borderColor: "border-[#34C759]/20",
+        strokeColor: "#34C759",
+        badgeText: "Shielded Identity",
+        statusLabel: "Healthy Organizational Posture",
+        subtext: "Continuous monitoring active",
+        icon: ShieldCheck,
+      };
+    }
+  };
+
+  const riskTheme = getAccountRiskTheme();
+  const StatusIcon = riskTheme.icon;
 
   return (
     <div className="w-full min-h-screen bg-[#F5F5F7] text-[#1D1D1F] pb-24">
@@ -219,7 +301,9 @@ export const UserPanel: React.FC<UserPanelProps> = ({
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-semibold text-sm ${
-              isBlocked ? "bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20" : "bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20"
+              isBlocked
+                ? "bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20"
+                : `${riskTheme.bgColor} ${riskTheme.textColor} border ${riskTheme.borderColor}`
             }`}>
               {account?.username ? account.username.slice(0, 2).toUpperCase() : "US"}
             </div>
@@ -236,9 +320,9 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                     <span>Access Suspended</span>
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#34C759]/10 text-[#34C759] border border-[#34C759]/20 flex items-center space-x-1">
-                    <ShieldCheck className="w-3 h-3" />
-                    <span>Shielded Identity</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${riskTheme.bgColor} ${riskTheme.textColor} border ${riskTheme.borderColor} flex items-center space-x-1`}>
+                    <StatusIcon className="w-3 h-3" />
+                    <span>{riskTheme.badgeText}</span>
                   </span>
                 )}
               </div>
@@ -641,62 +725,87 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       />
                       <path
-                        className="text-[#34C759]"
-                        strokeDasharray={`${userScore}, 100`}
+                        stroke={riskTheme.strokeColor}
+                        strokeDasharray={`${riskTheme.score}, 100`}
                         strokeWidth="3.2"
                         strokeLinecap="round"
-                        stroke="currentColor"
                         fill="none"
                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       />
                     </svg>
                     <div className="absolute flex flex-col items-center">
-                      <span className="text-3xl font-semibold text-[#1D1D1F]">{userScore}</span>
+                      <span className="text-3xl font-semibold text-[#1D1D1F]">{riskTheme.score}</span>
                       <span className="text-[10px] uppercase font-bold text-[#86868B] tracking-wider">
                         / 100
                       </span>
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-[#34C759] mt-3">
-                    Healthy Organizational Posture
+                  <span className={`text-xs font-semibold ${riskTheme.textColor} mt-3`}>
+                    {riskTheme.statusLabel}
                   </span>
-                  <span className="text-[11px] text-[#86868B] mt-0.5">
-                    Continuous monitoring active
+                  <span className="text-[11px] text-[#86868B] mt-0.5 text-center">
+                    {riskTheme.subtext}
                   </span>
                 </div>
 
                 {/* Score Breakdown Metrics */}
                 <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {/* Entropy Card */}
                   <div className="p-3.5 bg-[#FAFAFC] rounded-xl border border-black/[0.04]">
                     <span className="text-[11px] text-[#86868B] block">Entropy Strength</span>
                     <span className="text-base font-semibold text-[#1D1D1F] mt-1 block">
-                      {account?.zxcvbn_score ? `${account.zxcvbn_score * 18} bits` : "58.4 bits"}
+                      {account?.entropy_score ? `${account.entropy_score.toFixed(1)} bits` : (account?.zxcvbn_score ? `${account.zxcvbn_score * 18} bits` : "58.4 bits")}
                     </span>
-                    <span className="text-[10px] text-[#34C759]">High Resistance</span>
+                    <span className={`text-[10px] font-medium ${
+                      (account?.zxcvbn_score ?? 3) >= 3
+                        ? "text-[#34C759]"
+                        : (account?.zxcvbn_score === 2 ? "text-[#F59E0B]" : "text-[#FF3B30]")
+                    }`}>
+                      {(account?.zxcvbn_score ?? 3) >= 3
+                        ? "High Resistance"
+                        : ((account?.zxcvbn_score === 2) ? "Moderate Entropy" : "Vulnerable Entropy")}
+                    </span>
                   </div>
 
+                  {/* Breach Immunity Card */}
                   <div className="p-3.5 bg-[#FAFAFC] rounded-xl border border-black/[0.04]">
                     <span className="text-[11px] text-[#86868B] block">Breach Immunity</span>
-                    <span className="text-base font-semibold text-[#34C759] mt-1 block">
-                      {account?.breach_match ? "Found in Dump" : "0 Found"}
+                    <span className={`text-base font-semibold mt-1 block ${account?.breach_match ? "text-[#FF3B30]" : "text-[#34C759]"}`}>
+                      {account?.breach_match ? "Breach Match" : "0 Found"}
                     </span>
-                    <span className="text-[10px] text-[#6E6E73]">Clean in 12B corpus</span>
+                    <span className={`text-[10px] ${account?.breach_match ? "text-[#FF3B30] font-medium" : "text-[#6E6E73]"}`}>
+                      {account?.breach_match ? "Found in Known Dumps" : "Clean in 12B corpus"}
+                    </span>
                   </div>
 
+                  {/* Lateral Exposure Card */}
                   <div className="p-3.5 bg-[#FAFAFC] rounded-xl border border-black/[0.04]">
                     <span className="text-[11px] text-[#86868B] block">Lateral Exposure</span>
                     <span className="text-base font-semibold text-[#1D1D1F] mt-1 block">
                       {account?.password_group_id ? `Cluster #${account.password_group_id}` : "Isolated"}
                     </span>
-                    <span className="text-[10px] text-[#34C759]">0 Unmitigated Risks</span>
+                    <span className={`text-[10px] font-medium ${account?.password_group_id ? "text-[#FF3B30]" : "text-[#34C759]"}`}>
+                      {account?.password_group_id ? "Reused in AD Family" : "0 Lateral Links"}
+                    </span>
                   </div>
 
+                  {/* Rotation Interval Card */}
                   <div className="p-3.5 bg-[#FAFAFC] rounded-xl border border-black/[0.04]">
                     <span className="text-[11px] text-[#86868B] block">Rotation Interval</span>
                     <span className="text-base font-semibold text-[#1D1D1F] mt-1 block">
-                      {account?.last_remediated_at ? "Recently Updated" : "42 days"}
+                      {account?.last_remediated_at
+                        ? "Recently Updated"
+                        : (riskTheme.tier === "Critical" || riskTheme.tier === "High" ? "Action Mandated" : "Quarterly Cycle")}
                     </span>
-                    <span className="text-[10px] text-[#FF9500]">Quarterly SOC 2 cycle</span>
+                    <span className={`text-[10px] font-medium ${
+                      account?.last_remediated_at
+                        ? "text-[#34C759]"
+                        : (riskTheme.tier === "Critical" ? "text-[#FF3B30]" : (riskTheme.tier === "High" ? "text-[#FF9500]" : "text-[#86868B]"))
+                    }`}>
+                      {account?.last_remediated_at
+                        ? "Remediated & Verified"
+                        : (riskTheme.tier === "Critical" || riskTheme.tier === "High" ? "Immediate Reset Required" : "Quarterly SOC 2 cycle")}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -729,43 +838,102 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                 </div>
               </div>
 
-              {/* Tool 2: Password Policy & MFA status */}
+              {/* Tool 2: Password Policy & Compliance status */}
               <div className="apple-card p-6 bg-white border border-black/[0.06] rounded-2xl shadow-card flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center space-x-2 text-xs font-semibold text-[#34C759] uppercase tracking-wider mb-2">
+                  <div className={`flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider mb-2 ${
+                    account?.policy_violations && account.policy_violations.length > 0
+                      ? "text-[#FF3B30]"
+                      : "text-[#34C759]"
+                  }`}>
                     <Lock className="w-4 h-4" />
-                    <span>Corporate Security Mandate</span>
+                    <span>
+                      {account?.policy_violations && account.policy_violations.length > 0
+                        ? "Policy Enforcement Required"
+                        : "Corporate Security Mandate"}
+                    </span>
                   </div>
                   <h3 className="text-base font-semibold text-[#1D1D1F]">
-                    Your account protects the organizational perimeter
+                    {account?.policy_violations && account.policy_violations.length > 0
+                      ? "Credential Policy Discrepancies Identified"
+                      : "Your account protects the organizational perimeter"}
                   </h3>
                   <div className="space-y-2.5 mt-4">
+                    {/* Check 1: Length */}
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#6E6E73] flex items-center space-x-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
+                        {account?.policy_violations?.some(v => v.toLowerCase().includes("length") || v.toLowerCase().includes("short")) ? (
+                          <XCircle className="w-3.5 h-3.5 text-[#FF3B30]" />
+                        ) : (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
+                        )}
                         <span>Minimum Length: 12 characters</span>
                       </span>
-                      <span className="font-semibold text-[#1D1D1F]">Passed</span>
+                      <span className={`font-semibold ${
+                        account?.policy_violations?.some(v => v.toLowerCase().includes("length") || v.toLowerCase().includes("short"))
+                          ? "text-[#FF3B30]"
+                          : "text-[#1D1D1F]"
+                      }`}>
+                        {account?.policy_violations?.some(v => v.toLowerCase().includes("length") || v.toLowerCase().includes("short"))
+                          ? "Failed (< 12)"
+                          : "Passed"}
+                      </span>
                     </div>
+
+                    {/* Check 2: Entropy */}
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#6E6E73] flex items-center space-x-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
+                        {(account?.zxcvbn_score ?? 3) < 3 || account?.policy_violations?.some(v => v.toLowerCase().includes("entropy") || v.toLowerCase().includes("complexity")) ? (
+                          <XCircle className="w-3.5 h-3.5 text-[#FF3B30]" />
+                        ) : (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
+                        )}
                         <span>Entropy & Diversity Standard</span>
                       </span>
-                      <span className="font-semibold text-[#1D1D1F]">Passed (zxcvbn 4/4)</span>
+                      <span className={`font-semibold ${
+                        (account?.zxcvbn_score ?? 3) < 3
+                          ? "text-[#FF3B30]"
+                          : "text-[#1D1D1F]"
+                      }`}>
+                        {(account?.zxcvbn_score ?? 3) < 3
+                          ? `Failed (zxcvbn ${account?.zxcvbn_score || 1}/4)`
+                          : "Passed (zxcvbn 4/4)"}
+                      </span>
                     </div>
+
+                    {/* Check 3: Banned patterns / dictionary */}
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#6E6E73] flex items-center space-x-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
+                        {account?.policy_violations?.some(v => v.toLowerCase().includes("pattern") || v.toLowerCase().includes("brand") || v.toLowerCase().includes("dictionary") || v.toLowerCase().includes("leetspeak")) || account?.breach_match ? (
+                          <XCircle className="w-3.5 h-3.5 text-[#FF3B30]" />
+                        ) : (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
+                        )}
                         <span>Banned Patterns & Dictionary Shield</span>
                       </span>
-                      <span className="font-semibold text-[#1D1D1F]">Passed</span>
+                      <span className={`font-semibold ${
+                        account?.policy_violations?.some(v => v.toLowerCase().includes("pattern") || v.toLowerCase().includes("brand") || v.toLowerCase().includes("dictionary") || v.toLowerCase().includes("leetspeak")) || account?.breach_match
+                          ? "text-[#FF3B30]"
+                          : "text-[#1D1D1F]"
+                      }`}>
+                        {account?.policy_violations?.some(v => v.toLowerCase().includes("pattern") || v.toLowerCase().includes("brand") || v.toLowerCase().includes("dictionary") || v.toLowerCase().includes("leetspeak")) || account?.breach_match
+                          ? "Violation Detected"
+                          : "Passed"}
+                      </span>
                     </div>
                   </div>
                 </div>
                 <div className="pt-4 border-t border-black/[0.04] flex items-center justify-between text-[11px] text-[#86868B]">
                   <span>Enforced by Lexicon FGPP Governance</span>
-                  <span className="text-[#34C759] font-medium">100% Compliant</span>
+                  <span className={`font-medium ${
+                    account?.policy_violations && account.policy_violations.length > 0
+                      ? "text-[#FF3B30]"
+                      : "text-[#34C759]"
+                  }`}>
+                    {account?.policy_violations && account.policy_violations.length > 0
+                      ? `${account.policy_violations.length} Policy Violations`
+                      : "100% Compliant"}
+                  </span>
                 </div>
               </div>
             </div>
