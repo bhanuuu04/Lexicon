@@ -20,8 +20,13 @@ import {
   Eye,
   EyeOff,
   Building2,
+  Cpu,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import { HIBPLiveModal } from "../HIBPCheck/HIBPLiveModal";
+import { evaluatePasswordLive } from "../../lib/api";
+import { PasswordEvaluationResult } from "../../types";
 
 interface UserPanelProps {
   onSwitchToAdmin: () => void;
@@ -29,9 +34,14 @@ interface UserPanelProps {
 
 export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
   const [isHIBPOpen, setIsHIBPOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "activity" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "precheck" | "activity" | "settings">("overview");
   const [mfaEnabled, setMfaEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  // Live test state
+  const [testPassword, setTestPassword] = useState("");
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<PasswordEvaluationResult | null>(null);
 
   // User details
   const user = {
@@ -48,6 +58,27 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
     reuseClusters: 0,
     mfaMethod: "FIDO2 WebAuthn (YubiKey 5C)",
     passwordAgeDays: 42,
+  };
+
+  const handleEvaluateTestPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testPassword) return;
+
+    setIsTesting(true);
+    try {
+      const res = await evaluatePasswordLive({
+        password: testPassword,
+        username: user.email.split("@")[0],
+        department: user.department,
+        role: user.role,
+        custom_inputs: ["Lexicon", "Morgan", "Design"],
+      });
+      setTestResult(res);
+    } catch (err) {
+      console.error("Evaluation failed:", err);
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   const activityLog = [
@@ -123,6 +154,17 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
               Security Posture
             </button>
             <button
+              onClick={() => setActiveTab("precheck")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1 ${
+                activeTab === "precheck"
+                  ? "bg-white text-[#0071E3] shadow-xs font-semibold"
+                  : "text-[#6E6E73] hover:text-[#1D1D1F]"
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5" />
+              <span>zxcvbn Pre-Check</span>
+            </button>
+            <button
               onClick={() => setActiveTab("activity")}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                 activeTab === "activity"
@@ -147,6 +189,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
           <div className="space-y-6">
             {/* Top Score Banner */}
@@ -339,7 +382,158 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
           </div>
         )}
 
-        {/* Activity Tab */}
+        {/* TAB 2: LIVE ZXCVBN PRE-CHECK */}
+        {activeTab === "precheck" && (
+          <div className="space-y-6">
+            <div className="apple-card p-6 sm:p-8 bg-white border border-black/[0.06] rounded-2xl shadow-card space-y-6">
+              <div className="pb-4 border-b border-black/[0.06]">
+                <div className="flex items-center space-x-2 text-xs font-semibold text-[#0071E3] uppercase tracking-wider mb-1">
+                  <Cpu className="w-4 h-4" />
+                  <span>dwolfhub/zxcvbn-python Engine</span>
+                </div>
+                <h3 className="text-lg font-semibold text-[#1D1D1F]">
+                  Enterprise Password Pre-Check & Pattern Analyzer
+                </h3>
+                <p className="text-xs text-[#6E6E73] mt-1 leading-relaxed">
+                  Evaluate potential new passwords against corporate brand word dictionaries, spatial keyboard walks, date patterns, and Active Directory policy rules before updating your credentials.
+                </p>
+              </div>
+
+              <form onSubmit={handleEvaluateTestPassword} className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold uppercase text-[#86868B] block mb-1.5">
+                    Candidate Password to Test
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={testPassword}
+                        onChange={(e) => setTestPassword(e.target.value)}
+                        placeholder="Try entering a password (e.g. LexiconDesign2026!)"
+                        className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                      />
+                      <Lock className="w-4 h-4 text-[#86868B] absolute right-3.5 top-1/2 -translate-y-1/2" />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isTesting || !testPassword}
+                      className="px-6 py-3 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-50 text-white font-medium text-xs flex items-center justify-center space-x-2 shadow-xs transition active:scale-[0.98]"
+                    >
+                      {isTesting ? (
+                        <span>Analyzing...</span>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          <span>Evaluate Password</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              {testResult && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-5 pt-4 border-t border-black/[0.06]"
+                >
+                  {/* Results Metric Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3.5 rounded-xl bg-[#FAFAFC] border border-black/[0.04]">
+                      <span className="text-[10px] text-[#86868B] uppercase font-semibold block">zxcvbn Strength</span>
+                      <span
+                        className={`text-lg font-bold mt-1 block ${
+                          testResult.zxcvbn.score >= 3
+                            ? "text-[#34C759]"
+                            : testResult.zxcvbn.score === 2
+                            ? "text-[#FF9500]"
+                            : "text-[#FF3B30]"
+                        }`}
+                      >
+                        Score {testResult.zxcvbn.score} / 4
+                      </span>
+                      <span className="text-[10px] text-[#86868B]">
+                        {testResult.zxcvbn.score >= 3 ? "Enterprise Strong" : "Vulnerable"}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-[#FAFAFC] border border-black/[0.04]">
+                      <span className="text-[10px] text-[#86868B] uppercase font-semibold block">Entropy Value</span>
+                      <span className="text-lg font-bold text-[#1D1D1F] mt-1 block font-mono">
+                        {testResult.zxcvbn.entropy_bits} bits
+                      </span>
+                      <span className="text-[10px] text-[#86868B]">log10: {testResult.zxcvbn.guesses_log10}</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-[#FAFAFC] border border-black/[0.04]">
+                      <span className="text-[10px] text-[#86868B] uppercase font-semibold block">Fast Hash Crack</span>
+                      <span className="text-sm font-bold text-[#FF3B30] mt-1 block truncate">
+                        {testResult.zxcvbn.crack_times_display.offline_fast_hashing_1e10_per_second}
+                      </span>
+                      <span className="text-[10px] text-[#86868B]">NTLM Offline GPU</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-[#FAFAFC] border border-black/[0.04]">
+                      <span className="text-[10px] text-[#86868B] uppercase font-semibold block">Memory-Hard Crack</span>
+                      <span className="text-sm font-bold text-[#34C759] mt-1 block truncate">
+                        {testResult.zxcvbn.crack_times_display.offline_slow_hashing_1e4_per_second}
+                      </span>
+                      <span className="text-[10px] text-[#86868B]">Argon2id Resistance</span>
+                    </div>
+                  </div>
+
+                  {/* Pattern Anatomy Sequence */}
+                  {testResult.zxcvbn.sequence && testResult.zxcvbn.sequence.length > 0 && (
+                    <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.04] space-y-2">
+                      <span className="text-xs font-semibold text-[#1D1D1F] block">
+                        Pattern Sequence Breakdown:
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {testResult.zxcvbn.sequence.map((seq, idx) => (
+                          <div
+                            key={idx}
+                            className="px-3 py-1.5 rounded-lg bg-white border border-black/[0.06] text-xs font-mono shadow-xs flex items-center space-x-1.5"
+                          >
+                            <span className="font-semibold text-[#0071E3]">{seq.token}</span>
+                            <span className="text-[10px] text-[#86868B] uppercase">
+                              [{seq.pattern}{seq.matched_word ? `: "${seq.matched_word}"` : ""}]
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Policy Violations */}
+                  <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.04] space-y-2">
+                    <span className="text-xs font-semibold text-[#1D1D1F] block">
+                      Corporate Active Directory Policy Check:
+                    </span>
+                    {testResult.policy_violations.length === 0 ? (
+                      <div className="text-xs text-[#34C759] flex items-center space-x-1.5 font-medium">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Meets all organizational complexity and length mandates.</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {testResult.policy_violations.map((violation, idx) => (
+                          <div key={idx} className="text-xs text-[#FF9500] flex items-center space-x-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                            <span>{violation}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: ACTIVITY */}
         {activeTab === "activity" && (
           <div className="apple-card p-6 bg-white border border-black/[0.06] rounded-2xl shadow-card space-y-4">
             <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
@@ -379,7 +573,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
           </div>
         )}
 
-        {/* Settings Tab */}
+        {/* TAB 4: SETTINGS */}
         {activeTab === "settings" && (
           <div className="apple-card p-6 bg-white border border-black/[0.06] rounded-2xl shadow-card space-y-6">
             <div>

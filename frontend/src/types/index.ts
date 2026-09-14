@@ -1,3 +1,42 @@
+export interface ZxcvbnSequenceItem {
+  pattern: string;
+  token: string;
+  matched_word?: string;
+  dictionary_name?: string;
+  guesses_log10?: number;
+}
+
+export interface ZxcvbnCrackTimes {
+  online_throttling_100_per_hour: string;
+  online_no_throttling_10_per_second: string;
+  offline_slow_hashing_1e4_per_second: string;
+  offline_fast_hashing_1e10_per_second: string;
+}
+
+export interface ZxcvbnFeedback {
+  warning: string;
+  suggestions: string[];
+}
+
+export interface ZxcvbnAnalysis {
+  score: number;
+  guesses: string;
+  guesses_log10: number;
+  entropy_bits: number;
+  sequence: ZxcvbnSequenceItem[];
+  crack_times_display: ZxcvbnCrackTimes;
+  crack_times_seconds: Record<string, number>;
+  feedback: ZxcvbnFeedback;
+}
+
+export interface PasswordEvaluationResult {
+  password: string;
+  zxcvbn: ZxcvbnAnalysis;
+  policy_violations: string[];
+  password_weakness: number;
+  is_policy_compliant: boolean;
+}
+
 export interface Account {
   id: string;
   username: string;
@@ -14,6 +53,7 @@ export interface Account {
   hash_argon2id: string;
   policy_violations: string[];
   zxcvbn_score: number;
+  zxcvbn_analysis?: ZxcvbnAnalysis;
   breach_match: boolean;
   baseline_risk: number;
   baseline_tier: "Critical" | "High" | "Medium" | "Low";

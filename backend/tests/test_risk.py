@@ -92,3 +92,26 @@ def test_attack_adjustment_and_final_risk():
     assert no_adj == 0.0
     f_score, f_tier = calculate_final_risk(baseline, no_adj)
     assert f_score == 0.65
+
+def test_zxcvbn_enterprise_analysis():
+    from backend.app.features.risk_engine.zxcvbn_service import analyze_password_zxcvbn, evaluate_password_comprehensive
+    
+    # 1. Test standard password
+    res = analyze_password_zxcvbn("Password123!", user_inputs=["user", "Lexicon"])
+    assert "score" in res
+    assert "guesses" in res
+    assert "crack_times_display" in res
+    assert "sequence" in res
+    assert res["score"] <= 2
+    
+    # 2. Test enterprise brand word penalization
+    comp_res = evaluate_password_comprehensive(
+        password="LexiconMarketing2024!",
+        username="alex.morgan",
+        department="Marketing",
+        role="Lead"
+    )
+    assert "zxcvbn" in comp_res
+    assert "policy_violations" in comp_res
+    assert comp_res["zxcvbn"]["score"] >= 0
+

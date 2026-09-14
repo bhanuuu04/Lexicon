@@ -9,6 +9,10 @@ import {
   AlertTriangle,
   Copy,
   Check,
+  Cpu,
+  Clock,
+  KeyRound,
+  Sparkles,
 } from "lucide-react";
 import { Account } from "../../types";
 import { getTierColor, formatRiskScore, getZxcvbnLabel } from "../../lib/riskFormat";
@@ -31,6 +35,7 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
   const currentTier = account.final_tier || account.baseline_tier;
   const tierStyle = getTierColor(currentTier);
   const zxcvbnInfo = getZxcvbnLabel(account.zxcvbn_score);
+  const zxcvbnAnalysis = account.zxcvbn_analysis;
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -94,28 +99,105 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
             </div>
           </div>
 
+          {/* zxcvbn Password Pattern Anatomy & Crack Times */}
+          {zxcvbnAnalysis && (
+            <div className="p-4 rounded-2xl bg-[#FAFAFC] border border-[#0071E3]/20 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-xs font-semibold text-[#0071E3] uppercase tracking-wider">
+                  <Cpu className="w-4 h-4" />
+                  <span>zxcvbn Pattern Sequence & Entropy</span>
+                </div>
+                <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-white text-[#1D1D1F] border border-black/[0.06]">
+                  {zxcvbnAnalysis.entropy_bits} bits entropy
+                </span>
+              </div>
+
+              {/* Sequence Tokens Anatomy */}
+              {zxcvbnAnalysis.sequence && zxcvbnAnalysis.sequence.length > 0 && (
+                <div>
+                  <span className="text-[11px] text-[#86868B] block mb-1.5 font-medium">
+                    Decomposed Pattern Anatomy:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {zxcvbnAnalysis.sequence.map((seq, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 rounded-lg bg-white border border-black/[0.06] text-xs font-mono flex items-center space-x-1 shadow-xs"
+                      >
+                        <span className="font-semibold text-[#0071E3]">{seq.token}</span>
+                        <span className="text-[10px] text-[#86868B] uppercase">
+                          ({seq.pattern}{seq.matched_word ? `: ${seq.matched_word}` : ""})
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fast vs Slow Hash Crack Times */}
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-black/[0.04] text-xs">
+                <div className="p-2.5 rounded-xl bg-white border border-black/[0.04]">
+                  <span className="text-[10px] text-[#86868B] uppercase block font-semibold flex items-center space-x-1">
+                    <Clock className="w-3 h-3 text-[#FF3B30]" />
+                    <span>NTLM Fast Hash (Offline GPU)</span>
+                  </span>
+                  <span className="text-xs font-semibold text-[#FF3B30] mt-0.5 block">
+                    {zxcvbnAnalysis.crack_times_display.offline_fast_hashing_1e10_per_second}
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white border border-black/[0.04]">
+                  <span className="text-[10px] text-[#86868B] uppercase block font-semibold flex items-center space-x-1">
+                    <Clock className="w-3 h-3 text-[#34C759]" />
+                    <span>Argon2id Slow Hash (Memory-Hard)</span>
+                  </span>
+                  <span className="text-xs font-semibold text-[#34C759] mt-0.5 block">
+                    {zxcvbnAnalysis.crack_times_display.offline_slow_hashing_1e4_per_second}
+                  </span>
+                </div>
+              </div>
+
+              {/* Suggestions / Warning */}
+              {(zxcvbnAnalysis.feedback.warning || (zxcvbnAnalysis.feedback.suggestions && zxcvbnAnalysis.feedback.suggestions.length > 0)) && (
+                <div className="text-xs text-[#6E6E73] p-2.5 rounded-xl bg-white border border-black/[0.04] space-y-1">
+                  {zxcvbnAnalysis.feedback.warning && (
+                    <div className="text-[#FF9500] font-medium flex items-center space-x-1">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{zxcvbnAnalysis.feedback.warning}</span>
+                    </div>
+                  )}
+                  {zxcvbnAnalysis.feedback.suggestions.map((sugg, i) => (
+                    <div key={i} className="text-[11px] text-[#6E6E73]">
+                      • {sugg}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Password Intelligence */}
           <div className="space-y-3">
             <h4 className="text-xs uppercase text-[#86868B] tracking-wider font-semibold">
-              Password Intelligence & Audit Telemetry
+              Enterprise Audit Telemetry
             </h4>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
-                <span className="text-[11px] text-[#6E6E73] block font-medium">zxcvbn Entropy Score</span>
+                <span className="text-[11px] text-[#6E6E73] block font-medium">zxcvbn Strength</span>
                 <span className={`text-sm font-semibold mt-1 block ${zxcvbnInfo.color}`}>
                   {zxcvbnInfo.label}
                 </span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04]">
-                <span className="text-[11px] text-[#6E6E73] block font-medium">Synthetic Breach Corpus</span>
+                <span className="text-[11px] text-[#6E6E73] block font-medium">Breach Corpus Status</span>
                 <span
                   className={`text-sm font-semibold mt-1 block ${
                     account.breach_match ? "text-[#FF3B30]" : "text-[#34C759]"
                   }`}
                 >
-                  {account.breach_match ? "Compromised Match" : "No Breach Match"}
+                  {account.breach_match ? "Compromised Match" : "Clean (No Match)"}
                 </span>
               </div>
 
@@ -201,90 +283,30 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-[#86868B] italic">
-                No bounded simulation performed yet for this account. Launch Attack Lab below to test deterministic mutation resistance.
+              <p className="text-xs text-[#86868B]">
+                No client-side attack simulation has been executed on this account yet.
               </p>
             )}
           </div>
-
-          {/* Cryptographic Hashes Inspection */}
-          <div className="space-y-2 text-xs">
-            <h4 className="text-xs uppercase text-[#86868B] tracking-wider font-semibold">Cryptographic Hashes</h4>
-            
-            {/* MD5 */}
-            <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
-              <div className="truncate mr-2">
-                <span className="text-[#86868B] uppercase text-[10px] block font-semibold">MD5 Digest</span>
-                <span className="text-[#1D1D1F] font-mono truncate block text-[11px]">{account.hash_md5}</span>
-              </div>
-              <button
-                onClick={() => copyToClipboard(account.hash_md5, "md5")}
-                className="p-1.5 rounded-lg bg-white text-[#6E6E73] hover:text-[#1D1D1F] border border-black/[0.06] shadow-xs transition"
-              >
-                {copiedKey === "md5" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-
-            {/* SHA-256 */}
-            <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
-              <div className="truncate mr-2">
-                <span className="text-[#86868B] uppercase text-[10px] block font-semibold">SHA-256 Digest</span>
-                <span className="text-[#1D1D1F] font-mono truncate block text-[11px]">{account.hash_sha256}</span>
-              </div>
-              <button
-                onClick={() => copyToClipboard(account.hash_sha256, "sha256")}
-                className="p-1.5 rounded-lg bg-white text-[#6E6E73] hover:text-[#1D1D1F] border border-black/[0.06] shadow-xs transition"
-              >
-                {copiedKey === "sha256" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-
-            {/* bcrypt */}
-            <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
-              <div className="truncate mr-2">
-                <span className="text-[#86868B] uppercase text-[10px] block font-semibold">bcrypt Hash</span>
-                <span className="text-[#1D1D1F] font-mono truncate block text-[11px]">{account.hash_bcrypt}</span>
-              </div>
-              <button
-                onClick={() => copyToClipboard(account.hash_bcrypt, "bcrypt")}
-                className="p-1.5 rounded-lg bg-white text-[#6E6E73] hover:text-[#1D1D1F] border border-black/[0.06] shadow-xs transition"
-              >
-                {copiedKey === "bcrypt" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-
-            {/* Argon2id */}
-            <div className="p-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
-              <div className="truncate mr-2">
-                <span className="text-[#86868B] uppercase text-[10px] block font-semibold">Argon2id Hash</span>
-                <span className="text-[#1D1D1F] font-mono truncate block text-[11px]">{account.hash_argon2id}</span>
-              </div>
-              <button
-                onClick={() => copyToClipboard(account.hash_argon2id, "argon2id")}
-                className="p-1.5 rounded-lg bg-white text-[#6E6E73] hover:text-[#1D1D1F] border border-black/[0.06] shadow-xs transition"
-              >
-                {copiedKey === "argon2id" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Footer Action Button */}
-        <div className="pt-6 border-t border-black/[0.06] mt-6">
+        {/* Action Buttons */}
+        <div className="pt-6 border-t border-black/[0.06] flex items-center space-x-3">
           <button
-            onClick={() => {
-              onClose();
-              onLaunchAttack(account);
-            }}
-            className="w-full py-3 px-4 rounded-xl bg-[#FF3B30] hover:bg-[#E02E24] text-white font-semibold flex items-center justify-center space-x-2 transition shadow-sm active:scale-[0.98]"
+            onClick={() => onLaunchAttack(account)}
+            className="flex-1 py-3 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white font-medium text-xs flex items-center justify-center space-x-2 shadow-sm transition active:scale-[0.98]"
           >
             <Zap className="w-4 h-4 text-white" />
-            <span>Launch Account in Attack Lab</span>
+            <span>Simulate Exploit in Attack Lab</span>
+          </button>
+          <button
+            onClick={onClose}
+            className="px-5 py-3 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-[#1D1D1F] text-xs font-medium border border-black/[0.08] transition"
+          >
+            Close
           </button>
         </div>
       </div>
     </div>
   );
 };
-
-

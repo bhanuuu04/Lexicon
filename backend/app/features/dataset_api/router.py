@@ -1,13 +1,25 @@
 import json
 from typing import Optional, List
+from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Query
 from backend.app.config import AUDIT_RESULTS_FILE, ACCOUNTS_FILE
 from backend.app.features.breach_dictionary.service import breach_checker
+from backend.app.features.risk_engine.zxcvbn_service import (
+    analyze_password_zxcvbn,
+    evaluate_password_comprehensive
+)
 
 router = APIRouter(prefix="/api", tags=["dataset"])
 
 _accounts_cache = None
 _audit_cache = None
+
+class EvaluatePasswordRequest(BaseModel):
+    password: str
+    username: Optional[str] = ""
+    department: Optional[str] = ""
+    role: Optional[str] = ""
+    custom_inputs: Optional[List[str]] = []
 
 def get_accounts():
     global _accounts_cache
@@ -43,7 +55,13 @@ def get_hero_account():
     accounts = get_accounts()
     for acc in accounts:
         if acc.get("is_hero") or acc.get("id") == "ACC-00042":
-            return acc
+            acc_copy = dict(acc)
+            if "zxcvbn_analysis" not in acc_copy and "plaintext_password" in acc_copy:
+                acc_copy["zxcvbn_analysis"] = analyze_password_zxcvbn(
+                    acc_copy["plaintext_password"],
+                    user_inputs=[acc_copy.get("username", ""), acc_copy.get("department", ""), acc_copy.get("role", "")]
+                )
+            return acc_copy
     for acc in accounts:
         if acc.get("is_privileged") and acc.get("baseline_tier") == "Critical":
             return acc
@@ -103,12 +121,34 @@ def list_accounts(
 
 @router.get("/dataset/accounts/{account_id}")
 def get_account_detail(account_id: str):
-    """Retrieve detailed profile for a specific account."""
+    """Retrieve detailed profile for a specific account with enriched zxcvbn analysis."""
     accounts = get_accounts()
     for a in accounts:
         if a["id"] == account_id or a["username"].lower() == account_id.lower():
-            return a
+            acc_copy = dict(a)
+            if "zxcvbn_analysis" not in acc_copy and "plaintext_password" in acc_copy:
+                acc_copy["zxcvbn_analysis"] = analyze_password_zxcvbn(
+                    acc_copy["plaintext_password"],
+                    user_inputs=[acc_copy.get("username", ""), acc_copy.get("department", ""), acc_copy.get("role", "")]
+                )
+            return acc_copy
     raise HTTPException(status_code=404, detail=f"Account {account_id} not found")
+
+@router.post("/audit/evaluate-password")
+def evaluate_password_endpoint(payload: EvaluatePasswordRequest):
+    """
+    Live password entropy and policy evaluation using dwolfhub/zxcvbn-python
+    with contextual enterprise user inputs.
+    """
+    if not payload.password:
+        raise HTTPException(status_code=400, detail="Password string cannot be empty")
+    return evaluate_password_comprehensive(
+        password=payload.password,
+        username=payload.username or "",
+        department=payload.department or "",
+        role=payload.role or "",
+        custom_inputs=payload.custom_inputs or []
+    )
 
 @router.get("/dataset/reuse-clusters/{group_id}")
 def get_reuse_cluster_details(group_id: int):

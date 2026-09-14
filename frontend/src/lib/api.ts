@@ -1,4 +1,4 @@
-import { Account, AuditSummary, RemediationReport } from "../types";
+import { Account, AuditSummary, RemediationReport, PasswordEvaluationResult } from "../types";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL !== undefined
@@ -102,6 +102,24 @@ export async function checkHIBPPrefix(prefix: string): Promise<any> {
   const res = await fetch(`${API_BASE}/api/hibp/check-range/${prefix}`);
   if (!res.ok) {
     throw new Error(`HIBP lookup failed`);
+  }
+  return res.json();
+}
+
+export async function evaluatePasswordLive(payload: {
+  password: string;
+  username?: string;
+  department?: string;
+  role?: string;
+  custom_inputs?: string[];
+}): Promise<PasswordEvaluationResult> {
+  const res = await fetch(`${API_BASE}/api/audit/evaluate-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error(`Password evaluation failed`);
   }
   return res.json();
 }
