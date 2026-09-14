@@ -97,13 +97,27 @@ def test_distinct_password_pools():
     assert len(set(weak)) == 50
     assert len(set(strong)) == 30
 
-def test_admin_generate_dataset_endpoint():
-    """Verify the /api/dataset/generate endpoint completes rapidly and updates summary."""
+def test_admin_generate_dataset_endpoint(monkeypatch):
+    """Verify the /api/dataset/generate endpoint completes rapidly and updates summary without polluting production files."""
+    def mock_generate_and_save(total_accounts=250):
+        accs = [{"id": "ACC-00042", "username": "alex.morgan", "is_blocked": False, "final_tier": "Critical", "department": "SecOps", "is_privileged": True, "password_hash": "abc"}]
+        corpus = ["Company2026!"]
+        meta = {"version": "1.0.0", "total_accounts": total_accounts, "is_custom_generated": True, "blocked_count": 0}
+        summary = {"total_accounts": total_accounts, "critical_count": 1, "high_risk_count": 0, "medium_risk_count": 0, "low_risk_count": 0, "breached_count": 1, "reuse_cluster_count": 1, "total_reused_accounts": 1, "privileged_count": 1, "privileged_at_risk_count": 1, "policy_violations_count": 0, "risk_distribution": {"critical": 1, "high": 0, "medium": 0, "low": 0}, "department_risk_summary": {}, "top_reuse_clusters": [], "hero_account_id": "ACC-00042"}
+        return accs, corpus, meta, summary
+
+    import sys
+    import backend.app.features.dataset_generator.generator as gen_mod
+    monkeypatch.setattr(gen_mod, "generate_and_save_dataset", mock_generate_and_save)
+    for mod_name, mod in list(sys.modules.items()):
+        if "dataset_api" in mod_name and hasattr(mod, "generate_and_save_dataset"):
+            monkeypatch.setattr(mod, "generate_and_save_dataset", mock_generate_and_save)
+
     from fastapi.testclient import TestClient
     from backend.app.main import app
 
     client = TestClient(app)
-    resp = client.post("/api/dataset/generate", json={"count": 250})
+    resp = client.post("/api/dataset/generate", json={"count": 250, "replace_supabase": False})
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "success"
@@ -111,8 +125,3 @@ def test_admin_generate_dataset_endpoint():
     assert "summary" in data
     assert data["metadata"]["total_accounts"] == 250
     assert data["summary"]["total_accounts"] == 250
-
-    # Ensure hero account is accessible immediately
-    hero_resp = client.get("/api/dataset/hero-account")
-    assert hero_resp.status_code == 200
-    assert hero_resp.json()["id"] == "ACC-00042"

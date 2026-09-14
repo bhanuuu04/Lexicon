@@ -1,10 +1,12 @@
 import { Account, AuditSummary, RemediationReport, PasswordEvaluationResult } from "../types";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL !== undefined
-    ? process.env.NEXT_PUBLIC_API_URL
+  process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL.trim() !== ""
+    ? process.env.NEXT_PUBLIC_API_URL.trim()
     : typeof window !== "undefined"
     ? ""
+    : process.env.NODE_ENV === "production"
+    ? "https://lexicon-backend-api.onrender.com"
     : "http://127.0.0.1:8000";
 
 export async function fetchAuditSummary(): Promise<AuditSummary> {
