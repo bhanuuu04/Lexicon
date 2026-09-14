@@ -29,6 +29,8 @@ export async function fetchAccounts(params: {
   department?: string;
   is_privileged?: boolean;
   is_breached?: boolean;
+  has_weak_hash?: boolean;
+  has_mfa?: boolean;
   group_id?: number;
   page?: number;
   page_size?: number;
@@ -39,6 +41,8 @@ export async function fetchAccounts(params: {
   if (params.department && params.department !== "ALL") query.set("department", params.department);
   if (params.is_privileged !== undefined) query.set("is_privileged", String(params.is_privileged));
   if (params.is_breached !== undefined) query.set("is_breached", String(params.is_breached));
+  if (params.has_weak_hash !== undefined) query.set("has_weak_hash", String(params.has_weak_hash));
+  if (params.has_mfa !== undefined) query.set("has_mfa", String(params.has_mfa));
   if (params.group_id !== undefined) query.set("group_id", String(params.group_id));
   if (params.page) query.set("page", String(params.page));
   if (params.page_size) query.set("page_size", String(params.page_size));
@@ -86,6 +90,34 @@ export async function submitAttackResult(payload: {
   return res.json();
 }
 
+export async function executeAttackSimulation(payload: {
+  account_id?: string;
+  target_hash?: string;
+  algorithm?: string;
+  org_name?: string;
+  max_candidates?: number;
+  time_budget_seconds?: number;
+}): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/attack/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Failed to run attack simulation`);
+  }
+  return res.json();
+}
+
+export async function fetchHardwareBenchmarks(): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/attack/hardware-benchmarks`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch hardware benchmarks`);
+  }
+  return res.json();
+}
+
 export async function generateRemediationReport(payload: any): Promise<RemediationReport> {
   const res = await fetch(`${API_BASE}/api/remediation/report`, {
     method: "POST",
@@ -94,6 +126,58 @@ export async function generateRemediationReport(payload: any): Promise<Remediati
   });
   if (!res.ok) {
     throw new Error(`Failed to generate remediation report`);
+  }
+  return res.json();
+}
+
+export async function fetchGPOScriptText(): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/remediation/gpo-script`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch GPO PowerShell script`);
+  }
+  return res.text();
+}
+
+export async function fetchDepartmentPlaybook(department: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/remediation/department-playbook/${encodeURIComponent(department)}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch department playbook for ${department}`);
+  }
+  return res.json();
+}
+
+export async function fetchComplianceScorecard(): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/audit/compliance`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch compliance scorecard`);
+  }
+  return res.json();
+}
+
+export async function fetchThreatSurface(): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/audit/threat-surface`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch threat surface metrics`);
+  }
+  return res.json();
+}
+
+export async function fetchBreachStats(): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/breach/stats`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch breach dictionary stats`);
+  }
+  return res.json();
+}
+
+export async function importCustomBreachList(passwords: string[], sourceLabel?: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/breach/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ passwords, source_label: sourceLabel || "Custom Breach Dump" }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to import custom breach list`);
   }
   return res.json();
 }
@@ -366,29 +450,6 @@ export function subscribeToRealtimeEvents(
   };
 }
 
-export async function fetchComplianceScorecard(): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/audit/compliance`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch compliance scorecard");
-  }
-  return res.json();
-}
-
-export async function fetchThreatSurface(): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/audit/threat-surface`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch Active Directory threat surface");
-  }
-  return res.json();
-}
-
-export async function fetchHardwareBenchmarks(): Promise<any> {
-  const res = await fetch(`${API_BASE}/api/attack/hardware-benchmarks`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch hardware benchmarks");
-  }
-  return res.json();
-}
 
 export async function runServerAttackSimulation(payload: {
   account_id: string;
@@ -406,3 +467,4 @@ export async function runServerAttackSimulation(payload: {
   }
   return res.json();
 }
+

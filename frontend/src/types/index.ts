@@ -42,6 +42,11 @@ export interface Account {
   username: string;
   first_name?: string;
   last_name?: string;
+  email?: string;
+  sid?: string;
+  password_age_days?: number;
+  mfa_enabled?: boolean;
+  failed_login_count?: number;
   department: string;
   role: string;
   is_privileged: boolean;
