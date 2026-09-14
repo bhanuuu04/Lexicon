@@ -8,6 +8,7 @@ from backend.app.features.remediation.router import router as remediation_router
 from backend.app.features.hashing.router import router as hashing_router
 from backend.app.features.risk_engine.router import router as risk_router
 from backend.app.features.breach_dictionary.router import router as breach_router
+from backend.app.features.audit.router import router as audit_router
 
 app = FastAPI(
     title="Lexicon — Enterprise Password Risk Intelligence API",
@@ -32,6 +33,7 @@ app.include_router(remediation_router)
 app.include_router(hashing_router)
 app.include_router(risk_router)
 app.include_router(breach_router)
+app.include_router(audit_router)
 
 
 @app.get("/health", tags=["system"])
@@ -60,7 +62,9 @@ def root():
             "summary": "/api/dataset/summary",
             "accounts": "/api/dataset/accounts",
             "hero_account": "/api/dataset/hero-account",
+            "attack_run": "/api/attack/run",
             "attack_result": "/api/attack/result",
+            "audit_compliance": "/api/audit/compliance",
             "remediation_report": "/api/remediation/report"
         }
     }

@@ -1,5 +1,8 @@
 import pytest
 import time
+from fastapi.testclient import TestClient
+
+from backend.app.main import app
 from backend.app.features.hashing.service import compute_md5, compute_sha256, compute_bcrypt
 from backend.app.features.attack_lab.mutation_engine import (
     generate_candidates,
@@ -8,8 +11,15 @@ from backend.app.features.attack_lab.mutation_engine import (
     YEARS,
     SPECIALS,
 )
-from backend.app.features.attack_lab.attack_runner import run_attack, AttackState
+from backend.app.features.attack_lab.attack_runner import (
+    run_attack,
+    AttackState,
+    get_hardware_benchmark_matrix,
+    estimate_hardware_crack_times
+)
 from backend.app.models import AttackResultPayload
+
+client = TestClient(app)
 
 
 def test_mutation_engine_candidate_generation():
@@ -41,11 +51,36 @@ def test_mutation_engine_includes_org_name():
     assert "LexiconOrg2026!" in candidates or "Lexiconorg2026!" in candidates
 
 
+def test_mutation_engine_identity_context_and_keyboard_walks():
+    """Verify user context and spatial walks are included in candidate generation."""
+    user_ctx = {
+        "username": "amorgan",
+        "first_name": "Alex",
+        "last_name": "Morgan",
+        "department": "IT_Engineering"
+    }
+    candidates = list(generate_candidates(max_candidates=1000, user_context=user_ctx))
+    assert "Alex2026!" in candidates or "Morgan2026!" in candidates or "AlexMorgan" in candidates
+    assert any("1qaz" in c or "qwer" in c for c in candidates)
+
+
 def test_leetspeak_variant_capping():
     """Ensure leetspeak generation is bounded to prevent explosion."""
     variants = generate_leetspeak_variants("password", max_variants=8)
     assert len(variants) <= 8
     assert all(isinstance(v, str) for v in variants)
+
+
+def test_hardware_benchmark_matrix_and_crack_time_estimates():
+    """Verify hardware benchmark profiles and time-to-crack formulas."""
+    matrix = get_hardware_benchmark_matrix()
+    assert "profiles" in matrix
+    assert "gpu_single_rtx4090" in matrix["profiles"]
+    assert "gpu_cluster_8x_4090" in matrix["profiles"]
+    
+    estimates = estimate_hardware_crack_times("MD5", 50000)
+    assert "gpu_single_rtx4090" in estimates
+    assert estimates["gpu_single_rtx4090"]["estimated_seconds"] < 1.0
 
 
 def test_attack_runner_finds_known_password_md5():
@@ -69,6 +104,7 @@ def test_attack_runner_finds_known_password_md5():
     assert result["candidates_tested"] > 0
     assert result["elapsed_ms"] >= 0.0
     assert result["state"] == AttackState.RESULT_DISPLAYED.value
+    assert "hardware_estimates" in result
 
 
 def test_attack_runner_finds_known_password_sha256():
@@ -174,3 +210,28 @@ def test_attack_result_payload_contract_compatibility():
     assert payload.account_id == "ACC-00042"
     assert payload.matched is True
     assert payload.matched_rule == "Welcome2026!"
+
+
+def test_attack_api_live_run_and_benchmarks():
+    """Test POST /api/attack/run and GET /api/attack/hardware-benchmarks endpoints."""
+    # 1. Hardware benchmarks
+    bench_resp = client.get("/api/attack/hardware-benchmarks")
+    assert bench_resp.status_code == 200
+    b_data = bench_resp.json()
+    assert "profiles" in b_data
+    assert "gpu_cluster_8x_4090" in b_data["profiles"]
+
+    # 2. Live simulation run against custom hash
+    pwd = "Company2026!"
+    h = compute_md5(pwd)
+    run_resp = client.post("/api/attack/run", json={
+        "target_hash": h,
+        "algorithm": "MD5",
+        "org_name": "Company",
+        "max_candidates": 2000
+    })
+    assert run_resp.status_code == 200
+    r_data = run_resp.json()
+    assert r_data["matched"] is True
+    assert r_data["matched_rule"] == pwd
+    assert "hardware_estimates" in r_data

@@ -131,3 +131,40 @@ def test_remediation_gpo_powershell_and_playbooks():
     assert it_resp.status_code == 200
     it_data = it_resp.json()
     assert "Information Technology" in it_data["department"]
+
+def test_audit_api_compliance_and_threat_surface():
+    # 1. GET /api/audit/compliance
+    comp_resp = client.get("/api/audit/compliance")
+    assert comp_resp.status_code == 200
+    c_data = comp_resp.json()
+    assert "frameworks" in c_data
+    assert "nist_sp_800_63b" in c_data["frameworks"]
+    assert "cis_controls_v8" in c_data["frameworks"]
+    assert "pci_dss_v4" in c_data["frameworks"]
+
+    # 2. GET /api/audit/threat-surface
+    threat_resp = client.get("/api/audit/threat-surface")
+    assert threat_resp.status_code == 200
+    t_data = threat_resp.json()
+    assert "kerberoasting_exposure" in t_data
+    assert "lateral_movement_blast_radius" in t_data
+
+def test_audit_api_trigger_bulk_run_and_eval():
+    # 1. POST /api/audit/evaluate-password
+    eval_resp = client.post("/api/audit/evaluate-password", json={
+        "password": "CorrectHorseBatteryStaple2026!",
+        "username": "alex.morgan",
+        "department": "Engineering"
+    })
+    assert eval_resp.status_code == 200
+    e_data = eval_resp.json()
+    assert e_data["zxcvbn"]["score"] >= 3
+    assert "compliance" in e_data
+    assert e_data["compliance"]["is_nist_compliant"] is True
+
+    # 2. POST /api/audit/run
+    run_resp = client.post("/api/audit/run")
+    assert run_resp.status_code == 200
+    r_data = run_resp.json()
+    assert r_data["status"] == "success"
+    assert "total_accounts" in r_data["summary"]

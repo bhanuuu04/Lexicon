@@ -338,11 +338,13 @@ def list_accounts(
     is_privileged: Optional[bool] = None,
     is_breached: Optional[bool] = None,
     is_blocked: Optional[bool] = None,
+    has_weak_hash: Optional[bool] = None,
+    has_mfa: Optional[bool] = None,
     group_id: Optional[int] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500)
 ):
-    """Search and filter the synthetic account directory with pagination."""
+    """Search and filter the synthetic account directory with pagination and attack targeting filters."""
     accounts = get_accounts()
     filtered = accounts
 
@@ -367,6 +369,13 @@ def list_accounts(
 
     if is_blocked is not None:
         filtered = [a for a in filtered if a.get("is_blocked", False) == is_blocked]
+
+    if has_weak_hash is not None:
+        # Accounts with fast/unsalted hashes (MD5 or NTLM populated)
+        filtered = [a for a in filtered if (bool(a.get("hash_md5") or a.get("hash_ntlm"))) == has_weak_hash]
+
+    if has_mfa is not None:
+        filtered = [a for a in filtered if a.get("mfa_enabled", False) == has_mfa]
 
     if group_id is not None:
         filtered = [a for a in filtered if a.get("password_group_id") == group_id]
