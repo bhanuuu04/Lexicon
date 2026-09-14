@@ -463,247 +463,354 @@ export const UserPanel: React.FC<UserPanelProps> = ({
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {/* ========================================================================= */}
-        {/* SCREEN 1: BLOCKED SECURITY WARNING SCREEN (WHEN is_blocked === true)      */}
+        {/* SCREEN 1: BLOCKED REMEDIATION & RESTORATION SCREEN (WHEN is_blocked === true) */}
         {/* ========================================================================= */}
-        {isBlocked && (
+        {isBlocked ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="space-y-6"
-          >
-            <div className="apple-card p-8 sm:p-12 bg-white border border-[#FF3B30]/20 rounded-3xl shadow-2xl text-center space-y-6 max-w-2xl mx-auto">
-              <div className="w-20 h-20 rounded-3xl bg-[#FF3B30]/10 border border-[#FF3B30]/30 text-[#FF3B30] flex items-center justify-center mx-auto shadow-inner">
-                <Lock className="w-10 h-10" />
-              </div>
-
-              <div className="space-y-2">
-                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20 inline-block">
-                  Account Suspended
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] tracking-tight">
-                  Account Blocked
-                </h2>
-                <p className="text-sm font-medium text-[#FF3B30]">
-                  Your account has been blocked because a security risk was detected.
-                </p>
-                <p className="text-xs text-[#6E6E73] max-w-md mx-auto leading-relaxed pt-1">
-                  Lexicon Risk Intelligence identified high-risk vulnerabilities associated with your credentials ({account?.blocked_reason || "Known credential breach exposure or Active Directory reuse"}).
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[#FAFAFC] border border-black/[0.06] text-left space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#86868B] block">
-                  Identified Compromise Telemetry:
-                </span>
-                <div className="space-y-1.5 text-xs text-[#1D1D1F]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#6E6E73]">Account Identity:</span>
-                    <span className="font-semibold">{account?.username} ({account?.id})</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#6E6E73]">Calculated Risk Score:</span>
-                    <span className="font-bold text-[#FF3B30]">{account?.final_risk?.toFixed(2) || "0.97"} / 1.00 ({account?.final_tier || "Critical"})</span>
-                  </div>
-                  {account?.password_group_id && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#6E6E73]">Credential Blast Radius:</span>
-                      <span className="font-semibold text-[#0071E3]">Cluster #{account.password_group_id}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <p className="text-xs font-medium text-[#1D1D1F] mb-4">
-                  Please reset your password to restore access.
-                </p>
-                <button
-                  onClick={() => setActiveTab("reset")}
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-sm font-semibold flex items-center justify-center space-x-2 shadow-lg transition active:scale-[0.98] mx-auto"
-                >
-                  <KeyRound className="w-4 h-4" />
-                  <span>Start Secure Password Reset</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* SCREEN 2: DETERMINISTIC PASSWORD RESET FLOW                               */}
-        {/* ========================================================================= */}
-        {activeTab === "reset" && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
             className="space-y-6 max-w-3xl mx-auto"
           >
-            <div className="apple-card p-6 sm:p-8 bg-white border border-black/[0.06] rounded-3xl shadow-card space-y-6">
-              <div className="pb-4 border-b border-black/[0.06] flex items-center justify-between">
+            <div className="apple-card p-8 sm:p-10 bg-white border border-[#FF3B30]/30 rounded-3xl shadow-2xl space-y-6">
+              {/* Header Status */}
+              <div className="text-center space-y-3 pb-6 border-b border-black/[0.06]">
+                <div className="w-16 h-16 rounded-3xl bg-[#FF3B30]/10 border border-[#FF3B30]/30 text-[#FF3B30] flex items-center justify-center mx-auto shadow-inner">
+                  <Lock className="w-8 h-8" />
+                </div>
                 <div>
-                  <div className="flex items-center space-x-2 text-xs font-semibold text-[#0071E3] uppercase tracking-wider mb-1">
-                    <KeyRound className="w-4 h-4" />
-                    <span>Deterministic Enterprise Password Policy</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-[#1D1D1F]">
-                    {isBlocked ? "Remediate & Unblock Account" : "Secure Credential Rotation"}
-                  </h3>
-                  <p className="text-xs text-[#6E6E73] mt-1">
-                    The new password must pass all 8 deterministic Lexicon security standards to be accepted.
+                  <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20 inline-block mb-2">
+                    Access Suspended • Security Risk Detected
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] tracking-tight font-sans">
+                    Account Blocked
+                  </h2>
+                  <p className="text-sm font-medium text-[#FF3B30] mt-1">
+                    Your account has been temporarily blocked by Lexicon Risk Intelligence.
+                  </p>
+                  <p className="text-xs text-[#6E6E73] max-w-md mx-auto leading-relaxed mt-1">
+                    Reason: {account?.blocked_reason || "Compounding Active Directory vulnerabilities or dark web breach match detected."}
                   </p>
                 </div>
-                {isBlocked && (
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20">
-                    Restoration Required
-                  </span>
-                )}
               </div>
 
-              {/* Password Reset Form */}
-              <form onSubmit={handleExecutePasswordReset} className="space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
-                      New Enterprise Password
-                    </label>
-                    <div className="relative">
+              {/* Compromise Telemetry Details */}
+              <div className="p-4 rounded-2xl bg-[#FAFAFC] border border-black/[0.06] text-left space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#86868B] block">
+                  Compromise Telemetry & Exposure Scope:
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                  <div className="bg-white p-2.5 rounded-xl border border-black/[0.04]">
+                    <span className="text-[10px] text-[#86868B] block">Corporate Identity</span>
+                    <span className="font-semibold text-[#1D1D1F] truncate block">{account?.username}</span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-black/[0.04]">
+                    <span className="text-[10px] text-[#86868B] block">Calculated Risk Tier</span>
+                    <span className="font-bold text-[#FF3B30] block">Critical ({account?.final_risk ? (account.final_risk * 100).toFixed(0) : "97"}%)</span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-black/[0.04]">
+                    <span className="text-[10px] text-[#86868B] block">Blast Radius Cluster</span>
+                    <span className="font-semibold text-[#0071E3] block">
+                      {account?.password_group_id ? `Cluster #${account.password_group_id}` : "Isolated"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Embedded Remediation & Password Reset Form */}
+              <div className="p-6 rounded-2xl bg-[#0071E3]/[0.03] border border-[#0071E3]/20 space-y-5">
+                <div className="flex items-center space-x-2 text-xs font-semibold text-[#0071E3] uppercase tracking-wider">
+                  <KeyRound className="w-4 h-4" />
+                  <span>Mandatory Account Remediation</span>
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-[#1D1D1F]">
+                    Create a Compliant Password to Restore Access
+                  </h3>
+                  <p className="text-xs text-[#6E6E73] mt-0.5 leading-relaxed">
+                    Set a new password meeting the 8-point enterprise NIST policy. Upon validation, your account will be immediately unblocked and restored to safe status.
+                  </p>
+                </div>
+
+                <form onSubmit={handleExecutePasswordReset} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                        New Enterprise Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="e.g. Xk9#vP!qR7$wL2zM"
+                          disabled={isResetting}
+                          className="w-full px-4 py-3 bg-white border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F]"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                        Confirm New Password
+                      </label>
                       <input
                         type={showPassword ? "text" : "password"}
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter compliant new password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter new password"
                         disabled={isResetting}
-                        className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                        className="w-full px-4 py-3 bg-white border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F]"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Re-enter new password"
-                      disabled={isResetting}
-                      className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
-                    />
-                  </div>
-                </div>
-
-                {resetError && (
-                  <div className="p-3 rounded-xl bg-[#FF3B30]/10 text-[#FF3B30] text-xs font-medium border border-[#FF3B30]/20 flex items-center space-x-2">
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>{resetError}</span>
-                  </div>
-                )}
-
-                {/* Submit CTA */}
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-[11px] text-[#86868B]">
-                    Deterministic verification • 0 Plaintext Stored • Genuine Hash Recomputation
-                  </span>
-                  <button
-                    type="submit"
-                    disabled={isResetting || !newPassword || !confirmPassword}
-                    className="px-6 py-3 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-40 text-white font-semibold text-xs flex items-center space-x-2 shadow-xs transition active:scale-[0.98]"
-                  >
-                    {isResetting ? (
-                      <>
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>Evaluating Security Engine...</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>Validate & Update Password</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-
-              {/* Reset Evaluation Results Checklist */}
-              {resetResult && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="pt-6 border-t border-black/[0.06] space-y-4"
-                >
-                  <div className={`p-4 rounded-2xl border flex items-start space-x-3 ${
-                    resetResult.success
-                      ? "bg-[#34C759]/10 border-[#34C759]/30 text-[#34C759]"
-                      : "bg-[#FF3B30]/10 border-[#FF3B30]/30 text-[#FF3B30]"
-                  }`}>
-                    {resetResult.success ? (
-                      <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-                    ) : (
-                      <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                    )}
-                    <div>
-                      <h4 className="text-sm font-semibold text-[#1D1D1F]">
-                        {resetResult.success ? "Access Restored Successfully!" : "Password Policy Rejection"}
-                      </h4>
-                      <p className="text-xs mt-0.5 opacity-90">{resetResult.message}</p>
+                  {resetError && (
+                    <div className="p-3 rounded-xl bg-[#FF3B30]/10 text-[#FF3B30] text-xs font-medium border border-[#FF3B30]/20 flex items-center space-x-2">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      <span>{resetError}</span>
                     </div>
-                  </div>
+                  )}
 
-                  {/* 8-Point Compliance Checklist */}
-                  <div className="space-y-2">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block">
-                      Deterministic Security Engine Checklist
+                  <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <span className="text-[11px] text-[#86868B]">
+                      Zero Plaintext Stored • 8-Point Deterministic Verification • Instant Unblock
                     </span>
+                    <button
+                      type="submit"
+                      disabled={isResetting || !newPassword || !confirmPassword}
+                      className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-40 text-white font-semibold text-xs flex items-center justify-center space-x-2 shadow-md transition active:scale-[0.98]"
+                    >
+                      {isResetting ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Validating Security Engine...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Unlock className="w-4 h-4" />
+                          <span>Validate & Restore Account Access</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+
+                {/* Live Policy Feedback Checklist if rejected */}
+                {resetResult && !resetResult.success && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-xl bg-[#FF3B30]/[0.06] border border-[#FF3B30]/20 space-y-3"
+                  >
+                    <div className="flex items-center space-x-2 text-xs font-semibold text-[#FF3B30]">
+                      <XCircle className="w-4 h-4" />
+                      <span>{resetResult.message}</span>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {resetResult.checks.map((chk, idx) => (
                         <div
                           key={idx}
-                          className={`p-3 rounded-xl border text-xs flex items-start space-x-2.5 ${
+                          className={`p-2.5 rounded-lg border text-xs flex items-start space-x-2 ${
                             chk.passed
-                              ? "bg-[#FAFAFC] border-black/[0.04] text-[#1D1D1F]"
-                              : "bg-[#FF3B30]/[0.04] border-[#FF3B30]/20 text-[#FF3B30]"
+                              ? "bg-white/80 border-black/[0.04] text-[#1D1D1F]"
+                              : "bg-white border-[#FF3B30]/30 text-[#FF3B30]"
                           }`}
                         >
                           {chk.passed ? (
-                            <CheckCircle2 className="w-4 h-4 text-[#34C759] shrink-0 mt-0.5" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759] shrink-0 mt-0.5" />
                           ) : (
-                            <AlertTriangle className="w-4 h-4 text-[#FF3B30] shrink-0 mt-0.5" />
+                            <AlertTriangle className="w-3.5 h-3.5 text-[#FF3B30] shrink-0 mt-0.5" />
                           )}
                           <div>
                             <span className="font-semibold block">{chk.rule_name}</span>
-                            <span className="text-[11px] text-[#6E6E73] block mt-0.5">
-                              {chk.message}
-                            </span>
+                            <span className="text-[11px] text-[#6E6E73]">{chk.message}</span>
                           </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  {resetResult.success && (
-                    <div className="pt-2 text-center">
-                      <button
-                        onClick={() => setActiveTab("overview")}
-                        className="px-6 py-2.5 rounded-xl bg-[#34C759] hover:bg-[#2FB34F] text-white text-xs font-semibold transition"
-                      >
-                        Return to Security Posture Overview →
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              )}
+                  </motion.div>
+                )}
+              </div>
             </div>
           </motion.div>
-        )}
+        ) : (
+          <>
+            {/* ========================================================================= */}
+            {/* SCREEN 2: DETERMINISTIC PASSWORD RESET FLOW (VOLUNTARY ROTATION)          */}
+            {/* ========================================================================= */}
+            {activeTab === "reset" && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6 max-w-3xl mx-auto"
+              >
+                <div className="apple-card p-6 sm:p-8 bg-white border border-black/[0.06] rounded-3xl shadow-card space-y-6">
+                  <div className="pb-4 border-b border-black/[0.06] flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center space-x-2 text-xs font-semibold text-[#0071E3] uppercase tracking-wider mb-1">
+                        <KeyRound className="w-4 h-4" />
+                        <span>Deterministic Enterprise Password Policy</span>
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#1D1D1F]">
+                        Secure Credential Rotation
+                      </h3>
+                      <p className="text-xs text-[#6E6E73] mt-1">
+                        The new password must pass all 8 deterministic Lexicon security standards to be accepted.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Password Reset Form */}
+                  <form onSubmit={handleExecutePasswordReset} className="space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                          New Enterprise Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Enter compliant new password"
+                            disabled={isResetting}
+                            className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F]"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                          Confirm New Password
+                        </label>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Re-enter new password"
+                          disabled={isResetting}
+                          className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                        />
+                      </div>
+                    </div>
+
+                    {resetError && (
+                      <div className="p-3 rounded-xl bg-[#FF3B30]/10 text-[#FF3B30] text-xs font-medium border border-[#FF3B30]/20 flex items-center space-x-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <span>{resetError}</span>
+                      </div>
+                    )}
+
+                    {/* Submit CTA */}
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-[11px] text-[#86868B]">
+                        Deterministic verification • 0 Plaintext Stored • Genuine Hash Recomputation
+                      </span>
+                      <button
+                        type="submit"
+                        disabled={isResetting || !newPassword || !confirmPassword}
+                        className="px-6 py-3 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-40 text-white font-semibold text-xs flex items-center space-x-2 shadow-xs transition active:scale-[0.98]"
+                      >
+                        {isResetting ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Evaluating Security Engine...</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="w-4 h-4" />
+                            <span>Validate & Update Password</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Reset Evaluation Results Checklist */}
+                  {resetResult && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="pt-6 border-t border-black/[0.06] space-y-4"
+                    >
+                      <div className={`p-4 rounded-2xl border flex items-start space-x-3 ${
+                        resetResult.success
+                          ? "bg-[#34C759]/10 border-[#34C759]/30 text-[#34C759]"
+                          : "bg-[#FF3B30]/10 border-[#FF3B30]/30 text-[#FF3B30]"
+                      }`}>
+                        {resetResult.success ? (
+                          <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                        ) : (
+                          <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                        )}
+                        <div>
+                          <h4 className="text-sm font-semibold text-[#1D1D1F]">
+                            {resetResult.success ? "Password Updated Successfully!" : "Password Policy Rejection"}
+                          </h4>
+                          <p className="text-xs mt-0.5 opacity-90">{resetResult.message}</p>
+                        </div>
+                      </div>
+
+                      {/* 8-Point Compliance Checklist */}
+                      <div className="space-y-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block">
+                          Deterministic Security Engine Checklist
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {resetResult.checks.map((chk, idx) => (
+                            <div
+                              key={idx}
+                              className={`p-3 rounded-xl border text-xs flex items-start space-x-2.5 ${
+                                chk.passed
+                                  ? "bg-[#FAFAFC] border-black/[0.04] text-[#1D1D1F]"
+                                  : "bg-[#FF3B30]/[0.04] border-[#FF3B30]/20 text-[#FF3B30]"
+                              }`}
+                            >
+                              {chk.passed ? (
+                                <CheckCircle2 className="w-4 h-4 text-[#34C759] shrink-0 mt-0.5" />
+                              ) : (
+                                <AlertTriangle className="w-4 h-4 text-[#FF3B30] shrink-0 mt-0.5" />
+                              )}
+                              <div>
+                                <span className="font-semibold block">{chk.rule_name}</span>
+                                <span className="text-[11px] text-[#6E6E73] block mt-0.5">
+                                  {chk.message}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {resetResult.success && (
+                        <div className="pt-2 text-center">
+                          <button
+                            onClick={() => setActiveTab("overview")}
+                            className="px-6 py-2.5 rounded-xl bg-[#34C759] hover:bg-[#2FB34F] text-white text-xs font-semibold transition"
+                          >
+                            Return to Security Posture Overview →
+                          </button>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            )}
 
         {/* ========================================================================= */}
         {/* SCREEN 3: NORMAL POSTURE OVERVIEW (WHEN is_blocked === false)              */}
@@ -1187,6 +1294,8 @@ export const UserPanel: React.FC<UserPanelProps> = ({
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
 
