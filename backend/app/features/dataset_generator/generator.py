@@ -1,13 +1,14 @@
 import json
 import random
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Tuple, Any
 from concurrent.futures import ThreadPoolExecutor
 
 from backend.app.config import (
     TOTAL_ACCOUNTS, REUSED_RATIO, UNIQUE_WEAK_RATIO, STRONG_UNIQUE_RATIO,
-    DATA_DIRECTORY, ACCOUNTS_FILE, BREACH_CORPUS_FILE
+    DATA_DIRECTORY, ACCOUNTS_FILE, BREACH_CORPUS_FILE, METADATA_FILE
 )
 from backend.app.features.hashing.service import compute_all_hashes
 from backend.app.features.dataset_generator.constants import (
@@ -96,13 +97,13 @@ def generate_distinct_password_pools():
         
     return list(set(weak_pool)), list(set(strong_pool))
 
-def generate_accounts() -> Tuple[List[Dict[str, Any]], List[str]]:
-    """Generate 50,000 synthetic Active Directory accounts."""
+def generate_accounts(total_accounts: int = TOTAL_ACCOUNTS) -> Tuple[List[Dict[str, Any]], List[str]]:
+    """Generate synthetic Active Directory accounts with deterministic attributes."""
     random.seed(42)
     
-    num_reused = int(TOTAL_ACCOUNTS * REUSED_RATIO)           # 30,000 (60%)
-    num_weak_unique = int(TOTAL_ACCOUNTS * UNIQUE_WEAK_RATIO)  # 15,000 (30%)
-    num_strong_unique = TOTAL_ACCOUNTS - num_reused - num_weak_unique  # 5,000 (10%)
+    num_reused = int(total_accounts * REUSED_RATIO)           # 60%
+    num_weak_unique = int(total_accounts * UNIQUE_WEAK_RATIO)  # 30%
+    num_strong_unique = total_accounts - num_reused - num_weak_unique  # 10%
     
     reuse_groups = build_reuse_groups(num_reused)
     weak_pool, strong_pool = generate_distinct_password_pools()
@@ -171,7 +172,11 @@ def generate_accounts() -> Tuple[List[Dict[str, Any]], List[str]]:
                 "is_privileged": is_privileged,
                 "password_group_id": grp_id,
                 "plaintext_password": pwd,
-                "is_hero": (is_hero_group and member_idx == 0)
+                "is_hero": (is_hero_group and member_idx == 0),
+                "is_blocked": False,
+                "blocked_reason": None,
+                "blocked_at": None,
+                "last_remediated_at": None
             })
             account_counter += 1
 
@@ -197,7 +202,11 @@ def generate_accounts() -> Tuple[List[Dict[str, Any]], List[str]]:
             "is_privileged": is_privileged,
             "password_group_id": None,
             "plaintext_password": pwd,
-            "is_hero": False
+            "is_hero": False,
+            "is_blocked": False,
+            "blocked_reason": None,
+            "blocked_at": None,
+            "last_remediated_at": None
         })
         account_counter += 1
 
@@ -223,14 +232,18 @@ def generate_accounts() -> Tuple[List[Dict[str, Any]], List[str]]:
             "is_privileged": is_privileged,
             "password_group_id": None,
             "plaintext_password": pwd,
-            "is_hero": False
+            "is_hero": False,
+            "is_blocked": False,
+            "blocked_reason": None,
+            "blocked_at": None,
+            "last_remediated_at": None
         })
         account_counter += 1
 
-    hero_acc = next(a for a in accounts if a.get("is_hero"))
+    hero_acc = next((a for a in accounts if a.get("is_hero")), None)
     other_accs = [a for a in accounts if not a.get("is_hero")]
     random.shuffle(other_accs)
-    final_accounts = [hero_acc] + other_accs
+    final_accounts = ([hero_acc] if hero_acc else []) + other_accs
 
     unique_passwords = list(set(a["plaintext_password"] for a in final_accounts))
     print(f"[DatasetGenerator] Precomputing hashes for {len(unique_passwords)} distinct passwords...")
@@ -250,20 +263,37 @@ def generate_accounts() -> Tuple[List[Dict[str, Any]], List[str]]:
 
     return final_accounts, breach_corpus
 
-def generate_and_save_dataset():
-    """Save accounts_50k.json and breach_corpus.json."""
+def generate_and_save_dataset(total_accounts: int = TOTAL_ACCOUNTS):
+    """Save accounts dataset, breach_corpus.json, and dataset_metadata.json."""
     DATA_DIRECTORY.mkdir(parents=True, exist_ok=True)
     
-    print("[DatasetGenerator] Generating 50,000 synthetic Active Directory accounts...")
-    accounts, breach_corpus = generate_accounts()
+    print(f"[DatasetGenerator] Generating {total_accounts:,} synthetic Active Directory accounts...")
+    accounts, breach_corpus = generate_accounts(total_accounts=total_accounts)
     
     print(f"[DatasetGenerator] Writing {len(breach_corpus)} breach corpus items to {BREACH_CORPUS_FILE}...")
-    with open(BREACH_CORPUS_FILE, "w", encoding="utf-8") as f:
+    with open(str(BREACH_CORPUS_FILE), "w", encoding="utf-8") as f:
         json.dump(breach_corpus, f, indent=2)
         
     print(f"[DatasetGenerator] Writing {len(accounts)} accounts to {ACCOUNTS_FILE}...")
-    with open(ACCOUNTS_FILE, "w", encoding="utf-8") as f:
+    with open(str(ACCOUNTS_FILE), "w", encoding="utf-8") as f:
         json.dump(accounts, f)
+
+    metadata = {
+        "version": "1.0.0",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "total_accounts": len(accounts),
+        "dataset_file": str(ACCOUNTS_FILE.name),
+        "is_custom_generated": total_accounts != TOTAL_ACCOUNTS,
+        "blocked_count": 0,
+        "generator_config": {
+            "reused_ratio": REUSED_RATIO,
+            "unique_weak_ratio": UNIQUE_WEAK_RATIO,
+            "strong_unique_ratio": STRONG_UNIQUE_RATIO,
+            "seed": 42
+        }
+    }
+    with open(METADATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
         
     print(f"[DatasetGenerator] Dataset generation complete ({len(accounts)} accounts).")
-    return accounts, breach_corpus
+    return accounts, breach_corpus, metadata

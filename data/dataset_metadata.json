@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "created_at": "2026-09-14T09:58:06.775206+00:00",
+  "total_accounts": 50000,
+  "dataset_file": "accounts_50k.json",
+  "is_custom_generated": false,
+  "blocked_count": 0,
+  "generator_config": {
+    "reused_ratio": 0.6,
+    "unique_weak_ratio": 0.3,
+    "strong_unique_ratio": 0.1,
+    "seed": 42
+  }
+}

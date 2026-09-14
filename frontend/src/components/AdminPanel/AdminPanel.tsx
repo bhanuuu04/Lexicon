@@ -12,8 +12,10 @@ import { AIAdvisoryStudio } from "../Remediation/AIAdvisoryStudio";
 import { HIBPLiveModal } from "../HIBPCheck/HIBPLiveModal";
 import { AuditLogsView } from "./AuditLogsView";
 import { AdminSettings } from "./AdminSettings";
-import { AuditSummary, Account } from "../../types";
-import { fetchAccountDetail } from "../../lib/api";
+import { CompromisedAccountsView } from "./CompromisedAccountsView";
+import { GenerateDatasetModal } from "./GenerateDatasetModal";
+import { AuditSummary, Account, DatasetMetadata, GenerateDatasetResponse } from "../../types";
+import { fetchAccountDetail, fetchDatasetMetadata } from "../../lib/api";
 import {
   Activity,
   Users,
@@ -39,6 +41,7 @@ import {
   Shield,
   Layers,
   ChevronRight,
+  Database,
 } from "lucide-react";
 
 interface AdminPanelProps {
@@ -66,7 +69,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 }) => {
   const [activeTierFilter, setActiveTierFilter] = useState<string>("ALL");
   const [isHIBPOpen, setIsHIBPOpen] = useState(false);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [metadata, setMetadata] = useState<DatasetMetadata | null>(null);
+
+  React.useEffect(() => {
+    async function loadMeta() {
+      try {
+        const meta = await fetchDatasetMetadata();
+        setMetadata(meta);
+      } catch (e) {
+        console.error("Failed to load dataset metadata:", e);
+      }
+    }
+    loadMeta();
+  }, []);
+
+  const handleDatasetGenerated = (res: GenerateDatasetResponse) => {
+    setMetadata(res.metadata);
+    window.location.reload();
+  };
 
   const handleCardFilterClick = (filterType: string) => {
     setActiveTierFilter(filterType);
@@ -77,12 +99,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setIsRefreshing(true);
     setTimeout(() => {
       setIsRefreshing(false);
+      window.location.reload();
     }, 800);
   };
 
   const adminSubNav = [
     { id: "overview", label: "Defense Overview", icon: Activity, badge: null },
-    { id: "accounts", label: "Corporate Identities", icon: Users, badge: "50,000" },
+    { id: "compromised", label: "Compromised Accounts", icon: ShieldAlert, badge: "Action" },
+    { id: "accounts", label: "Corporate Identities", icon: Users, badge: `${summary.total_accounts.toLocaleString()}` },
     { id: "blast-radius", label: "Blast Radius", icon: Network, badge: "805" },
     { id: "attack-lab", label: "Attack Lab", icon: Zap, badge: "Live" },
     { id: "hash-race", label: "Hash Race", icon: Cpu, badge: "4 Algos" },
@@ -140,12 +164,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#34C759]">
                   Continuous Defense Active
                 </span>
+                {metadata && (
+                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-black/[0.05] text-[#86868B]">
+                    v{metadata.version} • {metadata.total_accounts.toLocaleString()} AD records
+                  </span>
+                )}
               </div>
               <h2 className="text-lg sm:text-xl font-semibold text-[#1D1D1F] tracking-tight">
                 Enterprise Identity Safeguard
               </h2>
               <p className="text-xs text-[#6E6E73] leading-relaxed">
-                Active Directory scope: <strong>50,000 accounts</strong> across 805 credential reuse families.
+                Active Directory scope: <strong>{summary.total_accounts.toLocaleString()} accounts</strong> across {summary.reuse_cluster_count} credential reuse families.
+                {metadata?.created_at && (
+                  <span className="block text-[11px] text-[#86868B] mt-0.5">
+                    Persistent Dataset Synthesized: {new Date(metadata.created_at).toLocaleDateString()} {new Date(metadata.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -195,14 +229,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   className="px-3.5 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-1.5 transition active:scale-[0.98]"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 text-[#6E6E73] ${isRefreshing ? "animate-spin text-[#0071E3]" : ""}`} />
-                  <span>{isRefreshing ? "Auditing 50k Accounts..." : "Re-evaluate Posture"}</span>
+                  <span>{isRefreshing ? "Auditing Dataset..." : "Re-evaluate Posture"}</span>
+                </button>
+                <button
+                  onClick={() => setIsGenerateModalOpen(true)}
+                  className="px-3.5 py-2 rounded-xl bg-[#0071E3]/10 hover:bg-[#0071E3]/15 text-xs font-semibold text-[#0071E3] border border-[#0071E3]/20 flex items-center space-x-1.5 transition active:scale-[0.98]"
+                  title="Generate new synthetic dataset with custom size"
+                >
+                  <Database className="w-3.5 h-3.5" />
+                  <span>Generate Synthetic Data</span>
                 </button>
                 <button
                   onClick={() => setIsHIBPOpen(true)}
                   className="px-3.5 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-1.5 transition active:scale-[0.98]"
                 >
                   <Globe className="w-3.5 h-3.5 text-[#0071E3]" />
-                  <span>k-Anonymity Probe</span>
+                  <span>k-Anonymity</span>
                 </button>
               </div>
 
@@ -437,6 +479,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           )}
 
+          {/* VIEW: Compromised Accounts */}
+          {activeAdminTab === "compromised" && (
+            <div className="space-y-6">
+              <CompromisedAccountsView
+                onSelectAccount={onSelectAccount}
+                onLaunchAttack={onLaunchAttack}
+                onAccountUpdated={onAccountUpdated}
+              />
+            </div>
+          )}
+
           {/* VIEW: Accounts */}
           {activeAdminTab === "accounts" && (
             <div className="space-y-6">
@@ -507,6 +560,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       <HIBPLiveModal
         isOpen={isHIBPOpen}
         onClose={() => setIsHIBPOpen(false)}
+      />
+
+      {/* Generate Synthetic Dataset Modal */}
+      <GenerateDatasetModal
+        isOpen={isGenerateModalOpen}
+        onClose={() => setIsGenerateModalOpen(false)}
+        onDatasetGenerated={handleDatasetGenerated}
+        currentCount={summary.total_accounts}
       />
     </div>
   );

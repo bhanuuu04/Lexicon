@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck,
   ShieldAlert,
   KeyRound,
   Lock,
+  Unlock,
   Smartphone,
   CheckCircle2,
   AlertTriangle,
@@ -23,10 +24,26 @@ import {
   Cpu,
   Clock,
   Sparkles,
+  ArrowRight,
+  User,
+  Users,
+  Search,
+  XCircle,
 } from "lucide-react";
 import { HIBPLiveModal } from "../HIBPCheck/HIBPLiveModal";
-import { evaluatePasswordLive } from "../../lib/api";
-import { PasswordEvaluationResult } from "../../types";
+import {
+  evaluatePasswordLive,
+  fetchAccountDetail,
+  fetchAccounts,
+  resetAccountPassword,
+  blockAccount,
+} from "../../lib/api";
+import {
+  Account,
+  PasswordEvaluationResult,
+  PasswordCheckDetail,
+  ResetPasswordResponse,
+} from "../../types";
 
 interface UserPanelProps {
   onSwitchToAdmin: () => void;
@@ -34,31 +51,66 @@ interface UserPanelProps {
 
 export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
   const [isHIBPOpen, setIsHIBPOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "precheck" | "activity" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "precheck" | "reset" | "activity" | "settings">("overview");
   const [mfaEnabled, setMfaEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
-  // Live test state
+  // Active User State
+  const [currentUsername, setCurrentUsername] = useState("alex.morgan");
+  const [account, setAccount] = useState<Account | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+
+  // Identity switcher state
+  const [isSwitchingUser, setIsSwitchingUser] = useState(false);
+  const [quickAccounts, setQuickAccounts] = useState<Account[]>([]);
+
+  // Password Reset Flow State
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetResult, setResetResult] = useState<ResetPasswordResponse | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  // Live Pre-Check test state
   const [testPassword, setTestPassword] = useState("");
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<PasswordEvaluationResult | null>(null);
 
-  // User details
-  const user = {
-    name: "Alex Morgan",
-    email: "alex.morgan@lexicon.corp",
-    role: "Senior Product Designer",
-    department: "Product & Experience",
-    score: 78,
-    scoreStatus: "Protected Posture",
-    lastAudited: "Today at 09:14 AM",
-    entropy: 58.4,
-    length: 14,
-    breached: false,
-    reuseClusters: 0,
-    mfaMethod: "FIDO2 WebAuthn (YubiKey 5C)",
-    passwordAgeDays: 42,
+  // Load active account data
+  const loadAccount = async (username: string) => {
+    setLoadingUser(true);
+    setResetResult(null);
+    setResetError(null);
+    try {
+      const acc = await fetchAccountDetail(username);
+      setAccount(acc);
+      if (acc.is_blocked) {
+        setActiveTab("overview");
+      }
+    } catch (err) {
+      console.error("Failed to load user account:", err);
+    } finally {
+      setLoadingUser(false);
+    }
   };
+
+  useEffect(() => {
+    loadAccount(currentUsername);
+  }, [currentUsername]);
+
+  // Load quick accounts for identity switcher
+  useEffect(() => {
+    async function loadQuick() {
+      try {
+        const res = await fetchAccounts({ page: 1, page_size: 10 });
+        setQuickAccounts(res.accounts);
+      } catch (e) {
+        console.error("Failed to load quick accounts:", e);
+      }
+    }
+    loadQuick();
+  }, []);
 
   const handleEvaluateTestPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,10 +120,10 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
     try {
       const res = await evaluatePasswordLive({
         password: testPassword,
-        username: user.email.split("@")[0],
-        department: user.department,
-        role: user.role,
-        custom_inputs: ["Lexicon", "Morgan", "Design"],
+        username: account?.username || "user",
+        department: account?.department || "Corporate",
+        role: account?.role || "Staff",
+        custom_inputs: ["Lexicon", "Admin", "Corporate"],
       });
       setTestResult(res);
     } catch (err) {
@@ -81,84 +133,210 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
     }
   };
 
-  const activityLog = [
-    {
-      id: "act-1",
-      action: "SSO Authentication via Okta",
-      device: "MacBook Pro (macOS 14.5)",
-      location: "San Francisco, CA, US",
-      time: "10 minutes ago",
-      status: "Verified",
-    },
-    {
-      id: "act-2",
-      action: "Continuous Posture Evaluation (Lexicon Shield)",
-      device: "Background Automated Scan",
-      location: "Corporate Security Perimeter",
-      time: "Today at 09:14 AM",
-      status: "Protected (0 Threats)",
-    },
-    {
-      id: "act-3",
-      action: "FIDO2 Hardware Key Authenticated",
-      device: "YubiKey 5C NFC",
-      location: "San Francisco, CA, US",
-      time: "3 days ago",
-      status: "Verified",
-    },
-    {
-      id: "act-4",
-      action: "Scheduled Password Policy Refresh",
-      device: "MacBook Pro (macOS 14.5)",
-      location: "San Francisco, CA, US",
-      time: "42 days ago",
-      status: "Applied",
-    },
-  ];
+  const handleExecutePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!account) return;
+
+    if (newPassword !== confirmPassword) {
+      setResetError("New password and confirmation do not match.");
+      return;
+    }
+
+    setResetError(null);
+    setIsResetting(true);
+
+    try {
+      const res = await resetAccountPassword(account.id, newPassword);
+      setResetResult(res);
+      if (res.success && res.account) {
+        setAccount(res.account);
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch (err: any) {
+      setResetError(err.message || "Failed to reset password.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  // Demo toggle block state for testing the blocked screen
+  const handleSimulateBlockToggle = async () => {
+    if (!account) return;
+    const targetState = !account.is_blocked;
+    try {
+      await blockAccount(
+        account.id,
+        targetState,
+        targetState ? "Breach Correlation & High Risk Detected" : undefined
+      );
+      setAccount({
+        ...account,
+        is_blocked: targetState,
+        blocked_reason: targetState ? "Breach Correlation & High Risk Detected" : undefined,
+      });
+    } catch (e) {
+      console.error("Toggle block failed:", e);
+    }
+  };
+
+  if (loadingUser && !account) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-[#0071E3] flex items-center justify-center shadow-md animate-pulse">
+          <ShieldCheck className="w-6 h-6 text-white" />
+        </div>
+        <div className="text-center space-y-1">
+          <h2 className="text-base font-semibold text-[#1D1D1F]">
+            Authenticating Employee Identity
+          </h2>
+          <p className="text-xs text-[#6E6E73]">
+            Retrieving Active Directory profile for {currentUsername}...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const isBlocked = account?.is_blocked;
+  const userScore = account ? Math.max(10, Math.round((1 - account.final_risk) * 100)) : 85;
 
   return (
     <div className="w-full min-h-screen bg-[#F5F5F7] text-[#1D1D1F] pb-24">
       {/* Header Banner */}
       <div className="bg-white border-b border-black/[0.06] sticky top-14 z-20 backdrop-blur-md bg-white/90">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-[#0071E3]/10 border border-[#0071E3]/20 flex items-center justify-center font-semibold text-[#0071E3] text-sm">
-              AM
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-semibold text-sm ${
+              isBlocked ? "bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20" : "bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20"
+            }`}>
+              {account?.username ? account.username.slice(0, 2).toUpperCase() : "US"}
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-base font-semibold text-[#1D1D1F]">
-                  {user.name}
+                  {account?.first_name && account?.last_name
+                    ? `${account.first_name} ${account.last_name}`
+                    : account?.username || "Employee"}
                 </h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#34C759]/10 text-[#34C759] border border-[#34C759]/20 flex items-center space-x-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  <span>Shielded Identity</span>
-                </span>
+                {isBlocked ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20 flex items-center space-x-1">
+                    <Lock className="w-2.5 h-2.5" />
+                    <span>Access Suspended</span>
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#34C759]/10 text-[#34C759] border border-[#34C759]/20 flex items-center space-x-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>Shielded Identity</span>
+                  </span>
+                )}
               </div>
               <p className="text-xs text-[#86868B]">
-                {user.email} • {user.role} ({user.department})
+                {account?.username}@lexicon.corp • {account?.role} ({account?.department})
               </p>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center space-x-1 bg-[#F5F5F7] p-1 rounded-xl border border-black/[0.04]">
+          {/* Identity Switcher & Controls */}
+          <div className="flex items-center space-x-2">
+            {/* Quick Switch Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsSwitchingUser(!isSwitchingUser)}
+                className="px-3 py-1.5 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-1.5 transition"
+              >
+                <Users className="w-3.5 h-3.5 text-[#0071E3]" />
+                <span>Switch Identity</span>
+              </button>
+
+              {isSwitchingUser && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-black/[0.08] shadow-xl p-2 z-30 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-2 py-1 text-[10px] uppercase font-bold text-[#86868B]">
+                    Select Identity to Test
+                  </div>
+                  {/* Hero Account */}
+                  <button
+                    onClick={() => {
+                      setCurrentUsername("alex.morgan");
+                      setIsSwitchingUser(false);
+                    }}
+                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center justify-between ${
+                      currentUsername === "alex.morgan"
+                        ? "bg-[#0071E3] text-white"
+                        : "hover:bg-[#F5F5F7] text-[#1D1D1F]"
+                    }`}
+                  >
+                    <span>alex.morgan (Hero Target)</span>
+                    <span className="text-[10px] opacity-75">Admin</span>
+                  </button>
+                  {/* Other accounts */}
+                  {quickAccounts.slice(0, 5).map((qa) => (
+                    <button
+                      key={qa.id}
+                      onClick={() => {
+                        setCurrentUsername(qa.username);
+                        setIsSwitchingUser(false);
+                      }}
+                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center justify-between ${
+                        currentUsername === qa.username
+                          ? "bg-[#0071E3] text-white"
+                          : "hover:bg-[#F5F5F7] text-[#1D1D1F]"
+                      }`}
+                    >
+                      <span className="truncate">{qa.username}</span>
+                      <span className="text-[10px] opacity-75">{qa.department.split(" ")[0]}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Test Block Toggle */}
+            <button
+              onClick={handleSimulateBlockToggle}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition ${
+                isBlocked
+                  ? "bg-[#34C759]/10 text-[#34C759] border border-[#34C759]/20 hover:bg-[#34C759]/20"
+                  : "bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20 hover:bg-[#FF3B30]/20"
+              }`}
+              title="Simulate blocking or unblocking this employee account"
+            >
+              {isBlocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+              <span>{isBlocked ? "Simulate Unblock" : "Simulate Block"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        {!isBlocked && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-3 pt-1 flex items-center space-x-1 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
                 activeTab === "overview"
-                  ? "bg-white text-[#1D1D1F] shadow-xs"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F]"
+                  ? "bg-[#0071E3] text-white shadow-xs font-semibold"
+                  : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
               }`}
             >
               Security Posture
             </button>
             <button
+              onClick={() => setActiveTab("reset")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center space-x-1 ${
+                activeTab === "reset"
+                  ? "bg-[#0071E3] text-white shadow-xs font-semibold"
+                  : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
+              }`}
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>Reset Password</span>
+            </button>
+            <button
               onClick={() => setActiveTab("precheck")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center space-x-1 ${
                 activeTab === "precheck"
-                  ? "bg-white text-[#0071E3] shadow-xs font-semibold"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F]"
+                  ? "bg-[#0071E3] text-white shadow-xs font-semibold"
+                  : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
               }`}
             >
               <Cpu className="w-3.5 h-3.5" />
@@ -166,31 +344,276 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
             </button>
             <button
               onClick={() => setActiveTab("activity")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
                 activeTab === "activity"
-                  ? "bg-white text-[#1D1D1F] shadow-xs"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F]"
+                  ? "bg-[#0071E3] text-white shadow-xs font-semibold"
+                  : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
               }`}
             >
               Activity & Log
             </button>
             <button
               onClick={() => setActiveTab("settings")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
                 activeTab === "settings"
-                  ? "bg-white text-[#1D1D1F] shadow-xs"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F]"
+                  ? "bg-[#0071E3] text-white shadow-xs font-semibold"
+                  : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
               }`}
             >
               Safeguard Settings
             </button>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        {/* TAB 1: OVERVIEW */}
-        {activeTab === "overview" && (
+        {/* ========================================================================= */}
+        {/* SCREEN 1: BLOCKED SECURITY WARNING SCREEN (WHEN is_blocked === true)      */}
+        {/* ========================================================================= */}
+        {isBlocked && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-6"
+          >
+            <div className="apple-card p-8 sm:p-12 bg-white border border-[#FF3B30]/20 rounded-3xl shadow-2xl text-center space-y-6 max-w-2xl mx-auto">
+              <div className="w-20 h-20 rounded-3xl bg-[#FF3B30]/10 border border-[#FF3B30]/30 text-[#FF3B30] flex items-center justify-center mx-auto shadow-inner">
+                <Lock className="w-10 h-10" />
+              </div>
+
+              <div className="space-y-2">
+                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20 inline-block">
+                  Account Suspended
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] tracking-tight">
+                  Account Blocked
+                </h2>
+                <p className="text-sm font-medium text-[#FF3B30]">
+                  Your account has been blocked because a security risk was detected.
+                </p>
+                <p className="text-xs text-[#6E6E73] max-w-md mx-auto leading-relaxed pt-1">
+                  Lexicon Risk Intelligence identified high-risk vulnerabilities associated with your credentials ({account?.blocked_reason || "Known credential breach exposure or Active Directory reuse"}).
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-[#FAFAFC] border border-black/[0.06] text-left space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#86868B] block">
+                  Identified Compromise Telemetry:
+                </span>
+                <div className="space-y-1.5 text-xs text-[#1D1D1F]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#6E6E73]">Account Identity:</span>
+                    <span className="font-semibold">{account?.username} ({account?.id})</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#6E6E73]">Calculated Risk Score:</span>
+                    <span className="font-bold text-[#FF3B30]">{account?.final_risk?.toFixed(2) || "0.97"} / 1.00 ({account?.final_tier || "Critical"})</span>
+                  </div>
+                  {account?.password_group_id && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#6E6E73]">Credential Blast Radius:</span>
+                      <span className="font-semibold text-[#0071E3]">Cluster #{account.password_group_id}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <p className="text-xs font-medium text-[#1D1D1F] mb-4">
+                  Please reset your password to restore access.
+                </p>
+                <button
+                  onClick={() => setActiveTab("reset")}
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-sm font-semibold flex items-center justify-center space-x-2 shadow-lg transition active:scale-[0.98] mx-auto"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  <span>Start Secure Password Reset</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SCREEN 2: DETERMINISTIC PASSWORD RESET FLOW                               */}
+        {/* ========================================================================= */}
+        {activeTab === "reset" && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6 max-w-3xl mx-auto"
+          >
+            <div className="apple-card p-6 sm:p-8 bg-white border border-black/[0.06] rounded-3xl shadow-card space-y-6">
+              <div className="pb-4 border-b border-black/[0.06] flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-2 text-xs font-semibold text-[#0071E3] uppercase tracking-wider mb-1">
+                    <KeyRound className="w-4 h-4" />
+                    <span>Deterministic Enterprise Password Policy</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-[#1D1D1F]">
+                    {isBlocked ? "Remediate & Unblock Account" : "Secure Credential Rotation"}
+                  </h3>
+                  <p className="text-xs text-[#6E6E73] mt-1">
+                    The new password must pass all 8 deterministic Lexicon security standards to be accepted.
+                  </p>
+                </div>
+                {isBlocked && (
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20">
+                    Restoration Required
+                  </span>
+                )}
+              </div>
+
+              {/* Password Reset Form */}
+              <form onSubmit={handleExecutePasswordReset} className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                      New Enterprise Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter compliant new password"
+                        disabled={isResetting}
+                        className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F]"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block mb-1.5">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter new password"
+                      disabled={isResetting}
+                      className="w-full px-4 py-3 bg-[#F5F5F7] border border-black/[0.08] rounded-xl text-xs sm:text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:bg-white transition"
+                    />
+                  </div>
+                </div>
+
+                {resetError && (
+                  <div className="p-3 rounded-xl bg-[#FF3B30]/10 text-[#FF3B30] text-xs font-medium border border-[#FF3B30]/20 flex items-center space-x-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>{resetError}</span>
+                  </div>
+                )}
+
+                {/* Submit CTA */}
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-[11px] text-[#86868B]">
+                    Deterministic verification • 0 Plaintext Stored • Genuine Hash Recomputation
+                  </span>
+                  <button
+                    type="submit"
+                    disabled={isResetting || !newPassword || !confirmPassword}
+                    className="px-6 py-3 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-40 text-white font-semibold text-xs flex items-center space-x-2 shadow-xs transition active:scale-[0.98]"
+                  >
+                    {isResetting ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Evaluating Security Engine...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Validate & Update Password</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+
+              {/* Reset Evaluation Results Checklist */}
+              {resetResult && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="pt-6 border-t border-black/[0.06] space-y-4"
+                >
+                  <div className={`p-4 rounded-2xl border flex items-start space-x-3 ${
+                    resetResult.success
+                      ? "bg-[#34C759]/10 border-[#34C759]/30 text-[#34C759]"
+                      : "bg-[#FF3B30]/10 border-[#FF3B30]/30 text-[#FF3B30]"
+                  }`}>
+                    {resetResult.success ? (
+                      <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <h4 className="text-sm font-semibold text-[#1D1D1F]">
+                        {resetResult.success ? "Access Restored Successfully!" : "Password Policy Rejection"}
+                      </h4>
+                      <p className="text-xs mt-0.5 opacity-90">{resetResult.message}</p>
+                    </div>
+                  </div>
+
+                  {/* 8-Point Compliance Checklist */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#86868B] block">
+                      Deterministic Security Engine Checklist
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {resetResult.checks.map((chk, idx) => (
+                        <div
+                          key={idx}
+                          className={`p-3 rounded-xl border text-xs flex items-start space-x-2.5 ${
+                            chk.passed
+                              ? "bg-[#FAFAFC] border-black/[0.04] text-[#1D1D1F]"
+                              : "bg-[#FF3B30]/[0.04] border-[#FF3B30]/20 text-[#FF3B30]"
+                          }`}
+                        >
+                          {chk.passed ? (
+                            <CheckCircle2 className="w-4 h-4 text-[#34C759] shrink-0 mt-0.5" />
+                          ) : (
+                            <AlertTriangle className="w-4 h-4 text-[#FF3B30] shrink-0 mt-0.5" />
+                          )}
+                          <div>
+                            <span className="font-semibold block">{chk.rule_name}</span>
+                            <span className="text-[11px] text-[#6E6E73] block mt-0.5">
+                              {chk.message}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {resetResult.success && (
+                    <div className="pt-2 text-center">
+                      <button
+                        onClick={() => setActiveTab("overview")}
+                        className="px-6 py-2.5 rounded-xl bg-[#34C759] hover:bg-[#2FB34F] text-white text-xs font-semibold transition"
+                      >
+                        Return to Security Posture Overview →
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* SCREEN 3: NORMAL POSTURE OVERVIEW (WHEN is_blocked === false)              */}
+        {/* ========================================================================= */}
+        {activeTab === "overview" && !isBlocked && (
           <div className="space-y-6">
             {/* Top Score Banner */}
             <div className="apple-card p-6 sm:p-8 bg-white border border-black/[0.06] rounded-2xl shadow-card">
@@ -208,7 +631,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                       />
                       <path
                         className="text-[#34C759]"
-                        strokeDasharray={`${user.score}, 100`}
+                        strokeDasharray={`${userScore}, 100`}
                         strokeWidth="3.2"
                         strokeLinecap="round"
                         stroke="currentColor"
@@ -217,7 +640,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                       />
                     </svg>
                     <div className="absolute flex flex-col items-center">
-                      <span className="text-3xl font-semibold text-[#1D1D1F]">{user.score}</span>
+                      <span className="text-3xl font-semibold text-[#1D1D1F]">{userScore}</span>
                       <span className="text-[10px] uppercase font-bold text-[#86868B] tracking-wider">
                         / 100
                       </span>
@@ -236,15 +659,15 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                   <div className="p-3.5 bg-[#FAFAFC] rounded-xl border border-black/[0.04]">
                     <span className="text-[11px] text-[#86868B] block">Entropy Strength</span>
                     <span className="text-base font-semibold text-[#1D1D1F] mt-1 block">
-                      {user.entropy} bits
+                      {account?.zxcvbn_score ? `${account.zxcvbn_score * 18} bits` : "58.4 bits"}
                     </span>
-                    <span className="text-[10px] text-[#34C759]">High Resistance (zxcvbn 4/4)</span>
+                    <span className="text-[10px] text-[#34C759]">High Resistance</span>
                   </div>
 
                   <div className="p-3.5 bg-[#FAFAFC] rounded-xl border border-black/[0.04]">
                     <span className="text-[11px] text-[#86868B] block">Breach Immunity</span>
                     <span className="text-base font-semibold text-[#34C759] mt-1 block">
-                      0 Found
+                      {account?.breach_match ? "Found in Dump" : "0 Found"}
                     </span>
                     <span className="text-[10px] text-[#6E6E73]">Clean in 12B corpus</span>
                   </div>
@@ -252,15 +675,15 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                   <div className="p-3.5 bg-[#FAFAFC] rounded-xl border border-black/[0.04]">
                     <span className="text-[11px] text-[#86868B] block">Lateral Exposure</span>
                     <span className="text-base font-semibold text-[#1D1D1F] mt-1 block">
-                      Isolated
+                      {account?.password_group_id ? `Cluster #${account.password_group_id}` : "Isolated"}
                     </span>
-                    <span className="text-[10px] text-[#34C759]">0 Reuse Clusters</span>
+                    <span className="text-[10px] text-[#34C759]">0 Unmitigated Risks</span>
                   </div>
 
                   <div className="p-3.5 bg-[#FAFAFC] rounded-xl border border-black/[0.04]">
                     <span className="text-[11px] text-[#86868B] block">Rotation Interval</span>
                     <span className="text-base font-semibold text-[#1D1D1F] mt-1 block">
-                      {user.passwordAgeDays} days
+                      {account?.last_remediated_at ? "Recently Updated" : "42 days"}
                     </span>
                     <span className="text-[10px] text-[#FF9500]">Quarterly SOC 2 cycle</span>
                   </div>
@@ -281,7 +704,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                     Safely verify your credentials against global breach dumps
                   </h3>
                   <p className="text-xs text-[#6E6E73] mt-2 leading-relaxed">
-                    Test password resistance using Troy Hunt&apos;s HaveIBeenPwned API with zero data exposure. Only the first 5 SHA-1 characters leave your browser.
+                    Test password resistance using HaveIBeenPwned API with zero data exposure. Only the first 5 SHA-1 characters leave your browser.
                   </p>
                 </div>
                 <div className="pt-6">
@@ -309,16 +732,16 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#6E6E73] flex items-center space-x-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
-                        <span>Minimum Length: 14 characters</span>
+                        <span>Minimum Length: 12 characters</span>
                       </span>
-                      <span className="font-semibold text-[#1D1D1F]">Passed (14 chars)</span>
+                      <span className="font-semibold text-[#1D1D1F]">Passed</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#6E6E73] flex items-center space-x-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
                         <span>Entropy & Diversity Standard</span>
                       </span>
-                      <span className="font-semibold text-[#1D1D1F]">Passed (4/4)</span>
+                      <span className="font-semibold text-[#1D1D1F]">Passed (zxcvbn 4/4)</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#6E6E73] flex items-center space-x-1.5">
@@ -335,55 +758,13 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                 </div>
               </div>
             </div>
-
-            {/* Recommendations Banner */}
-            <div className="apple-card p-6 bg-white border border-black/[0.06] rounded-2xl shadow-card">
-              <h3 className="text-sm font-semibold text-[#1D1D1F] mb-4">
-                Recommended Workforce Protections
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-[#FAFAFC] border border-black/[0.04]">
-                  <div className="w-7 h-7 rounded-lg bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center mb-2">
-                    <Smartphone className="w-4 h-4" />
-                  </div>
-                  <h4 className="text-xs font-semibold text-[#1D1D1F]">
-                    Hardware Passkey Active
-                  </h4>
-                  <p className="text-[11px] text-[#6E6E73] mt-1 leading-relaxed">
-                    FIDO2 YubiKey is registered, protecting against real-time phishing and proxy attacks.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-[#FAFAFC] border border-black/[0.04]">
-                  <div className="w-7 h-7 rounded-lg bg-[#34C759]/10 text-[#34C759] flex items-center justify-center mb-2">
-                    <KeyRound className="w-4 h-4" />
-                  </div>
-                  <h4 className="text-xs font-semibold text-[#1D1D1F]">
-                    Corporate Vault Sync
-                  </h4>
-                  <p className="text-[11px] text-[#6E6E73] mt-1 leading-relaxed">
-                    Enterprise password manager sync active, eliminating clipboard leaks and unsafe notes.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-[#FAFAFC] border border-black/[0.04]">
-                  <div className="w-7 h-7 rounded-lg bg-[#FF9500]/10 text-[#FF9500] flex items-center justify-center mb-2">
-                    <History className="w-4 h-4" />
-                  </div>
-                  <h4 className="text-xs font-semibold text-[#1D1D1F]">
-                    Scheduled Audit Cycle
-                  </h4>
-                  <p className="text-[11px] text-[#6E6E73] mt-1 leading-relaxed">
-                    Next automatic posture audit scheduled in 48 days for continuous SOC 2 verification.
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
-        {/* TAB 2: LIVE ZXCVBN PRE-CHECK */}
-        {activeTab === "precheck" && (
+        {/* ========================================================================= */}
+        {/* SCREEN 4: ZXCVBN PRE-CHECK TAB                                            */}
+        {/* ========================================================================= */}
+        {activeTab === "precheck" && !isBlocked && (
           <div className="space-y-6">
             <div className="apple-card p-6 sm:p-8 bg-white border border-black/[0.06] rounded-2xl shadow-card space-y-6">
               <div className="pb-4 border-b border-black/[0.06]">
@@ -439,7 +820,6 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-5 pt-4 border-t border-black/[0.06]"
                 >
-                  {/* Results Metric Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="p-3.5 rounded-xl bg-[#FAFAFC] border border-black/[0.04]">
                       <span className="text-[10px] text-[#86868B] uppercase font-semibold block">zxcvbn Strength</span>
@@ -484,7 +864,6 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                     </div>
                   </div>
 
-                  {/* Pattern Anatomy Sequence */}
                   {testResult.zxcvbn.sequence && testResult.zxcvbn.sequence.length > 0 && (
                     <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.04] space-y-2">
                       <span className="text-xs font-semibold text-[#1D1D1F] block">
@@ -505,36 +884,16 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                       </div>
                     </div>
                   )}
-
-                  {/* Policy Violations */}
-                  <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.04] space-y-2">
-                    <span className="text-xs font-semibold text-[#1D1D1F] block">
-                      Corporate Active Directory Policy Check:
-                    </span>
-                    {testResult.policy_violations.length === 0 ? (
-                      <div className="text-xs text-[#34C759] flex items-center space-x-1.5 font-medium">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Meets all organizational complexity and length mandates.</span>
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        {testResult.policy_violations.map((violation, idx) => (
-                          <div key={idx} className="text-xs text-[#FF9500] flex items-center space-x-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                            <span>{violation}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </motion.div>
               )}
             </div>
           </div>
         )}
 
-        {/* TAB 3: ACTIVITY */}
-        {activeTab === "activity" && (
+        {/* ========================================================================= */}
+        {/* SCREEN 5: ACTIVITY LOG TAB                                                */}
+        {/* ========================================================================= */}
+        {activeTab === "activity" && !isBlocked && (
           <div className="apple-card p-6 bg-white border border-black/[0.06] rounded-2xl shadow-card space-y-4">
             <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
               <div>
@@ -542,39 +901,55 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
                   Identity Telemetry & Audit History
                 </h3>
                 <p className="text-xs text-[#6E6E73]">
-                  All login events, audit telemetry, and safeguard activations for {user.email}
+                  All login events, audit telemetry, and safeguard activations for {account?.username}
                 </p>
               </div>
             </div>
 
             <div className="divide-y divide-black/[0.04]">
-              {activityLog.map((item) => (
-                <div key={item.id} className="py-3.5 flex items-center justify-between text-xs">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#F5F5F7] flex items-center justify-center text-[#1D1D1F] mt-0.5">
-                      <Laptop className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="font-semibold text-[#1D1D1F] block">{item.action}</span>
-                      <span className="text-[11px] text-[#86868B]">
-                        {item.device} • {item.location}
-                      </span>
-                    </div>
+              <div className="py-3.5 flex items-center justify-between text-xs">
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#F5F5F7] flex items-center justify-center text-[#1D1D1F] mt-0.5">
+                    <Laptop className="w-4 h-4" />
                   </div>
-                  <div className="text-right">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#34C759]/10 text-[#34C759]">
-                      {item.status}
-                    </span>
-                    <span className="text-[11px] text-[#86868B] block mt-1">{item.time}</span>
+                  <div>
+                    <span className="font-semibold text-[#1D1D1F] block">SSO Authentication via Okta</span>
+                    <span className="text-[11px] text-[#86868B]">MacBook Pro (macOS 14.5) • San Francisco, CA, US</span>
                   </div>
                 </div>
-              ))}
+                <div className="text-right">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#34C759]/10 text-[#34C759]">
+                    Verified
+                  </span>
+                  <span className="text-[11px] text-[#86868B] block mt-1">10 minutes ago</span>
+                </div>
+              </div>
+
+              <div className="py-3.5 flex items-center justify-between text-xs">
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#F5F5F7] flex items-center justify-center text-[#1D1D1F] mt-0.5">
+                    <ShieldCheck className="w-4 h-4 text-[#34C759]" />
+                  </div>
+                  <div>
+                    <span className="font-semibold text-[#1D1D1F] block">Continuous Posture Evaluation (Lexicon Shield)</span>
+                    <span className="text-[11px] text-[#86868B]">Background Automated Scan • Corporate Security Perimeter</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#34C759]/10 text-[#34C759]">
+                    Protected
+                  </span>
+                  <span className="text-[11px] text-[#86868B] block mt-1">Today at 09:14 AM</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* TAB 4: SETTINGS */}
-        {activeTab === "settings" && (
+        {/* ========================================================================= */}
+        {/* SCREEN 6: SETTINGS TAB                                                    */}
+        {/* ========================================================================= */}
+        {activeTab === "settings" && !isBlocked && (
           <div className="apple-card p-6 bg-white border border-black/[0.06] rounded-2xl shadow-card space-y-6">
             <div>
               <h3 className="text-base font-semibold text-[#1D1D1F]">
@@ -644,3 +1019,4 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
     </div>
   );
 };
+

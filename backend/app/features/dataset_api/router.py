@@ -1,18 +1,32 @@
 import json
-from typing import Optional, List
+import re
+from datetime import datetime, timezone
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Query
-from backend.app.config import AUDIT_RESULTS_FILE, ACCOUNTS_FILE
+
+from backend.app.config import AUDIT_RESULTS_FILE, ACCOUNTS_FILE, METADATA_FILE
 from backend.app.features.breach_dictionary.service import breach_checker
+from backend.app.features.hashing.service import compute_all_hashes
 from backend.app.features.risk_engine.zxcvbn_service import (
     analyze_password_zxcvbn,
     evaluate_password_comprehensive
+)
+from backend.app.features.dataset_generator.generator import generate_and_save_dataset
+from backend.app.features.audit.engine import run_bulk_audit
+from backend.app.models import (
+    BlockAccountRequest,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
+    PasswordCheckDetail,
+    DatasetMetadata
 )
 
 router = APIRouter(prefix="/api", tags=["dataset"])
 
 _accounts_cache = None
 _audit_cache = None
+_metadata_cache = None
 
 class EvaluatePasswordRequest(BaseModel):
     password: str
@@ -21,33 +35,110 @@ class EvaluatePasswordRequest(BaseModel):
     role: Optional[str] = ""
     custom_inputs: Optional[List[str]] = []
 
-def get_accounts():
+class GenerateDatasetRequest(BaseModel):
+    count: int = 50_000
+
+def get_accounts() -> List[Dict[str, Any]]:
     global _accounts_cache
     if _accounts_cache is None:
         if not ACCOUNTS_FILE.exists():
-            raise HTTPException(status_code=503, detail="Dataset not generated yet. Please run generate_dataset.py and run_audit.py")
+            raise HTTPException(
+                status_code=503,
+                detail="Dataset not generated yet. Use Admin panel to generate synthetic dataset."
+            )
         with open(ACCOUNTS_FILE, "r", encoding="utf-8") as f:
             _accounts_cache = json.load(f)
     return _accounts_cache
 
-def get_audit_summary():
+def get_audit_summary() -> Dict[str, Any]:
     global _audit_cache
     if _audit_cache is None:
         if not AUDIT_RESULTS_FILE.exists():
-            raise HTTPException(status_code=503, detail="Audit results not available yet. Please run run_audit.py")
+            raise HTTPException(
+                status_code=503,
+                detail="Audit results not available yet. Use Admin panel to generate and audit dataset."
+            )
         with open(AUDIT_RESULTS_FILE, "r", encoding="utf-8") as f:
             _audit_cache = json.load(f)
     return _audit_cache
 
+def get_dataset_metadata() -> Dict[str, Any]:
+    global _metadata_cache
+    if _metadata_cache is None:
+        if METADATA_FILE.exists():
+            with open(METADATA_FILE, "r", encoding="utf-8") as f:
+                _metadata_cache = json.load(f)
+        else:
+            accounts = get_accounts()
+            blocked_count = sum(1 for a in accounts if a.get("is_blocked"))
+            _metadata_cache = {
+                "version": "1.0.0",
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "total_accounts": len(accounts),
+                "dataset_file": str(ACCOUNTS_FILE.name),
+                "is_custom_generated": False,
+                "blocked_count": blocked_count,
+                "generator_config": {
+                    "reused_ratio": 0.60,
+                    "unique_weak_ratio": 0.30,
+                    "strong_unique_ratio": 0.10,
+                    "seed": 42
+                }
+            }
+            with open(str(METADATA_FILE), "w", encoding="utf-8") as f:
+                json.dump(_metadata_cache, f, indent=2)
+    return _metadata_cache
+
 def invalidate_cache():
-    global _accounts_cache, _audit_cache
+    global _accounts_cache, _audit_cache, _metadata_cache
     _accounts_cache = None
     _audit_cache = None
+    _metadata_cache = None
+
+def save_accounts(accounts: List[Dict[str, Any]]):
+    global _accounts_cache
+    _accounts_cache = accounts
+    with open(str(ACCOUNTS_FILE), "w", encoding="utf-8") as f:
+        json.dump(accounts, f)
+
+@router.get("/dataset/metadata")
+def get_metadata():
+    """Retrieve metadata and generation timestamp of active persistent dataset."""
+    return get_dataset_metadata()
 
 @router.get("/dataset/summary")
 def get_summary():
-    """Retrieve precomputed enterprise 50K audit summary."""
+    """Retrieve precomputed enterprise audit summary."""
     return get_audit_summary()
+
+@router.post("/dataset/generate")
+def generate_dataset_endpoint(payload: GenerateDatasetRequest):
+    """
+    Admin-only: Explicitly regenerate synthetic dataset of specified size and re-run audit.
+    NEVER runs automatically.
+    """
+    count = payload.count
+    if count < 100 or count > 100_000:
+        raise HTTPException(
+            status_code=400,
+            detail="Account count must be between 100 and 100,000"
+        )
+    
+    # 1. Generate & save dataset and metadata
+    accounts, breach_corpus, metadata = generate_and_save_dataset(total_accounts=count)
+    
+    # 2. Run full deterministic audit on the new dataset
+    audit_summary = run_bulk_audit()
+    
+    # 3. Invalidate and reload in-memory caches
+    invalidate_cache()
+    
+    return {
+        "status": "success",
+        "message": f"Successfully generated and audited {count:,} synthetic accounts.",
+        "metadata": metadata,
+        "summary": audit_summary
+    }
 
 @router.get("/dataset/hero-account")
 def get_hero_account():
@@ -74,13 +165,12 @@ def list_accounts(
     department: Optional[str] = None,
     is_privileged: Optional[bool] = None,
     is_breached: Optional[bool] = None,
+    is_blocked: Optional[bool] = None,
     group_id: Optional[int] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500)
 ):
-    """
-    Search and filter the 50,000 synthetic account directory with pagination.
-    """
+    """Search and filter the synthetic account directory with pagination."""
     accounts = get_accounts()
     filtered = accounts
 
@@ -103,6 +193,9 @@ def list_accounts(
     if is_breached is not None:
         filtered = [a for a in filtered if a.get("breach_match") == is_breached]
 
+    if is_blocked is not None:
+        filtered = [a for a in filtered if a.get("is_blocked", False) == is_blocked]
+
     if group_id is not None:
         filtered = [a for a in filtered if a.get("password_group_id") == group_id]
 
@@ -116,6 +209,82 @@ def list_accounts(
         "page": page,
         "page_size": page_size,
         "total_pages": (total_count + page_size - 1) // page_size if page_size > 0 else 1,
+        "accounts": paginated_items
+    }
+
+@router.get("/dataset/compromised-accounts")
+def list_compromised_accounts(
+    search: Optional[str] = None,
+    vector: Optional[str] = Query("all", pattern="^(all|breached|attack_cracked|critical_tier|blocked)$"),
+    department: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500)
+):
+    """
+    Dedicated endpoint for the Compromised Accounts Auditor section.
+    Filters accounts identified as compromised/high-risk through breach exposure,
+    successful attack lab cracking, or critical risk indicators.
+    """
+    accounts = get_accounts()
+    
+    # Baseline filter for compromised/high risk
+    compromised = [
+        a for a in accounts
+        if a.get("breach_match")
+        or a.get("attack_adjustment", 0) > 0
+        or a.get("baseline_tier") in ["Critical", "High"]
+        or a.get("is_blocked", False)
+    ]
+
+    if vector == "breached":
+        compromised = [a for a in compromised if a.get("breach_match")]
+    elif vector == "attack_cracked":
+        compromised = [a for a in compromised if a.get("attack_adjustment", 0) > 0]
+    elif vector == "critical_tier":
+        compromised = [a for a in compromised if a.get("baseline_tier") == "Critical"]
+    elif vector == "blocked":
+        compromised = [a for a in compromised if a.get("is_blocked", False)]
+
+    if search:
+        s = search.lower().strip()
+        compromised = [
+            a for a in compromised
+            if s in a["username"].lower() or s in a["role"].lower() or s in a["department"].lower() or s in a["id"].lower()
+        ]
+
+    if department:
+        compromised = [a for a in compromised if a["department"].lower() == department.lower()]
+
+    total_count = len(compromised)
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    paginated_items = compromised[start_idx:end_idx]
+
+    # Calculate summary metrics for the compromised view
+    all_accounts = accounts
+    breached_count = sum(1 for a in all_accounts if a.get("breach_match"))
+    attack_cracked_count = sum(1 for a in all_accounts if a.get("attack_adjustment", 0) > 0)
+    critical_tier_count = sum(1 for a in all_accounts if a.get("baseline_tier") == "Critical")
+    blocked_count = sum(1 for a in all_accounts if a.get("is_blocked", False))
+
+    return {
+        "total": total_count,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total_count + page_size - 1) // page_size if page_size > 0 else 1,
+        "stats": {
+            "total_compromised": total_count if vector != "all" else len([
+                a for a in all_accounts
+                if a.get("breach_match")
+                or a.get("attack_adjustment", 0) > 0
+                or a.get("baseline_tier") in ["Critical", "High"]
+                or a.get("is_blocked", False)
+            ]),
+            "breached_count": breached_count,
+            "attack_cracked_count": attack_cracked_count,
+            "critical_tier_count": critical_tier_count,
+            "blocked_count": blocked_count
+        },
         "accounts": paginated_items
     }
 
@@ -133,6 +302,252 @@ def get_account_detail(account_id: str):
                 )
             return acc_copy
     raise HTTPException(status_code=404, detail=f"Account {account_id} not found")
+
+@router.post("/accounts/{account_id}/block")
+def block_account_endpoint(account_id: str, payload: BlockAccountRequest):
+    """
+    Admin action: Block or unblock an account.
+    Persists `is_blocked` state directly into the dataset on disk.
+    """
+    accounts = get_accounts()
+    target = None
+    for a in accounts:
+        if a["id"] == account_id or a["username"].lower() == account_id.lower():
+            target = a
+            break
+            
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Account {account_id} not found")
+
+    target["is_blocked"] = payload.is_blocked
+    target["blocked_reason"] = payload.reason if payload.is_blocked else None
+    target["blocked_at"] = datetime.now(timezone.utc).isoformat() if payload.is_blocked else None
+
+    # Persist update
+    save_accounts(accounts)
+    
+    # Update metadata blocked count
+    metadata = get_dataset_metadata()
+    metadata["blocked_count"] = sum(1 for a in accounts if a.get("is_blocked"))
+    with open(METADATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+
+    return {
+        "status": "success",
+        "account_id": target["id"],
+        "username": target["username"],
+        "is_blocked": target["is_blocked"],
+        "blocked_reason": target["blocked_reason"],
+        "blocked_at": target["blocked_at"]
+    }
+
+def evaluate_password_deterministic_rules(
+    password: str,
+    account: Dict[str, Any]
+) -> List[PasswordCheckDetail]:
+    """
+    Deterministic 8-point enterprise password policy and risk verification engine.
+    NO AI is used. All decisions are deterministic, reproducible, and explainable.
+    """
+    checks: List[PasswordCheckDetail] = []
+    
+    # 1. Length Check (Minimum 12 characters)
+    len_pass = len(password) >= 12
+    checks.append(PasswordCheckDetail(
+        rule_name="Length Requirement",
+        passed=len_pass,
+        message="Password must be at least 12 characters in length (Current: " + str(len(password)) + ")",
+        severity="error" if not len_pass else "success"
+    ))
+    
+    # 2. Complexity Standard (Uppercase, Lowercase, Number, Symbol)
+    has_upper = any(c.isupper() for c in password)
+    has_lower = any(c.islower() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_symbol = bool(re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?~`]', password))
+    comp_pass = has_upper and has_lower and has_digit and has_symbol
+    comp_missing = []
+    if not has_upper: comp_missing.append("Uppercase letter")
+    if not has_lower: comp_missing.append("Lowercase letter")
+    if not has_digit: comp_missing.append("Number")
+    if not has_symbol: comp_missing.append("Special symbol")
+    checks.append(PasswordCheckDetail(
+        rule_name="Complexity Standard",
+        passed=comp_pass,
+        message="Must include uppercase, lowercase, digit, and symbol" + (f" (Missing: {', '.join(comp_missing)})" if comp_missing else ""),
+        severity="error" if not comp_pass else "success"
+    ))
+
+    # 3. zxcvbn Realistic Strength & Entropy
+    z_res = analyze_password_zxcvbn(
+        password,
+        user_inputs=[
+            account.get("username", ""),
+            account.get("department", ""),
+            account.get("role", ""),
+            "Lexicon",
+            "Admin",
+            "Corp"
+        ]
+    )
+    z_pass = z_res["score"] >= 3 and z_res["entropy_bits"] >= 45.0
+    z_msg = f"zxcvbn score {z_res['score']}/4 with {z_res['entropy_bits']} bits entropy"
+    if z_res["feedback"].get("warning"):
+        z_msg += f" — Warning: {z_res['feedback']['warning']}"
+    checks.append(PasswordCheckDetail(
+        rule_name="zxcvbn Entropy & Guess Hardness",
+        passed=z_pass,
+        message=z_msg,
+        severity="error" if not z_pass else "success"
+    ))
+
+    # 4. Known Breach Check (Breach corpus & Dictionary)
+    is_breached = breach_checker.is_breached(password)
+    checks.append(PasswordCheckDetail(
+        rule_name="Dark Web Breach Corpus Check",
+        passed=not is_breached,
+        message="Password is clean and uncompromised across 12B global breach records" if not is_breached else "Password appears in known credential breach dumps! Choose a unique secret.",
+        severity="error" if is_breached else "success"
+    ))
+
+    # 5. Organization-Specific Brand Words
+    pwd_lower = password.lower()
+    org_terms = ["lexicon", "admin", "corporate", "enterprise", "password", "secret", "welcome"]
+    dept_term = account.get("department", "").lower().split()[0] if account.get("department") else ""
+    if dept_term and len(dept_term) >= 3:
+        org_terms.append(dept_term)
+        
+    found_org_terms = [t for t in org_terms if t in pwd_lower]
+    org_pass = len(found_org_terms) == 0
+    checks.append(PasswordCheckDetail(
+        rule_name="Organizational Context Shield",
+        passed=org_pass,
+        message="Does not contain enterprise brand terms" if org_pass else f"Cannot contain corporate terms: {', '.join(found_org_terms)}",
+        severity="error" if not org_pass else "success"
+    ))
+
+    # 6. Personal Identity Context (Username, First/Last name)
+    username = account.get("username", "").lower()
+    fn = account.get("first_name", "").lower()
+    ln = account.get("last_name", "").lower()
+    ident_terms = []
+    if username and len(username) >= 3 and username in pwd_lower:
+        ident_terms.append(username)
+    if fn and len(fn) >= 3 and fn in pwd_lower:
+        ident_terms.append(fn)
+    if ln and len(ln) >= 3 and ln in pwd_lower:
+        ident_terms.append(ln)
+        
+    ident_pass = len(ident_terms) == 0
+    checks.append(PasswordCheckDetail(
+        rule_name="Identity Context Shield",
+        passed=ident_pass,
+        message="Does not contain personal username or name components" if ident_pass else f"Cannot contain your personal identity: {', '.join(ident_terms)}",
+        severity="error" if not ident_pass else "success"
+    ))
+
+    # 7. Predictable Seasonal / Year Pattern Check
+    season_pattern = re.search(
+        r'(spring|summer|autumn|fall|winter|january|february|march|april|may|june|july|august|september|october|november|december)\s*20[123][0-9]',
+        pwd_lower
+    )
+    season_pass = season_pattern is None
+    checks.append(PasswordCheckDetail(
+        rule_name="Seasonal Pattern Shield",
+        passed=season_pass,
+        message="Free from predictable seasonal patterns" if season_pass else "Banned: Predictable season + year pattern detected (e.g., Summer2024!)",
+        severity="error" if not season_pass else "success"
+    ))
+
+    # 8. Previous Password Reuse Check
+    prev_pwd = account.get("plaintext_password", "")
+    reuse_pass = password != prev_pwd
+    checks.append(PasswordCheckDetail(
+        rule_name="Password History & Unique State",
+        passed=reuse_pass,
+        message="New password is distinct from previous compromised credential" if reuse_pass else "Cannot reuse your previous password",
+        severity="error" if not reuse_pass else "success"
+    ))
+
+    return checks
+
+@router.post("/accounts/{account_id}/reset-password", response_model=ResetPasswordResponse)
+def reset_password_endpoint(account_id: str, payload: ResetPasswordRequest):
+    """
+    User Remediation Flow: Submit a new password for a blocked/compromised account.
+    The new password MUST pass all 8 deterministic security engine checks.
+    Upon passing: rehashes passwords, unblocks account, updates disk, and restores access.
+    """
+    accounts = get_accounts()
+    target = None
+    for a in accounts:
+        if a["id"] == account_id or a["username"].lower() == account_id.lower():
+            target = a
+            break
+
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Account {account_id} not found")
+
+    new_pwd = payload.new_password.strip()
+    if not new_pwd:
+        raise HTTPException(status_code=400, detail="New password cannot be empty")
+
+    # Run deterministic 8-point checks
+    checks = evaluate_password_deterministic_rules(new_pwd, target)
+    all_passed = all(c.passed for c in checks)
+
+    if not all_passed:
+        failed_count = sum(1 for c in checks if not c.passed)
+        return ResetPasswordResponse(
+            success=False,
+            account_id=target["id"],
+            message=f"Password rejected: {failed_count} enterprise security policy check(s) failed.",
+            checks=checks,
+            account=None
+        )
+
+    # Password PASSED all checks!
+    # Compute all 4 cryptographic hashes
+    new_hashes = compute_all_hashes(new_pwd)
+    
+    # Update account state
+    target["plaintext_password"] = new_pwd
+    target["hash_md5"] = new_hashes["hash_md5"]
+    target["hash_sha256"] = new_hashes["hash_sha256"]
+    target["hash_bcrypt"] = new_hashes["hash_bcrypt"]
+    target["hash_argon2id"] = new_hashes["hash_argon2id"]
+    
+    # Unblock & remediate
+    target["is_blocked"] = False
+    target["blocked_reason"] = None
+    target["blocked_at"] = None
+    target["last_remediated_at"] = datetime.now(timezone.utc).isoformat()
+    target["breach_match"] = False
+    target["password_group_id"] = None
+    target["policy_violations"] = []
+    target["baseline_risk"] = 0.05
+    target["baseline_tier"] = "Low"
+    target["final_risk"] = 0.05
+    target["final_tier"] = "Low"
+    target["attack_adjustment"] = 0.0
+    target["zxcvbn_score"] = 4
+
+    # Persist to dataset on disk
+    save_accounts(accounts)
+
+    # Update metadata blocked count
+    metadata = get_dataset_metadata()
+    metadata["blocked_count"] = sum(1 for a in accounts if a.get("is_blocked"))
+    with open(METADATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=2)
+
+    return ResetPasswordResponse(
+        success=True,
+        account_id=target["id"],
+        message="Password accepted and securely hardened! Account access has been restored.",
+        checks=checks,
+        account=target
+    )
 
 @router.post("/audit/evaluate-password")
 def evaluate_password_endpoint(payload: EvaluatePasswordRequest):

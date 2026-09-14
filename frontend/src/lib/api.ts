@@ -123,3 +123,74 @@ export async function evaluatePasswordLive(payload: {
   }
   return res.json();
 }
+
+export async function fetchDatasetMetadata(): Promise<import("../types").DatasetMetadata> {
+  const res = await fetch(`${API_BASE}/api/dataset/metadata`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch dataset metadata`);
+  }
+  return res.json();
+}
+
+export async function generateNewDataset(count: number): Promise<import("../types").GenerateDatasetResponse> {
+  const res = await fetch(`${API_BASE}/api/dataset/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ count }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to generate new synthetic dataset");
+  }
+  return res.json();
+}
+
+export async function fetchCompromisedAccounts(params: {
+  search?: string;
+  vector?: string;
+  department?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<import("../types").CompromisedAccountsResponse> {
+  const query = new URLSearchParams();
+  if (params.search) query.set("search", params.search);
+  if (params.vector && params.vector !== "ALL") query.set("vector", params.vector);
+  if (params.department && params.department !== "ALL") query.set("department", params.department);
+  if (params.page) query.set("page", String(params.page));
+  if (params.page_size) query.set("page_size", String(params.page_size));
+
+  const res = await fetch(`${API_BASE}/api/dataset/compromised-accounts?${query.toString()}`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch compromised accounts`);
+  }
+  return res.json();
+}
+
+export async function blockAccount(accountId: string, isBlocked: boolean, reason?: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/accounts/${accountId}/block`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ is_blocked: isBlocked, reason: reason || "Security Risk Detected" }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to update block status for account ${accountId}`);
+  }
+  return res.json();
+}
+
+export async function resetAccountPassword(
+  accountId: string,
+  newPassword: string
+): Promise<import("../types").ResetPasswordResponse> {
+  const res = await fetch(`${API_BASE}/api/accounts/${accountId}/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ new_password: newPassword }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Password reset request failed");
+  }
+  return res.json();
+}
+

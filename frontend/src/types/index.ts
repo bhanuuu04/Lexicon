@@ -61,6 +61,10 @@ export interface Account {
   final_risk: number;
   final_tier: "Critical" | "High" | "Medium" | "Low";
   is_hero?: boolean;
+  is_blocked?: boolean;
+  blocked_reason?: string;
+  blocked_at?: string;
+  last_remediated_at?: string;
   attack_evidence?: {
     algorithm: string;
     candidates_tested: number;
@@ -68,6 +72,58 @@ export interface Account {
     matched: boolean;
     matched_rule?: string;
   };
+}
+
+export interface DatasetMetadata {
+  version: string;
+  created_at: string;
+  total_accounts: number;
+  dataset_file: string;
+  is_custom_generated: boolean;
+  blocked_count: number;
+  generator_config?: {
+    reused_ratio: number;
+    unique_weak_ratio: number;
+    strong_unique_ratio: number;
+    seed: number;
+  };
+}
+
+export interface PasswordCheckDetail {
+  rule_name: string;
+  passed: boolean;
+  message: string;
+  severity: "error" | "warning" | "success";
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  account_id: string;
+  message: string;
+  checks: PasswordCheckDetail[];
+  account?: Account;
+}
+
+export interface CompromisedAccountsResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  stats: {
+    total_compromised: number;
+    breached_count: number;
+    attack_cracked_count: number;
+    critical_tier_count: number;
+    blocked_count: number;
+  };
+  accounts: Account[];
+}
+
+export interface GenerateDatasetResponse {
+  status: string;
+  message: string;
+  metadata: DatasetMetadata;
+  summary: AuditSummary;
 }
 
 export interface PasswordGroupSummary {

@@ -136,7 +136,11 @@ def run_bulk_audit() -> Dict[str, Any]:
             "attack_adjustment": 0.0,
             "final_risk": baseline_risk,
             "final_tier": baseline_tier,
-            "is_hero": acc.get("is_hero", False)
+            "is_hero": acc.get("is_hero", False),
+            "is_blocked": acc.get("is_blocked", False),
+            "blocked_reason": acc.get("blocked_reason"),
+            "blocked_at": acc.get("blocked_at"),
+            "last_remediated_at": acc.get("last_remediated_at")
         })
 
     for d, s in dept_summary.items():
@@ -182,11 +186,11 @@ def run_bulk_audit() -> Dict[str, Any]:
     }
     
     print(f"[AuditEngine] Updating {ACCOUNTS_FILE} with audit attributes...")
-    with open(ACCOUNTS_FILE, "w", encoding="utf-8") as f:
+    with open(str(ACCOUNTS_FILE), "w", encoding="utf-8") as f:
         json.dump(audited_accounts, f)
         
     print(f"[AuditEngine] Writing precomputed summary to {AUDIT_RESULTS_FILE}...")
-    with open(AUDIT_RESULTS_FILE, "w", encoding="utf-8") as f:
+    with open(str(AUDIT_RESULTS_FILE), "w", encoding="utf-8") as f:
         json.dump(audit_summary, f, indent=2)
         
     print("[AuditEngine] Audit complete!")

@@ -297,7 +297,7 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
             className="flex-1 py-3 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white font-medium text-xs flex items-center justify-center space-x-2 shadow-sm transition active:scale-[0.98]"
           >
             <Zap className="w-4 h-4 text-white" />
-            <span>Simulate Exploit in Attack Lab</span>
+            <span>Attack Lab</span>
           </button>
           <button
             onClick={onClose}

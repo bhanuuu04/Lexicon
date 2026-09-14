@@ -32,6 +32,40 @@ class Account(BaseModel):
     final_risk: float = 0.0
     final_tier: str = "Low"
 
+    is_blocked: bool = False
+    blocked_reason: Optional[str] = None
+    blocked_at: Optional[str] = None
+    last_remediated_at: Optional[str] = None
+
+class DatasetMetadata(BaseModel):
+    version: str = "1.0.0"
+    created_at: str
+    total_accounts: int
+    dataset_file: str
+    is_custom_generated: bool = False
+    blocked_count: int = 0
+    generator_config: Dict[str, Any] = Field(default_factory=dict)
+
+class BlockAccountRequest(BaseModel):
+    is_blocked: bool
+    reason: Optional[str] = "Security Risk Detected"
+
+class ResetPasswordRequest(BaseModel):
+    new_password: str
+
+class PasswordCheckDetail(BaseModel):
+    rule_name: str
+    passed: bool
+    message: str
+    severity: str = "error"  # error, warning, success
+
+class ResetPasswordResponse(BaseModel):
+    success: bool
+    account_id: str
+    message: str
+    checks: List[PasswordCheckDetail]
+    account: Optional[Dict[str, Any]] = None
+
 class PasswordGroupSummary(BaseModel):
     group_id: int
     password_sample: str

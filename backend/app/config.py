@@ -9,6 +9,7 @@ DATA_DIRECTORY = BASE_DIR / "data"
 ACCOUNTS_FILE = DATA_DIRECTORY / "accounts_50k.json"
 AUDIT_RESULTS_FILE = DATA_DIRECTORY / "audit_results.json"
 BREACH_CORPUS_FILE = DATA_DIRECTORY / "breach_corpus.json"
+METADATA_FILE = DATA_DIRECTORY / "dataset_metadata.json"
 
 # Dataset Generation Config
 TOTAL_ACCOUNTS = 50_000
