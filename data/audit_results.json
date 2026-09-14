@@ -1,31 +1,31 @@
 {
   "total_accounts": 250,
-  "critical_count": 24,
-  "high_risk_count": 124,
-  "medium_risk_count": 51,
-  "low_risk_count": 51,
-  "breached_count": 159,
+  "critical_count": 23,
+  "high_risk_count": 125,
+  "medium_risk_count": 49,
+  "low_risk_count": 53,
+  "breached_count": 158,
   "reuse_cluster_count": 5,
-  "total_reused_accounts": 150,
+  "total_reused_accounts": 149,
   "privileged_count": 89,
   "privileged_at_risk_count": 52,
-  "policy_violations_count": 318,
+  "policy_violations_count": 316,
   "risk_distribution": {
-    "critical": 24,
-    "high": 124,
-    "medium": 51,
-    "low": 51
+    "critical": 23,
+    "high": 125,
+    "medium": 49,
+    "low": 53
   },
   "department_risk_summary": {
     "Information Technology": {
       "total": 25,
       "critical": 5,
-      "high": 12,
-      "medium": 3,
+      "high": 13,
+      "medium": 2,
       "low": 5,
       "privileged": 16,
       "breached": 15,
-      "avg_risk": 0.5606
+      "avg_risk": 0.5636
     },
     "Finance": {
       "total": 46,
@@ -61,11 +61,11 @@
       "total": 11,
       "critical": 2,
       "high": 2,
-      "medium": 3,
-      "low": 4,
+      "medium": 2,
+      "low": 5,
       "privileged": 11,
       "breached": 4,
-      "avg_risk": 0.4405
+      "avg_risk": 0.4269
     },
     "Operations": {
       "total": 36,

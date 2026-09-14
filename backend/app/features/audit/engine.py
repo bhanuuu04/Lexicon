@@ -1,17 +1,42 @@
 import json
+import uuid
 from typing import List, Dict, Any
 from collections import defaultdict
+from pathlib import Path
 from zxcvbn import zxcvbn
 
 from backend.app.config import ACCOUNTS_FILE, AUDIT_RESULTS_FILE
 from backend.app.features.breach_dictionary.service import breach_checker
-from backend.app.features.risk_engine.scoring import calculate_baseline_risk
+from backend.app.features.risk_engine.scoring import (
+    calculate_baseline_risk_detailed,
+    compute_risk_radar_vector,
+    calculate_baseline_risk
+)
 from backend.app.features.risk_engine.policy import check_policy_violations
+
+def _atomic_write_json(file_path: Path, data: Any, indent: int = None):
+    """Safely write JSON to disk with atomic replacement."""
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = file_path.with_name(f"{file_path.name}.{uuid.uuid4().hex[:8]}.tmp")
+    with open(str(tmp_path), "w", encoding="utf-8") as f:
+        if indent:
+            json.dump(data, f, indent=indent)
+        else:
+            json.dump(data, f)
+    try:
+        tmp_path.replace(file_path)
+    except Exception:
+        if file_path.exists():
+            try:
+                file_path.unlink()
+            except Exception:
+                pass
+        tmp_path.rename(file_path)
 
 def run_bulk_audit() -> Dict[str, Any]:
     """
-    Run complete deterministic 50,000-account audit pipeline.
-    Produces precomputed audit_results.json.
+    Run complete deterministic enterprise Active Directory credential audit pipeline.
+    Produces precomputed audit_results.json and updates accounts with factor breakdowns and radar vectors.
     """
     print(f"[AuditEngine] Loading accounts from {ACCOUNTS_FILE}...")
     with open(ACCOUNTS_FILE, "r", encoding="utf-8") as f:
@@ -69,11 +94,14 @@ def run_bulk_audit() -> Dict[str, Any]:
         pwd = acc["plaintext_password"]
         username = acc["username"]
         dept = acc["department"]
+        role = acc.get("role", "")
         is_priv = acc.get("is_privileged", False)
         grp_id = acc.get("password_group_id")
         cluster_size = group_sizes[grp_id] if grp_id is not None else 1
+        dept_count = len(group_departments[grp_id]) if grp_id is not None else 1
+        priv_in_cluster = group_privileged[grp_id] if grp_id is not None else (1 if is_priv else 0)
         
-        violations = check_policy_violations(pwd, username, dept)
+        violations = check_policy_violations(pwd, username=username, department=dept, role=role)
         total_violations_count += len(violations)
         
         z_score = zxcvbn_cache[pwd]
@@ -82,12 +110,24 @@ def run_bulk_audit() -> Dict[str, Any]:
         if is_breach:
             breached_count += 1
             
-        baseline_risk, baseline_tier = calculate_baseline_risk(
+        baseline_risk, baseline_tier, factors = calculate_baseline_risk_detailed(
             zxcvbn_score=z_score,
             is_breached=is_breach,
             reuse_cluster_size=cluster_size,
             is_privileged=is_priv,
-            policy_violations=violations
+            policy_violations=violations,
+            department_count=dept_count,
+            privileged_in_cluster=priv_in_cluster,
+            password_age_days=acc.get("password_age_days")
+        )
+        radar = compute_risk_radar_vector(
+            zxcvbn_score=z_score,
+            is_breached=is_breach,
+            reuse_cluster_size=cluster_size,
+            is_privileged=is_priv,
+            policy_violations=violations,
+            department_count=dept_count,
+            privileged_in_cluster=priv_in_cluster
         )
         
         if baseline_tier == "Critical":
@@ -117,11 +157,16 @@ def run_bulk_audit() -> Dict[str, Any]:
         audited_accounts.append({
             "id": acc["id"],
             "username": acc["username"],
+            "email": acc.get("email", f"{username}@lexicon.corp"),
             "first_name": acc.get("first_name", ""),
             "last_name": acc.get("last_name", ""),
             "department": dept,
-            "role": acc["role"],
+            "role": role,
             "is_privileged": is_priv,
+            "sid": acc.get("sid"),
+            "password_age_days": acc.get("password_age_days"),
+            "mfa_enabled": acc.get("mfa_enabled", False),
+            "failed_login_count": acc.get("failed_login_count", 0),
             "password_group_id": grp_id,
             "plaintext_password": pwd,
             "hash_ntlm": acc.get("hash_ntlm", ""),
@@ -135,9 +180,11 @@ def run_bulk_audit() -> Dict[str, Any]:
             "breach_match": is_breach,
             "baseline_risk": baseline_risk,
             "baseline_tier": baseline_tier,
-            "attack_adjustment": 0.0,
+            "attack_adjustment": acc.get("attack_adjustment", 0.0),
             "final_risk": baseline_risk,
             "final_tier": baseline_tier,
+            "factors": factors,
+            "radar": radar,
             "is_hero": acc.get("is_hero", False),
             "is_blocked": acc.get("is_blocked", False),
             "blocked_reason": acc.get("blocked_reason"),
@@ -188,12 +235,10 @@ def run_bulk_audit() -> Dict[str, Any]:
     }
     
     print(f"[AuditEngine] Updating {ACCOUNTS_FILE} with audit attributes...")
-    with open(str(ACCOUNTS_FILE), "w", encoding="utf-8") as f:
-        json.dump(audited_accounts, f)
+    _atomic_write_json(ACCOUNTS_FILE, audited_accounts)
         
     print(f"[AuditEngine] Writing precomputed summary to {AUDIT_RESULTS_FILE}...")
-    with open(str(AUDIT_RESULTS_FILE), "w", encoding="utf-8") as f:
-        json.dump(audit_summary, f, indent=2)
+    _atomic_write_json(AUDIT_RESULTS_FILE, audit_summary, indent=2)
         
     print("[AuditEngine] Audit complete!")
     return audit_summary

@@ -30,7 +30,53 @@ def test_breach_checker_in_memory():
     
     stats = checker.get_corpus_stats()
     assert stats["total_compromised_passwords"] == 3
-    assert "Synthetic Compromised Password Corpus" in stats["source"]
+    assert "Compromised Password Dictionary" in stats["source"]
+
+def test_breach_checker_k_anonymity_and_bulk():
+    checker = BreachChecker()
+    checker.import_custom_passwords(["Finance2026!", "P@ssword123"], source_label="Custom Threat Feed")
+    
+    found, prefix, suffix = checker.check_local_k_anonymity("Finance2026!")
+    assert found is True
+    assert len(prefix) == 5
+    assert len(suffix) == 35
+
+    bulk = checker.check_bulk(["Finance2026!", "CleanPassword9981!", "P@ssword123"])
+    assert len(bulk) == 3
+    assert bulk[0]["is_breached"] is True
+    assert bulk[1]["is_breached"] is False
+    assert bulk[2]["is_breached"] is True
+
+def test_breach_api_endpoints():
+    # 1. POST /api/breach/check
+    check_resp = client.post("/api/breach/check", json={"password": "Company2026!", "check_hibp": False})
+    assert check_resp.status_code == 200
+    data = check_resp.json()
+    assert data["is_breached"] is True
+    assert data["severity"] == "critical"
+
+    # 2. POST /api/breach/check-bulk
+    bulk_resp = client.post("/api/breach/check-bulk", json={"passwords": ["Company2026!", "UniqueRandomPass!99"]})
+    assert bulk_resp.status_code == 200
+    b_data = bulk_resp.json()
+    assert b_data["total_checked"] == 2
+    assert b_data["breached_count"] == 1
+    assert b_data["clean_count"] == 1
+
+    # 3. GET /api/breach/stats
+    stats_resp = client.get("/api/breach/stats")
+    assert stats_resp.status_code == 200
+    s_data = stats_resp.json()
+    assert s_data["total_compromised_passwords"] > 0
+    assert "categories" in s_data
+
+    # 4. POST /api/breach/import
+    import_resp = client.post("/api/breach/import", json={
+        "passwords": ["InjectedLeakedPass2026!"],
+        "source_label": "Unit Test Import"
+    })
+    assert import_resp.status_code == 200
+    assert import_resp.json()["imported_count"] == 1
 
 def test_remediation_fallback_generation():
     req_payload = {
@@ -65,3 +111,23 @@ def test_remediation_fallback_generation():
     assert "password_policy_recommendations" in report
     assert "mfa_recommendations" in report
     assert "org_blocklist_suggestions" in report
+
+def test_remediation_gpo_powershell_and_playbooks():
+    # 1. GET /api/remediation/gpo-script
+    gpo_resp = client.get("/api/remediation/gpo-script")
+    assert gpo_resp.status_code == 200
+    assert "New-ADFineGrainedPasswordPolicy" in gpo_resp.text
+    assert "Lexicon-Privileged-PSO" in gpo_resp.text
+
+    # 2. GET /api/remediation/department-playbook/Finance
+    fin_resp = client.get("/api/remediation/department-playbook/Finance")
+    assert fin_resp.status_code == 200
+    f_data = fin_resp.json()
+    assert "Finance" in f_data["department"]
+    assert len(f_data["top_actions"]) > 0
+
+    # 3. GET /api/remediation/department-playbook/IT
+    it_resp = client.get("/api/remediation/department-playbook/IT")
+    assert it_resp.status_code == 200
+    it_data = it_resp.json()
+    assert "Information Technology" in it_data["department"]
