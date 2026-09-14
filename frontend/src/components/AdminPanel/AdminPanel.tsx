@@ -385,7 +385,103 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       </div>
 
-      {/* 2. SUB-NAVIGATION TABS */}
+      {/* 2. 🌟 4-STEP GOLDEN PATH JURY EVALUATION WORKFLOW */}
+      <div className="p-4 rounded-3xl bg-gradient-to-r from-[#0071E3]/[0.05] via-[#5856D6]/[0.03] to-[#0071E3]/[0.05] border border-[#0071E3]/15 shadow-card space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+          <div className="flex items-center space-x-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#0071E3] text-white text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1 shadow-xs">
+              <Sparkles className="w-3 h-3" />
+              <span>4-Step Golden Path</span>
+            </span>
+            <h3 className="text-xs sm:text-sm font-bold text-[#1D1D1F]">
+              PS-11 Evaluator Guided Sequence
+            </h3>
+          </div>
+          <span className="text-[11px] text-[#86868B] font-medium">
+            Follow this 4-step live sequence for the complete PS-11 problem-solution narrative
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {/* Step 1: Overview */}
+          <button
+            onClick={() => setActiveAdminTab("overview")}
+            className={`p-3 rounded-2xl text-left transition-all border cursor-pointer ${
+              activeAdminTab === "overview"
+                ? "bg-white border-[#0071E3] shadow-md ring-2 ring-[#0071E3]/20"
+                : "bg-white/80 hover:bg-white border-black/[0.06] hover:border-black/[0.12]"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold text-[#0071E3] uppercase tracking-wider">Step 1 • 60s</span>
+              <Activity className="w-3.5 h-3.5 text-[#0071E3]" />
+            </div>
+            <h4 className="text-xs font-bold text-[#1D1D1F]">50k Directory Audit</h4>
+            <p className="text-[11px] text-[#6E6E73] mt-0.5 line-clamp-2">
+              Explore 20k+ high-risk accounts & department posture concentration.
+            </p>
+          </button>
+
+          {/* Step 2: Blast Radius */}
+          <button
+            onClick={() => setActiveAdminTab("blast-radius")}
+            className={`p-3 rounded-2xl text-left transition-all border cursor-pointer ${
+              activeAdminTab === "blast-radius"
+                ? "bg-white border-[#5856D6] shadow-md ring-2 ring-[#5856D6]/20"
+                : "bg-white/80 hover:bg-white border-black/[0.06] hover:border-black/[0.12]"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold text-[#5856D6] uppercase tracking-wider">Step 2 • 60s</span>
+              <Network className="w-3.5 h-3.5 text-[#5856D6]" />
+            </div>
+            <h4 className="text-xs font-bold text-[#1D1D1F]">Blast Radius (Cluster #42)</h4>
+            <p className="text-[11px] text-[#6E6E73] mt-0.5 line-clamp-2">
+              31 users in Cluster #42 sharing password across IT & Domain Admins.
+            </p>
+          </button>
+
+          {/* Step 3: Attack Lab */}
+          <button
+            onClick={onHeroClick}
+            className={`p-3 rounded-2xl text-left transition-all border cursor-pointer ${
+              activeAdminTab === "attack-lab"
+                ? "bg-white border-[#FF3B30] shadow-md ring-2 ring-[#FF3B30]/20"
+                : "bg-white/80 hover:bg-white border-black/[0.06] hover:border-black/[0.12]"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold text-[#FF3B30] uppercase tracking-wider">Step 3 • 90s</span>
+              <Zap className="w-3.5 h-3.5 text-[#FF3B30]" />
+            </div>
+            <h4 className="text-xs font-bold text-[#1D1D1F]">Attack Lab & GPU Rigs</h4>
+            <p className="text-[11px] text-[#6E6E73] mt-0.5 line-clamp-2">
+              Simulate rule attack against alex.morgan & benchmark 8x RTX 4090 GPUs.
+            </p>
+          </button>
+
+          {/* Step 4: AI Advisory */}
+          <button
+            onClick={() => setActiveAdminTab("remediation")}
+            className={`p-3 rounded-2xl text-left transition-all border cursor-pointer ${
+              activeAdminTab === "remediation"
+                ? "bg-white border-[#34C759] shadow-md ring-2 ring-[#34C759]/20"
+                : "bg-white/80 hover:bg-white border-black/[0.06] hover:border-black/[0.12]"
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold text-[#34C759] uppercase tracking-wider">Step 4 • 60s</span>
+              <FileText className="w-3.5 h-3.5 text-[#34C759]" />
+            </div>
+            <h4 className="text-xs font-bold text-[#1D1D1F]">CISO Advisory & AD GPO</h4>
+            <p className="text-[11px] text-[#6E6E73] mt-0.5 line-clamp-2">
+              Generate NIST SP 800-63B policy brief & download PowerShell GPO script.
+            </p>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. SUB-NAVIGATION TABS */}
       <div className="flex items-center justify-between overflow-x-auto pb-2 border-b border-black/[0.06]">
         <div className="flex items-center space-x-1 sm:space-x-2">
           {adminSubNav.map((tab) => {
