@@ -124,10 +124,12 @@ def run_bulk_audit() -> Dict[str, Any]:
             "is_privileged": is_priv,
             "password_group_id": grp_id,
             "plaintext_password": pwd,
+            "hash_ntlm": acc.get("hash_ntlm", ""),
             "hash_md5": acc["hash_md5"],
             "hash_sha256": acc["hash_sha256"],
             "hash_bcrypt": acc["hash_bcrypt"],
             "hash_argon2id": acc["hash_argon2id"],
+
             "policy_violations": violations,
             "zxcvbn_score": z_score,
             "breach_match": is_breach,

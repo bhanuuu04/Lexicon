@@ -191,6 +191,25 @@ export interface HashRaceResult {
   status: "pending" | "running" | "completed";
 }
 
+export interface CrackTimeEstimate {
+  entropy_bits: number;
+  total_combinations: string;
+  hardware_rig: string;
+  hash_rate_per_sec: number;
+  estimated_seconds: number;
+  human_readable: string;
+}
+
+export interface AlgorithmMetadata {
+  name: string;
+  category: string;
+  work_factor: string;
+  memory_cost: string;
+  gpu_resistance: string;
+  standard: string;
+  description: string;
+}
+
 export interface PriorityAccountAction {
   username: string;
   role: string;
@@ -209,3 +228,4 @@ export interface RemediationReport {
   org_blocklist_suggestions: string[];
   remediation_priorities: string[];
 }
+

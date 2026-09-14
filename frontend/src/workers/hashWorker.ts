@@ -1,7 +1,17 @@
 import { md4, md5, sha256, bcrypt, argon2id } from "hash-wasm";
 
+function toUtf16LE(str: string): Uint8Array {
+  const buf = new Uint8Array(str.length * 2);
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    buf[i * 2] = code & 0xff;
+    buf[i * 2 + 1] = (code >> 8) & 0xff;
+  }
+  return buf;
+}
+
 self.onmessage = async (e: MessageEvent) => {
-  const { algorithm, workload, salt = "$2b$10$N9qo8uLOickgx2ZMRZoMye" } = e.data;
+  const { algorithm, workload } = e.data;
 
   const testCandidates = workload || [
     "Password123!", "Welcome2026!", "Company2026!", "Summer2026!", "Winter2025!",
@@ -13,17 +23,11 @@ self.onmessage = async (e: MessageEvent) => {
 
   try {
     if (algorithm === "NTLM") {
-      // Run NTLM (UTF-16LE MD4) batch
-      const iterations = 500;
+      // Run NTLM batch (MD4 over UTF-16LE)
+      const iterations = 800;
       for (let i = 0; i < iterations; i++) {
         const pwd = testCandidates[i % testCandidates.length];
-        const bytes = new Uint8Array(pwd.length * 2);
-        for (let j = 0; j < pwd.length; j++) {
-          const code = pwd.charCodeAt(j);
-          bytes[j * 2] = code & 0xff;
-          bytes[j * 2 + 1] = (code >> 8) & 0xff;
-        }
-        await md4(bytes);
+        await md4(toUtf16LE(pwd));
         completed++;
       }
       const elapsed = performance.now() - startTime;
@@ -37,7 +41,7 @@ self.onmessage = async (e: MessageEvent) => {
           elapsed_ms: Math.round(elapsed * 10) / 10,
           throughput,
           memory_cost: "0 KB",
-          iterations: "1 (AD Default)",
+          iterations: "1 (Unsalted MD4)",
           status: "completed",
         },
       });
@@ -87,6 +91,7 @@ self.onmessage = async (e: MessageEvent) => {
           status: "completed",
         },
       });
+
     } else if (algorithm === "bcrypt") {
       // Run bcrypt batch (e.g. cost 8-10 for responsive browser measurement)
       const iterations = 6;

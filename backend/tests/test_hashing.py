@@ -68,3 +68,47 @@ def test_compute_all_hashes_integrity():
     assert verify_password(pwd, all_hashes["hash_bcrypt"], "bcrypt") is True
     assert verify_password(pwd, all_hashes["hash_argon2id"], "argon2id") is True
 
+def test_hashing_api_endpoints():
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+
+    client = TestClient(app)
+
+    # 1. POST /api/hashing/compute
+    comp_resp = client.post("/api/hashing/compute", json={"password": "Company2026!"})
+    assert comp_resp.status_code == 200
+    comp_data = comp_resp.json()
+    assert "hash_ntlm" in comp_data
+    assert "hash_sha256" in comp_data
+    assert "hash_bcrypt" in comp_data
+    assert "hash_argon2id" in comp_data
+
+    # 2. POST /api/hashing/verify
+    verify_resp = client.post("/api/hashing/verify", json={
+        "password": "Company2026!",
+        "algorithm": "ntlm",
+        "hash_value": comp_data["hash_ntlm"]
+    })
+    assert verify_resp.status_code == 200
+    assert verify_resp.json()["matched"] is True
+
+    # 3. POST /api/hashing/estimate-crack-time
+    crack_resp = client.post("/api/hashing/estimate-crack-time", json={
+        "password": "Company2026!",
+        "algorithm": "ntlm",
+        "hardware_rig": "8x_rtx_4090"
+    })
+    assert crack_resp.status_code == 200
+    crack_data = crack_resp.json()
+    assert "estimated_seconds" in crack_data
+    assert "human_readable" in crack_data
+
+    # 4. GET /api/hashing/algorithms
+    algo_resp = client.get("/api/hashing/algorithms")
+    assert algo_resp.status_code == 200
+    algos = algo_resp.json()
+    assert len(algos) >= 4
+    assert any(a["name"] == "NTLM" for a in algos)
+    assert any(a["name"] == "Argon2id" for a in algos)
+
+

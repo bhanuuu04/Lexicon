@@ -16,11 +16,11 @@ class Account(BaseModel):
     password_group_id: Optional[int] = None
     plaintext_password: str  # Present strictly because dataset is synthetic
 
-    hash_ntlm: Optional[str] = None
-    hash_md5: str
-    hash_sha256: str
-    hash_bcrypt: str
-    hash_argon2id: str
+    hash_ntlm: str = ""
+    hash_md5: str = ""
+    hash_sha256: str = ""
+    hash_bcrypt: str = ""
+    hash_argon2id: str = ""
 
     policy_violations: List[str] = Field(default_factory=list)
     zxcvbn_score: int = 0  # 0 to 4

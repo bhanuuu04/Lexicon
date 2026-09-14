@@ -194,3 +194,40 @@ export async function resetAccountPassword(
   return res.json();
 }
 
+export async function fetchAlgorithmMetadata(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/api/hashing/algorithms`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch algorithm metadata`);
+  }
+  return res.json();
+}
+
+export async function estimateCrackTimeAPI(payload: {
+  password?: string;
+  entropy_bits?: number;
+  algorithm?: string;
+  hardware_rig?: string;
+}): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/hashing/estimate-crack-time`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error(`Crack time estimation failed`);
+  }
+  return res.json();
+}
+
+export async function computeHashesAPI(password: string): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/hashing/compute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+  if (!res.ok) {
+    throw new Error(`Hash computation failed`);
+  }
+  return res.json();
+}
+

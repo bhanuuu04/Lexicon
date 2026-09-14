@@ -5,7 +5,7 @@ import binascii
 import bcrypt
 import argon2
 from argon2 import PasswordHasher
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 
 from backend.app.config import BCRYPT_COST, ARGON2_MEMORY, ARGON2_ITERATIONS, ARGON2_PARALLELISM
 
@@ -161,5 +161,108 @@ def verify_password(candidate: str, target_hash: str, algorithm: str) -> bool:
 def verify_hash(password: str, hash_type: str, hash_value: str) -> bool:
     """Backward compatibility alias for verify_password."""
     return verify_password(candidate=password, target_hash=hash_value, algorithm=hash_type)
+
+# ---------------------------------------------------------------------------
+# Hardware Benchmarks & Theoretical Crack Time Estimation
+# ---------------------------------------------------------------------------
+
+HARDWARE_HASHRATES = {
+    "8x_rtx_4090": {
+        "ntlm": 1_200_000_000_000,    # 1.2 TH/s on 8x 4090 rig
+        "md5": 800_000_000_000,       # 800 GH/s
+        "sha256": 280_000_000_000,    # 280 GH/s
+        "bcrypt": 800_000,            # 800 kH/s (cost 12: ~200 kH/s)
+        "argon2id": 35_000            # 35 kH/s (at 64MB memory: ~5 kH/s)
+    },
+    "single_rtx_4090": {
+        "ntlm": 150_000_000_000,      # 150 GH/s
+        "md5": 100_000_000_000,       # 100 GH/s
+        "sha256": 35_000_000_000,     # 35 GH/s
+        "bcrypt": 25_000,             # 25 kH/s
+        "argon2id": 650               # 650 H/s
+    },
+    "cpu_standard": {
+        "ntlm": 500_000_000,          # 500 MH/s
+        "md5": 300_000_000,           # 300 MH/s
+        "sha256": 120_000_000,        # 120 MH/s
+        "bcrypt": 45,                 # 45 H/s
+        "argon2id": 2                 # 2 H/s
+    }
+}
+
+def format_duration(seconds: float) -> str:
+    if seconds < 0.001: return "Instantaneous (< 1 ms)"
+    if seconds < 1: return f"{seconds * 1000:.1f} ms"
+    if seconds < 60: return f"{seconds:.1f} seconds"
+    if seconds < 3600: return f"{seconds / 60:.1f} minutes"
+    if seconds < 86400: return f"{seconds / 3600:.1f} hours"
+    if seconds < 31536000: return f"{seconds / 86400:.1f} days"
+    if seconds < 3153600000: return f"{seconds / 31536000:.1f} years"
+    return f"{seconds / 31536000:.2e} centuries"
+
+def estimate_crack_time(entropy_bits: float, algorithm: str = "ntlm", rig: str = "8x_rtx_4090") -> Dict[str, Any]:
+    """
+    Estimate seconds and human-readable time to exhaust 50% search space
+    for a given password entropy and hardware profile.
+    """
+    algo = algorithm.lower().replace("-", "").replace("_", "")
+    total_combinations = 2 ** max(1.0, min(128.0, entropy_bits))
+    
+    hash_rates = HARDWARE_HASHRATES.get(rig, HARDWARE_HASHRATES["8x_rtx_4090"])
+    rate = hash_rates.get(algo, 1_000_000)
+    
+    # 50% expected search space
+    seconds = (total_combinations / 2.0) / max(1.0, rate)
+    
+    return {
+        "entropy_bits": round(entropy_bits, 1),
+        "total_combinations": f"{total_combinations:.2e}",
+        "hardware_rig": rig,
+        "hash_rate_per_sec": rate,
+        "estimated_seconds": seconds,
+        "human_readable": format_duration(seconds)
+    }
+
+def get_algorithms_metadata() -> List[Dict[str, Any]]:
+    """Return standard industry comparison metadata for all supported algorithms."""
+    return [
+        {
+            "name": "NTLM",
+            "category": "Legacy / Broken",
+            "work_factor": "1 (Single MD4 Pass)",
+            "memory_cost": "0 KB",
+            "gpu_resistance": "None (1.2 TH/s on 8x RTX 4090)",
+            "standard": "Windows Active Directory Default",
+            "description": "Unsalted, fast legacy digest. Enables Pass-the-Hash and rapid offline cracking."
+        },
+        {
+            "name": "SHA-256",
+            "category": "Standard Digest",
+            "work_factor": "1 (Single NIST Pass)",
+            "memory_cost": "0 KB",
+            "gpu_resistance": "None (280 GH/s on 8x RTX 4090)",
+            "standard": "FIPS 180-4",
+            "description": "Cryptographically secure for signatures, but vulnerable to GPU brute forcing when used raw for passwords."
+        },
+        {
+            "name": "bcrypt",
+            "category": "Adaptive Salted",
+            "work_factor": f"Cost {BCRYPT_COST} (4,096 Rounds)",
+            "memory_cost": "4 KB",
+            "gpu_resistance": "High (Adaptive Eksblowfish)",
+            "standard": "OpenBSD / OWASP Recommended",
+            "description": "Automatic salt embedding with configurable work factor scaling."
+        },
+        {
+            "name": "Argon2id",
+            "category": "Memory-Hard / Post-Quantum",
+            "work_factor": f"t={ARGON2_ITERATIONS} Passes, p={ARGON2_PARALLELISM}",
+            "memory_cost": f"{ARGON2_MEMORY // 1024} MB",
+            "gpu_resistance": "Extreme (Memory-hardness neutralizes ASIC/GPU parallel arrays)",
+            "standard": "RFC 9106 / Password Hashing Competition Winner",
+            "description": "Gold standard for modern enterprise identity systems, immune to GPU acceleration."
+        }
+    ]
+
 
 

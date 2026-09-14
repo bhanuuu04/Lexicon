@@ -316,6 +316,112 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
             </div>
           </div>
 
+          {/* Multi-Algorithm Cryptographic Digests */}
+          <div className="space-y-3">
+            <h4 className="text-xs uppercase text-[#86868B] tracking-wider font-semibold flex items-center space-x-1.5">
+              <KeyRound className="w-3.5 h-3.5 text-[#0071E3]" />
+              <span>Multi-Algorithm Cryptographic Digests</span>
+            </h4>
+
+            <div className="space-y-2">
+              {/* NTLM */}
+              <div className="p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
+                <div className="min-w-0 flex-1 pr-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#FF3B30]/[0.1] text-[#FF3B30]">
+                      NTLM (Active Directory)
+                    </span>
+                    <span className="text-[10px] text-[#86868B]">1 round MD4</span>
+                  </div>
+                  <div className="text-xs font-mono text-[#1D1D1F] truncate mt-1">
+                    {account.hash_ntlm || "N/A"}
+                  </div>
+                </div>
+                {account.hash_ntlm && (
+                  <button
+                    onClick={() => copyToClipboard(account.hash_ntlm!, "ntlm")}
+                    className="p-1.5 rounded-lg hover:bg-white text-[#6E6E73] hover:text-[#1D1D1F] transition shrink-0"
+                    title="Copy NTLM hash"
+                  >
+                    {copiedKey === "ntlm" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+              </div>
+
+              {/* SHA-256 */}
+              <div className="p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
+                <div className="min-w-0 flex-1 pr-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#FF9500]/[0.1] text-[#FF9500]">
+                      SHA-256
+                    </span>
+                    <span className="text-[10px] text-[#86868B]">Standard digest</span>
+                  </div>
+                  <div className="text-xs font-mono text-[#1D1D1F] truncate mt-1">
+                    {account.hash_sha256 || "N/A"}
+                  </div>
+                </div>
+                {account.hash_sha256 && (
+                  <button
+                    onClick={() => copyToClipboard(account.hash_sha256, "sha256")}
+                    className="p-1.5 rounded-lg hover:bg-white text-[#6E6E73] hover:text-[#1D1D1F] transition shrink-0"
+                    title="Copy SHA-256 hash"
+                  >
+                    {copiedKey === "sha256" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+              </div>
+
+              {/* bcrypt */}
+              <div className="p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
+                <div className="min-w-0 flex-1 pr-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#0071E3]/[0.1] text-[#0071E3]">
+                      bcrypt
+                    </span>
+                    <span className="text-[10px] text-[#86868B]">Cost 12 (4,096 rounds)</span>
+                  </div>
+                  <div className="text-xs font-mono text-[#1D1D1F] truncate mt-1">
+                    {account.hash_bcrypt || "N/A"}
+                  </div>
+                </div>
+                {account.hash_bcrypt && (
+                  <button
+                    onClick={() => copyToClipboard(account.hash_bcrypt, "bcrypt")}
+                    className="p-1.5 rounded-lg hover:bg-white text-[#6E6E73] hover:text-[#1D1D1F] transition shrink-0"
+                    title="Copy bcrypt hash"
+                  >
+                    {copiedKey === "bcrypt" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+              </div>
+
+              {/* Argon2id */}
+              <div className="p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.04] flex items-center justify-between">
+                <div className="min-w-0 flex-1 pr-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#34C759]/[0.1] text-[#34C759]">
+                      Argon2id
+                    </span>
+                    <span className="text-[10px] text-[#86868B]">64 MiB / 4 passes (PHC)</span>
+                  </div>
+                  <div className="text-xs font-mono text-[#1D1D1F] truncate mt-1">
+                    {account.hash_argon2id || "N/A"}
+                  </div>
+                </div>
+                {account.hash_argon2id && (
+                  <button
+                    onClick={() => copyToClipboard(account.hash_argon2id, "argon2id")}
+                    className="p-1.5 rounded-lg hover:bg-white text-[#6E6E73] hover:text-[#1D1D1F] transition shrink-0"
+                    title="Copy Argon2id hash"
+                  >
+                    {copiedKey === "argon2id" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Attack Evidence Section */}
           <div className="p-4 rounded-xl border border-black/[0.06] bg-[#F5F5F7] space-y-3">
             <div className="flex items-center justify-between">

@@ -100,6 +100,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
         ? targetAccount.hash_md5
         : targetAccount.hash_sha256;
 
+
     worker.postMessage({
       type: "START_ATTACK",
       payload: {
@@ -270,6 +271,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
                 SHA-256
               </button>
             </div>
+
 
             {/* Launch / Cancel Button */}
             {status === "RUNNING" ? (

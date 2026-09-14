@@ -1,17 +1,17 @@
 import { md4, md5, sha256 } from "hash-wasm";
 import { generateCandidateStream } from "../lib/mutationEngine";
 
-function stringToUtf16LeBytes(str: string): Uint8Array {
-  const bytes = new Uint8Array(str.length * 2);
+let isCancelled = false;
+
+function toUtf16LE(str: string): Uint8Array {
+  const buf = new Uint8Array(str.length * 2);
   for (let i = 0; i < str.length; i++) {
     const code = str.charCodeAt(i);
-    bytes[i * 2] = code & 0xff;
-    bytes[i * 2 + 1] = (code >> 8) & 0xff;
+    buf[i * 2] = code & 0xff;
+    buf[i * 2 + 1] = (code >> 8) & 0xff;
   }
-  return bytes;
+  return buf;
 }
-
-let isCancelled = false;
 
 self.onmessage = async (e: MessageEvent) => {
   const { type, payload } = e.data;
@@ -28,7 +28,7 @@ self.onmessage = async (e: MessageEvent) => {
       username,
       department,
       target_hash,
-      algorithm = "MD5",
+      algorithm = "NTLM",
       max_candidates = 50000,
       time_budget_ms = 30000,
     } = payload;
@@ -48,7 +48,7 @@ self.onmessage = async (e: MessageEvent) => {
 
     const stream = generateCandidateStream(contextSeeds, max_candidates);
 
-    const algoLower = algorithm.toLowerCase();
+    const algoLower = algorithm.toLowerCase().replace("-", "").replace("_", "");
 
     for (const item of stream) {
       if (isCancelled) {
@@ -64,15 +64,15 @@ self.onmessage = async (e: MessageEvent) => {
       let computedHash = "";
 
       if (algoLower === "ntlm") {
-        computedHash = await md4(stringToUtf16LeBytes(cand));
+        computedHash = await md4(toUtf16LE(cand));
       } else if (algoLower === "md5") {
         computedHash = await md5(cand);
-      } else if (algoLower === "sha256" || algoLower === "sha-256") {
+      } else if (algoLower === "sha256") {
         computedHash = await sha256(cand);
       } else {
-        // Default to fast md5 comparison
         computedHash = await md5(cand);
       }
+
 
       if (computedHash.toLowerCase() === target_hash.toLowerCase()) {
         matched = true;

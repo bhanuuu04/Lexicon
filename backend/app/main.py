@@ -5,6 +5,7 @@ from backend.app.config import CORS_ORIGINS
 from backend.app.features.dataset_api.router import router as dataset_router
 from backend.app.features.attack_lab.router import router as attack_router
 from backend.app.features.remediation.router import router as remediation_router
+from backend.app.features.hashing.router import router as hashing_router
 
 app = FastAPI(
     title="Lexicon — Enterprise Password Risk Intelligence API",
@@ -26,6 +27,8 @@ app.add_middleware(
 app.include_router(dataset_router)
 app.include_router(attack_router)
 app.include_router(remediation_router)
+app.include_router(hashing_router)
+
 
 @app.get("/health", tags=["system"])
 @app.get("/api/health", tags=["system"])

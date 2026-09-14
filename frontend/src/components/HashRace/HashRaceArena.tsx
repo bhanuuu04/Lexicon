@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Cpu, Play } from "lucide-react";
+import { Cpu, Play, ShieldAlert, Sparkles, Zap, HardDrive } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { HashRaceResult } from "../../types";
 
@@ -14,7 +14,7 @@ export const HashRaceArena: React.FC = () => {
       elapsed_ms: 0,
       throughput: 0,
       memory_cost: "0 KB",
-      iterations: "1 (AD Default)",
+      iterations: "1 (Unsalted MD4)",
       status: "pending",
     },
     MD5: {
@@ -23,7 +23,7 @@ export const HashRaceArena: React.FC = () => {
       elapsed_ms: 0,
       throughput: 0,
       memory_cost: "0 KB",
-      iterations: "1",
+      iterations: "1 (Standard)",
       status: "pending",
     },
     "SHA-256": {
@@ -32,7 +32,7 @@ export const HashRaceArena: React.FC = () => {
       elapsed_ms: 0,
       throughput: 0,
       memory_cost: "0 KB",
-      iterations: "1",
+      iterations: "1 (Fast Digest)",
       status: "pending",
     },
     bcrypt: {
@@ -57,7 +57,13 @@ export const HashRaceArena: React.FC = () => {
 
   const runRace = () => {
     setIsRunning(true);
-    const algos: ("NTLM" | "MD5" | "SHA-256" | "bcrypt" | "Argon2id")[] = ["NTLM", "MD5", "SHA-256", "bcrypt", "Argon2id"];
+    const algos: ("NTLM" | "MD5" | "SHA-256" | "bcrypt" | "Argon2id")[] = [
+      "NTLM",
+      "MD5",
+      "SHA-256",
+      "bcrypt",
+      "Argon2id",
+    ];
 
     setResults((prev) => {
       const next = { ...prev };
@@ -90,15 +96,23 @@ export const HashRaceArena: React.FC = () => {
         }
         worker.terminate();
       };
+
+      worker.onerror = () => {
+        completedCount++;
+        if (completedCount === algos.length) {
+          setIsRunning(false);
+        }
+        worker.terminate();
+      };
     });
   };
 
   const chartData = [
-    { name: "NTLM (AD)", throughput: results["NTLM"].throughput, fill: "#FF2D55" },
-    { name: "MD5", throughput: results["MD5"].throughput, fill: "#FF3B30" },
-    { name: "SHA-256", throughput: results["SHA-256"].throughput, fill: "#FF9500" },
-    { name: "bcrypt", throughput: results["bcrypt"].throughput, fill: "#0071E3" },
-    { name: "Argon2id", throughput: results["Argon2id"].throughput, fill: "#34C759" },
+    { name: "NTLM", throughput: results["NTLM"]?.throughput || 0, fill: "#FF3B30", label: "NTLM (AD)" },
+    { name: "MD5", throughput: results["MD5"]?.throughput || 0, fill: "#FF453A", label: "MD5" },
+    { name: "SHA-256", throughput: results["SHA-256"]?.throughput || 0, fill: "#FF9500", label: "SHA-256" },
+    { name: "bcrypt", throughput: results["bcrypt"]?.throughput || 0, fill: "#0071E3", label: "bcrypt" },
+    { name: "Argon2id", throughput: results["Argon2id"]?.throughput || 0, fill: "#34C759", label: "Argon2id" },
   ];
 
   return (
@@ -108,13 +122,13 @@ export const HashRaceArena: React.FC = () => {
         <div>
           <div className="flex items-center space-x-2 text-[#FF9500] text-xs font-semibold uppercase tracking-wider">
             <Cpu className="w-4 h-4" />
-            <span>Cryptographic Resistance Benchmark</span>
+            <span>Cryptographic Resistance Benchmark Engine</span>
           </div>
           <h2 className="text-xl font-semibold text-[#1D1D1F] mt-1 font-sans">
-            Hash Race: Workload vs. Computation Cost
+            Multi-Algorithm Hash Race: Workload vs. Compute Cost
           </h2>
-          <p className="text-xs text-[#6E6E73] max-w-2xl mt-1 font-normal">
-            Execute genuine WASM Web Workers measuring authentic on-device hashing throughput. Demonstrates why legacy fast hashes (MD5, SHA-256) are instantly crackable whereas modern memory-hard schemes (Argon2id, bcrypt) neutralize brute-force attacks.
+          <p className="text-xs text-[#6E6E73] max-w-3xl mt-1 font-normal">
+            Execute authentic parallel WASM Web Workers measuring client-side hashing throughput. Demonstrates why enterprise Active Directory legacy hashes (NTLM) and fast digests (MD5, SHA-256) are vulnerable to billion-hash/sec offline cracking clusters, whereas memory-hard schemes (Argon2id 64MB / bcrypt) neutralize offline brute-force attacks.
           </p>
         </div>
 
@@ -126,7 +140,7 @@ export const HashRaceArena: React.FC = () => {
           {isRunning ? (
             <>
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Executing Live WASM Race...</span>
+              <span>Executing 5-Lane WASM Race...</span>
             </>
           ) : (
             <>
@@ -140,26 +154,26 @@ export const HashRaceArena: React.FC = () => {
       {/* 5 Lanes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* NTLM */}
-        <div className="apple-card p-5 flex flex-col justify-between space-y-4 border border-[#FF2D55]/20 bg-white">
+        <div className="apple-card p-5 flex flex-col justify-between space-y-4 border-l-4 border-l-[#FF3B30]">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase px-2.5 py-0.5 rounded-full bg-[#FF2D55]/[0.08] text-[#FF2D55] border border-[#FF2D55]/20 font-semibold">
-                AD Baseline
+              <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-[#FF3B30]/[0.1] text-[#FF3B30] border border-[#FF3B30]/20 font-bold">
+                Active Directory
               </span>
-              <span className="text-xs text-[#86868B] font-mono">MD4-LE</span>
+              <span className="text-xs text-[#86868B] font-mono">1993</span>
             </div>
-            <h3 className="text-xl font-semibold text-[#1D1D1F] mt-2 font-sans">NTLM</h3>
-            <p className="text-xs text-[#6E6E73] mt-1">Windows Active Directory default. Highly vulnerable to rapid cracking.</p>
+            <h3 className="text-lg font-bold text-[#1D1D1F] mt-2 font-sans">NTLM</h3>
+            <p className="text-xs text-[#6E6E73] mt-1">Unsalted MD4 over UTF-16LE. Default Windows hash.</p>
           </div>
 
           <div className="space-y-2 text-xs pt-3 border-t border-black/[0.06]">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-[#6E6E73]">Measured Rate:</span>
-              <span className="text-[#FF2D55] font-semibold font-sans">
+              <span className="text-[#FF3B30] font-bold font-sans">
                 {results["NTLM"].throughput > 0
-                  ? `${results["NTLM"].throughput.toLocaleString()} /sec`
+                  ? `${results["NTLM"].throughput.toLocaleString()} /s`
                   : isRunning
-                  ? "Benchmarking..."
+                  ? "Testing..."
                   : "Ready"}
               </span>
             </div>
@@ -169,7 +183,11 @@ export const HashRaceArena: React.FC = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-[#6E6E73]">Memory Hardness:</span>
-              <span className="text-[#FF2D55] font-medium">0 KB (Zero RAM)</span>
+              <span className="text-[#FF3B30] font-semibold">0 KB (Zero RAM)</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#6E6E73]">Work Factor:</span>
+              <span className="text-[#86868B] font-mono text-[11px]">1 Iteration</span>
             </div>
           </div>
         </div>
@@ -178,23 +196,23 @@ export const HashRaceArena: React.FC = () => {
         <div className="apple-card p-5 flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase px-2.5 py-0.5 rounded-full bg-[#FF3B30]/[0.08] text-[#FF3B30] border border-[#FF3B30]/20 font-semibold">
-                Legacy / Vulnerable
+              <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-[#FF453A]/[0.1] text-[#FF453A] border border-[#FF453A]/20 font-semibold">
+                Legacy Digest
               </span>
               <span className="text-xs text-[#86868B] font-mono">1991</span>
             </div>
-            <h3 className="text-xl font-semibold text-[#1D1D1F] mt-2 font-sans">MD5</h3>
-            <p className="text-xs text-[#6E6E73] mt-1">Unsalted, extremely fast digest designed for checksums.</p>
+            <h3 className="text-lg font-bold text-[#1D1D1F] mt-2 font-sans">MD5</h3>
+            <p className="text-xs text-[#6E6E73] mt-1">Unsalted, fast checksum digest. Obsolete for passwords.</p>
           </div>
 
           <div className="space-y-2 text-xs pt-3 border-t border-black/[0.06]">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-[#6E6E73]">Measured Rate:</span>
-              <span className="text-[#FF3B30] font-semibold font-sans">
+              <span className="text-[#FF453A] font-semibold font-sans">
                 {results["MD5"].throughput > 0
-                  ? `${results["MD5"].throughput.toLocaleString()} /sec`
+                  ? `${results["MD5"].throughput.toLocaleString()} /s`
                   : isRunning
-                  ? "Benchmarking..."
+                  ? "Testing..."
                   : "Ready"}
               </span>
             </div>
@@ -204,7 +222,11 @@ export const HashRaceArena: React.FC = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-[#6E6E73]">Memory Hardness:</span>
-              <span className="text-[#FF3B30] font-medium">0 KB (Zero RAM)</span>
+              <span className="text-[#FF453A] font-medium">0 KB (Zero RAM)</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#6E6E73]">Work Factor:</span>
+              <span className="text-[#86868B] font-mono text-[11px]">1 Iteration</span>
             </div>
           </div>
         </div>
@@ -213,23 +235,23 @@ export const HashRaceArena: React.FC = () => {
         <div className="apple-card p-5 flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase px-2.5 py-0.5 rounded-full bg-[#FF9500]/[0.08] text-[#FF9500] border border-[#FF9500]/20 font-semibold">
-                Fast Crypto Digest
+              <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-[#FF9500]/[0.1] text-[#FF9500] border border-[#FF9500]/20 font-semibold">
+                Cryptographic
               </span>
               <span className="text-xs text-[#86868B] font-mono">2001</span>
             </div>
-            <h3 className="text-xl font-semibold text-[#1D1D1F] mt-2 font-sans">SHA-256</h3>
-            <p className="text-xs text-[#6E6E73] mt-1">Cryptographic hash, but lacks key-stretching (GPU vulnerable).</p>
+            <h3 className="text-lg font-bold text-[#1D1D1F] mt-2 font-sans">SHA-256</h3>
+            <p className="text-xs text-[#6E6E73] mt-1">Standard digest, lacks key-stretching (GPU vulnerable).</p>
           </div>
 
           <div className="space-y-2 text-xs pt-3 border-t border-black/[0.06]">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-[#6E6E73]">Measured Rate:</span>
               <span className="text-[#FF9500] font-semibold font-sans">
                 {results["SHA-256"].throughput > 0
-                  ? `${results["SHA-256"].throughput.toLocaleString()} /sec`
+                  ? `${results["SHA-256"].throughput.toLocaleString()} /s`
                   : isRunning
-                  ? "Benchmarking..."
+                  ? "Testing..."
                   : "Ready"}
               </span>
             </div>
@@ -241,6 +263,10 @@ export const HashRaceArena: React.FC = () => {
               <span className="text-[#6E6E73]">Memory Hardness:</span>
               <span className="text-[#FF9500] font-medium">0 KB (Zero RAM)</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-[#6E6E73]">Work Factor:</span>
+              <span className="text-[#86868B] font-mono text-[11px]">1 Iteration</span>
+            </div>
           </div>
         </div>
 
@@ -248,23 +274,23 @@ export const HashRaceArena: React.FC = () => {
         <div className="apple-card p-5 flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase px-2.5 py-0.5 rounded-full bg-[#0071E3]/[0.08] text-[#0071E3] border border-[#0071E3]/20 font-semibold">
-                Iterated / Salted
+              <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-[#0071E3]/[0.1] text-[#0071E3] border border-[#0071E3]/20 font-semibold">
+                Cost Factor 12
               </span>
               <span className="text-xs text-[#86868B] font-mono">1999</span>
             </div>
-            <h3 className="text-xl font-semibold text-[#1D1D1F] mt-2 font-sans">bcrypt</h3>
-            <p className="text-xs text-[#6E6E73] mt-1">Key-stretched with configurable exponential cost factor.</p>
+            <h3 className="text-lg font-bold text-[#1D1D1F] mt-2 font-sans">bcrypt</h3>
+            <p className="text-xs text-[#6E6E73] mt-1">Key-stretched Eksblowfish with 4,096 work rounds.</p>
           </div>
 
           <div className="space-y-2 text-xs pt-3 border-t border-black/[0.06]">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-[#6E6E73]">Measured Rate:</span>
               <span className="text-[#0071E3] font-semibold font-sans">
                 {results["bcrypt"].throughput > 0
-                  ? `${results["bcrypt"].throughput.toLocaleString()} /sec`
+                  ? `${results["bcrypt"].throughput.toLocaleString()} /s`
                   : isRunning
-                  ? "Benchmarking..."
+                  ? "Testing..."
                   : "Ready"}
               </span>
             </div>
@@ -274,32 +300,36 @@ export const HashRaceArena: React.FC = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-[#6E6E73]">Memory Hardness:</span>
-              <span className="text-[#0071E3] font-medium">4 KB (Blowfish state)</span>
+              <span className="text-[#0071E3] font-medium">4 KB (Blowfish)</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#6E6E73]">Work Factor:</span>
+              <span className="text-[#0071E3] font-mono text-[11px]">2¹² = 4,096</span>
             </div>
           </div>
         </div>
 
         {/* Argon2id */}
-        <div className="apple-card p-5 flex flex-col justify-between space-y-4">
+        <div className="apple-card p-5 flex flex-col justify-between space-y-4 border-r-4 border-r-[#34C759]">
           <div>
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase px-2.5 py-0.5 rounded-full bg-[#34C759]/[0.08] text-[#34C759] border border-[#34C759]/20 font-semibold">
-                Modern Standard
+              <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-[#34C759]/[0.1] text-[#34C759] border border-[#34C759]/20 font-bold">
+                PHC Standard
               </span>
-              <span className="text-xs text-[#86868B] font-mono">PHC Winner</span>
+              <span className="text-xs text-[#86868B] font-mono">2015</span>
             </div>
-            <h3 className="text-xl font-semibold text-[#1D1D1F] mt-2 font-sans">Argon2id</h3>
-            <p className="text-xs text-[#6E6E73] mt-1">Memory-hard & side-channel resistant. Industry standard.</p>
+            <h3 className="text-lg font-bold text-[#1D1D1F] mt-2 font-sans">Argon2id</h3>
+            <p className="text-xs text-[#6E6E73] mt-1">Memory-hard (64MB / 4 passes). Post-quantum grade.</p>
           </div>
 
           <div className="space-y-2 text-xs pt-3 border-t border-black/[0.06]">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-[#6E6E73]">Measured Rate:</span>
-              <span className="text-[#34C759] font-semibold font-sans">
+              <span className="text-[#34C759] font-bold font-sans">
                 {results["Argon2id"].throughput > 0
-                  ? `${results["Argon2id"].throughput.toLocaleString()} /sec`
+                  ? `${results["Argon2id"].throughput.toLocaleString()} /s`
                   : isRunning
-                  ? "Benchmarking..."
+                  ? "Testing..."
                   : "Ready"}
               </span>
             </div>
@@ -309,7 +339,11 @@ export const HashRaceArena: React.FC = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-[#6E6E73]">Memory Hardness:</span>
-              <span className="text-[#34C759] font-medium">8,192 KB (High RAM)</span>
+              <span className="text-[#34C759] font-bold">64 MiB RAM</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#6E6E73]">Work Factor:</span>
+              <span className="text-[#34C759] font-mono text-[11px]">4 Passes (p=1)</span>
             </div>
           </div>
         </div>
@@ -317,12 +351,26 @@ export const HashRaceArena: React.FC = () => {
 
       {/* Comparative Throughput Chart */}
       <div className="apple-card p-6">
-        <h3 className="text-base font-semibold text-[#1D1D1F] mb-1 font-sans">
-          Relative Throughput Comparison (Hashes / Second)
-        </h3>
-        <p className="text-xs text-[#6E6E73] mb-6 font-normal">
-          Higher rate = easier for an attacker to crack passwords offline. Argon2id and bcrypt force massive slowdowns on cracking clusters.
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-black/[0.06] mb-6 gap-2">
+          <div>
+            <h3 className="text-base font-semibold text-[#1D1D1F] font-sans">
+              Cryptographic Throughput Discrepancy (Hashes / Second)
+            </h3>
+            <p className="text-xs text-[#6E6E73] mt-0.5">
+              Higher throughput = attacker can test billions of candidates offline. Argon2id and bcrypt enforce memory bandwidth barriers.
+            </p>
+          </div>
+          <div className="flex items-center space-x-3 text-xs">
+            <span className="flex items-center space-x-1.5 text-[#FF3B30] font-semibold">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#FF3B30]"></span>
+              <span>Vulnerable (NTLM/MD5)</span>
+            </span>
+            <span className="flex items-center space-x-1.5 text-[#34C759] font-semibold">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#34C759]"></span>
+              <span>Protected (Argon2id/bcrypt)</span>
+            </span>
+          </div>
+        </div>
 
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -351,5 +399,6 @@ export const HashRaceArena: React.FC = () => {
     </div>
   );
 };
+
 
 
