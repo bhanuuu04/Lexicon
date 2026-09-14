@@ -10,11 +10,13 @@ import { AttackLabArena } from "../AttackLab/AttackLabArena";
 import { HashRaceArena } from "../HashRace/HashRaceArena";
 import { AIAdvisoryStudio } from "../Remediation/AIAdvisoryStudio";
 import { HIBPLiveModal } from "../HIBPCheck/HIBPLiveModal";
+import { ComplianceScorecardView } from "../Dashboard/ComplianceScorecardView";
 import { AuditLogsView } from "./AuditLogsView";
 import { AdminSettings } from "./AdminSettings";
 import { CompromisedAccountsView } from "./CompromisedAccountsView";
 import { ComplianceThreatSurfaceView } from "./ComplianceThreatSurfaceView";
 import { GenerateDatasetModal } from "./GenerateDatasetModal";
+import { ImportBreachModal } from "./ImportBreachModal";
 import { AuditSummary, Account, DatasetMetadata, GenerateDatasetResponse, DatabaseStatus } from "../../types";
 import {
   fetchAccountDetail,
@@ -51,6 +53,8 @@ import {
   ChevronRight,
   Database,
   Cloud,
+  Award,
+  UploadCloud,
 } from "lucide-react";
 
 
@@ -80,6 +84,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [activeTierFilter, setActiveTierFilter] = useState<string>("ALL");
   const [isHIBPOpen, setIsHIBPOpen] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [isImportBreachOpen, setIsImportBreachOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSyncingDb, setIsSyncingDb] = useState(false);
   const [isRunningLiveAnalysis, setIsRunningLiveAnalysis] = useState(false);
@@ -165,13 +170,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const adminSubNav = [
     { id: "overview", label: "Defense Overview", icon: Activity, badge: null },
-    { id: "compliance", label: "Compliance & AD Threat Surface", icon: ShieldCheck, badge: "NIST/CIS" },
+    { id: "compliance", label: "Compliance & AD Threat Surface", icon: Award, badge: "NIST/CIS" },
     { id: "compromised", label: "Compromised Accounts", icon: ShieldAlert, badge: "Action" },
     { id: "accounts", label: "Corporate Identities", icon: Users, badge: `${summary.total_accounts.toLocaleString()}` },
     { id: "blast-radius", label: "Blast Radius", icon: Network, badge: "805" },
     { id: "attack-lab", label: "Attack Lab", icon: Zap, badge: "Live" },
     { id: "hash-race", label: "Hash Race", icon: Cpu, badge: "5 Algos" },
-    { id: "remediation", label: "AI Advisory", icon: FileText, badge: "CISO" },
+    { id: "remediation", label: "AI Advisory & GPO", icon: FileText, badge: "CISO" },
     { id: "hibp", label: "k-Anonymity HIBP", icon: Globe, badge: null },
     { id: "audit-logs", label: "Audit Trail", icon: History, badge: null },
     { id: "settings", label: "Settings", icon: Settings, badge: null },
@@ -333,6 +338,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <Sparkles className="w-3.5 h-3.5 text-[#0071E3]" />
                 <span>Generate Dataset</span>
               </button>
+
+              <button
+                onClick={() => setIsImportBreachOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-[#FF3B30]/[0.08] hover:bg-[#FF3B30]/[0.15] text-[#FF3B30] text-xs font-semibold flex items-center space-x-2 border border-[#FF3B30]/20 transition active:scale-[0.98] cursor-pointer"
+                title="Import custom threat intelligence wordlists or breach dumps"
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>Import Threat Dump</span>
+              </button>
             </div>
 
             {/* Tactical Actions & Supabase Live Status Chip */}
@@ -344,6 +358,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
                 <span>Simulate Hero Breach</span>
+              </button>
+
+              <button
+                onClick={() => setIsHIBPOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-[#0071E3]/[0.08] hover:bg-[#0071E3]/[0.15] text-[#0071E3] text-xs font-semibold flex items-center space-x-2 border border-[#0071E3]/20 transition active:scale-[0.98] cursor-pointer"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>Live HIBP</span>
               </button>
 
               <button
@@ -363,39 +385,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       </div>
 
-      {/* 2. APPLE-STYLE SEGMENTED DEFENSE SUBNAV */}
-      <div className="flex items-center justify-between bg-white border border-black/[0.06] p-1.5 rounded-2xl shadow-card overflow-x-auto no-scrollbar">
-        <div className="flex items-center space-x-1">
-          {adminSubNav.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeAdminTab === item.id;
+      {/* 2. SUB-NAVIGATION TABS */}
+      <div className="flex items-center justify-between overflow-x-auto pb-2 border-b border-black/[0.06]">
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          {adminSubNav.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeAdminTab === tab.id;
             return (
               <button
-                key={item.id}
+                key={tab.id}
                 onClick={() => {
-                  if (item.id === "hibp") {
+                  if (tab.id === "hibp") {
                     setIsHIBPOpen(true);
                   } else {
-                    setActiveAdminTab(item.id);
+                    setActiveAdminTab(tab.id);
                   }
                 }}
-                className={`flex items-center space-x-2 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 shrink-0 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-medium flex items-center space-x-2 transition shrink-0 ${
                   isActive
                     ? "bg-[#0071E3] text-white shadow-xs font-semibold"
-                    : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
+                    : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-black/[0.03]"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-[#86868B]"}`} />
-                <span>{item.label}</span>
-                {item.badge && (
+                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : "text-[#86868B]"}`} />
+                <span>{tab.label}</span>
+                {tab.badge && (
                   <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
-                      isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-black/[0.05] text-[#86868B]"
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      isActive ? "bg-white/20 text-white" : "bg-black/[0.05] text-[#6E6E73]"
                     }`}
                   >
-                    {item.badge}
+                    {tab.badge}
                   </span>
                 )}
               </button>
@@ -404,45 +424,103 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       </div>
 
-      {/* 3. DEFENSE OPERATIONS WORKSPACE (VIEW ROUTING) */}
+      {/* 3. DYNAMIC TAB VIEW CONTENT */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeAdminTab}
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.15 }}
         >
           {/* VIEW: Overview */}
           {activeAdminTab === "overview" && (
             <div className="space-y-6">
-              <RiskOverviewCards summary={summary} onCardClick={handleCardFilterClick} />
-              <RiskDistributionChart summary={summary} />
+              {/* 4 Interactive Risk Cards with Drilldown Trigger */}
+              <RiskOverviewCards
+                summary={summary}
+                onCardClick={handleCardFilterClick}
+              />
 
-              {/* High-Priority Immediate Mitigation Focus */}
-              <div className="apple-card p-6 bg-white border border-black/[0.06] rounded-3xl shadow-card space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-black/[0.06]">
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <ShieldAlert className="w-4 h-4 text-[#FF3B30]" />
-                      <h3 className="text-sm sm:text-base font-semibold text-[#1D1D1F]">
-                        Critical Remediation Priorities
-                      </h3>
+              {/* Middle Section: Distribution Breakdown + Lateral Blast Radius Spotlight */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div className="lg:col-span-7">
+                  <RiskDistributionChart summary={summary} />
+                </div>
+
+                <div className="lg:col-span-5 apple-card p-6 bg-white border border-black/[0.06] rounded-3xl space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-black/[0.04]">
+                    <div className="flex items-center space-x-2 text-[#FF3B30] text-xs font-semibold uppercase">
+                      <Network className="w-4 h-4" />
+                      <span>Lateral Movement Exposure</span>
                     </div>
-                    <p className="text-xs text-[#6E6E73] mt-0.5">
-                      Top high-impact Active Directory accounts with multiple compounding vulnerability vectors
+                    <span className="px-2 py-0.5 rounded-full bg-[#FF3B30]/10 text-[#FF3B30] text-[10px] font-bold">
+                      Critical Risk
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-base font-semibold text-[#1D1D1F]">
+                      Enterprise Credential Reuse Blast Radius
+                    </h3>
+                    <p className="text-xs text-[#6E6E73] leading-relaxed">
+                      Password family analysis identified <strong>{summary.reuse_cluster_count} cross-department clusters</strong>. Single-credential compromise in lower tiers enables immediate lateral movement into privileged Domain Controller administration.
                     </p>
                   </div>
 
+                  {/* Spotlight Top Cluster */}
+                  {summary.top_reuse_clusters && summary.top_reuse_clusters.length > 0 && (
+                    <div className="p-4 rounded-2xl bg-[#FAFAFC] border border-black/[0.04] space-y-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-mono font-bold text-[#FF3B30]">
+                          Cluster #{summary.top_reuse_clusters[0].group_id} (Alex Morgan DC Hero Group)
+                        </span>
+                        <span className="text-[#86868B]">
+                          {summary.top_reuse_clusters[0].total_accounts} Linked Accounts
+                        </span>
+                      </div>
+
+                      <div className="flex items-center space-x-2 text-xs text-[#1D1D1F]">
+                        <span className="text-[#86868B]">Departments Bridged:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {Object.keys(summary.top_reuse_clusters[0].departments).map((dept) => (
+                            <span
+                              key={dept}
+                              className="px-2 py-0.5 rounded-md bg-white border border-black/[0.06] text-[10px] font-medium"
+                            >
+                              {dept} ({summary.top_reuse_clusters[0].departments[dept]})
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setActiveAdminTab("blast-radius")}
+                        className="w-full py-2 rounded-xl bg-[#FF3B30]/[0.08] hover:bg-[#FF3B30]/[0.15] text-[#FF3B30] font-semibold text-xs transition flex items-center justify-center space-x-1.5"
+                      >
+                        <span>Inspect Interactive Blast Graph</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Priority Remediation Queue Snapshot */}
+              <div className="apple-card p-6 bg-white border border-black/[0.06] rounded-3xl space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-black/[0.04]">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="w-4 h-4 text-[#FF9500]" />
+                    <h3 className="text-sm font-semibold text-[#1D1D1F]">
+                      High-Risk Identity Intervention Queue
+                    </h3>
+                  </div>
                   <button
-                    onClick={() => {
-                      setActiveTierFilter("Critical");
-                      setActiveAdminTab("accounts");
-                    }}
-                    className="text-xs text-[#0071E3] font-semibold hover:underline flex items-center space-x-1"
+                    onClick={() => setActiveAdminTab("remediation")}
+                    className="text-xs text-[#0071E3] font-medium hover:underline flex items-center space-x-1"
                   >
-                    <span>View All {summary.critical_count.toLocaleString()} Critical Accounts</span>
-                    <ArrowRight className="w-3 h-3" />
+                    <span>Launch AI Remediation Studio</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
@@ -670,6 +748,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       <HIBPLiveModal
         isOpen={isHIBPOpen}
         onClose={() => setIsHIBPOpen(false)}
+      />
+
+      {/* Import Custom Threat Dump Modal */}
+      <ImportBreachModal
+        isOpen={isImportBreachOpen}
+        onClose={() => setIsImportBreachOpen(false)}
+        onImportSuccess={() => handleRefresh()}
       />
 
       {/* Generate Synthetic Dataset Modal */}
