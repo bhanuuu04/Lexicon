@@ -1,11 +1,15 @@
 import os
 import json
-from fastapi import APIRouter
+from fastapi import APIRouter, Response, HTTPException
 import httpx
 
 from backend.app.models import RemediationRequest, RemediationReport
-from backend.app.config import GEMINI_API_KEY
-from backend.app.features.remediation.service import generate_fallback_advisory_report
+from backend.app.config import GEMINI_API_KEY, OPENAI_API_KEY
+from backend.app.features.remediation.service import (
+    generate_fallback_advisory_report,
+    generate_ad_gpo_powershell_script,
+    generate_department_remediation_playbook
+)
 
 router = APIRouter(prefix="/api/remediation", tags=["remediation"])
 
@@ -69,4 +73,24 @@ Respond ONLY with a valid JSON object strictly matching this schema:
         except Exception as e:
             print(f"[RemediationRouter] AI generation fallback triggered: {e}")
 
+    # Deterministic enterprise rule-based fallback
     return generate_fallback_advisory_report(req)
+
+@router.get("/gpo-script")
+def get_gpo_powershell_script():
+    """
+    Generate downloadable Active Directory Fine-Grained Password Policy PowerShell script.
+    """
+    script = generate_ad_gpo_powershell_script()
+    return Response(
+        content=script,
+        media_type="text/plain",
+        headers={"Content-Disposition": "attachment; filename=Deploy-LexiconPasswordPolicy.ps1"}
+    )
+
+@router.get("/department-playbook/{department}")
+def get_department_playbook(department: str):
+    """
+    Retrieve department-tailored threat profile and prioritized mitigation actions.
+    """
+    return generate_department_remediation_playbook(department)
