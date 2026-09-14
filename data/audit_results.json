@@ -1,20 +1,20 @@
 {
   "total_accounts": 50000,
-  "critical_count": 3025,
+  "critical_count": 3024,
   "high_risk_count": 20811,
   "medium_risk_count": 16152,
-  "low_risk_count": 10012,
+  "low_risk_count": 10013,
   "breached_count": 26959,
   "reuse_cluster_count": 805,
-  "total_reused_accounts": 30000,
+  "total_reused_accounts": 29998,
   "privileged_count": 19411,
-  "privileged_at_risk_count": 11595,
+  "privileged_at_risk_count": 11593,
   "policy_violations_count": 79367,
   "risk_distribution": {
-    "critical": 3025,
+    "critical": 3024,
     "high": 20811,
     "medium": 16152,
-    "low": 10012
+    "low": 10013
   },
   "department_risk_summary": {
     "Information Technology": {

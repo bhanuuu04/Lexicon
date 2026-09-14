@@ -65,9 +65,21 @@ export default function HomePage() {
     setIsDrawerOpen(false);
   };
 
+  const refreshSummary = async () => {
+    try {
+      const sum = await fetchAuditSummary();
+      setSummary(sum);
+      const hero = await fetchHeroAccount();
+      setAttackTargetAccount(hero);
+    } catch (e) {
+      console.error("Failed to refresh audit summary:", e);
+    }
+  };
+
   const handleAccountUpdated = (updatedAccount: Account) => {
     setSelectedAccount(updatedAccount);
     setAttackTargetAccount(updatedAccount);
+    refreshSummary();
   };
 
   if (loading) {
@@ -140,6 +152,8 @@ export default function HomePage() {
             setExperienceMode("admin");
             setActiveAdminTab("overview");
           }}
+          onAccountRemediated={handleAccountUpdated}
+          onSummaryUpdated={refreshSummary}
         />
       )}
 

@@ -107,6 +107,18 @@ def save_accounts(accounts: List[Dict[str, Any]]):
     except Exception as e:
         print(f"[DatasetAPI] Warning: disk save encountered {e}, in-memory state updated successfully.")
 
+def save_audit_summary(summary: Dict[str, Any]):
+    global _audit_cache
+    _audit_cache = summary
+    try:
+        temp_file = AUDIT_RESULTS_FILE.with_suffix(".tmp")
+        with open(str(temp_file), "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2)
+        if temp_file.exists():
+            temp_file.replace(AUDIT_RESULTS_FILE)
+    except Exception as e:
+        print(f"[DatasetAPI] Warning: audit summary disk save encountered {e}")
+
 @router.get("/dataset/metadata")
 def get_metadata():
     """Retrieve metadata and generation timestamp of active persistent dataset."""
@@ -512,8 +524,15 @@ def reset_password_endpoint(account_id: str, payload: ResetPasswordRequest):
             account=None
         )
 
+    # Record previous risk metrics for incremental audit update
+    prev_tier = target.get("final_tier", target.get("baseline_tier", "Low"))
+    prev_breach = target.get("breach_match", False)
+    prev_group_id = target.get("password_group_id")
+    prev_is_priv = target.get("is_privileged", False)
+    prev_violations_count = len(target.get("policy_violations", []))
+
     # Password PASSED all checks!
-    # Compute all 4 cryptographic hashes
+    # Compute all 4 cryptographic hashes + NTLM
     new_hashes = compute_all_hashes(new_pwd)
     
     # Update account state
@@ -541,6 +560,42 @@ def reset_password_endpoint(account_id: str, payload: ResetPasswordRequest):
 
     # Persist to dataset on disk
     save_accounts(accounts)
+
+    # Incrementally update global audit summary & organizational sensitivity
+    try:
+        summary = get_audit_summary()
+        if prev_tier == "Critical":
+            summary["critical_count"] = max(0, summary.get("critical_count", 1) - 1)
+            if "risk_distribution" in summary and "critical" in summary["risk_distribution"]:
+                summary["risk_distribution"]["critical"] = max(0, summary["risk_distribution"]["critical"] - 1)
+            if prev_is_priv:
+                summary["privileged_at_risk_count"] = max(0, summary.get("privileged_at_risk_count", 1) - 1)
+        elif prev_tier == "High":
+            summary["high_risk_count"] = max(0, summary.get("high_risk_count", 1) - 1)
+            if "risk_distribution" in summary and "high" in summary["risk_distribution"]:
+                summary["risk_distribution"]["high"] = max(0, summary["risk_distribution"]["high"] - 1)
+            if prev_is_priv:
+                summary["privileged_at_risk_count"] = max(0, summary.get("privileged_at_risk_count", 1) - 1)
+        elif prev_tier == "Medium":
+            summary["medium_risk_count"] = max(0, summary.get("medium_risk_count", 1) - 1)
+            if "risk_distribution" in summary and "medium" in summary["risk_distribution"]:
+                summary["risk_distribution"]["medium"] = max(0, summary["risk_distribution"]["medium"] - 1)
+
+        summary["low_risk_count"] = summary.get("low_risk_count", 0) + 1
+        if "risk_distribution" in summary and "low" in summary["risk_distribution"]:
+            summary["risk_distribution"]["low"] = summary["risk_distribution"].get("low", 0) + 1
+
+        if prev_breach:
+            summary["breached_count"] = max(0, summary.get("breached_count", 1) - 1)
+
+        summary["policy_violations_count"] = max(0, summary.get("policy_violations_count", 0) - prev_violations_count)
+
+        if prev_group_id is not None:
+            summary["total_reused_accounts"] = max(0, summary.get("total_reused_accounts", 1) - 1)
+
+        save_audit_summary(summary)
+    except Exception as e:
+        print(f"[DatasetAPI] Warning: could not incrementally update audit summary: {e}")
 
     # Update metadata blocked count
     metadata = get_dataset_metadata()

@@ -47,9 +47,15 @@ import {
 
 interface UserPanelProps {
   onSwitchToAdmin: () => void;
+  onAccountRemediated?: (account: Account) => void;
+  onSummaryUpdated?: () => void;
 }
 
-export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
+export const UserPanel: React.FC<UserPanelProps> = ({
+  onSwitchToAdmin,
+  onAccountRemediated,
+  onSummaryUpdated,
+}) => {
   const [isHIBPOpen, setIsHIBPOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "precheck" | "reset" | "activity" | "settings">("overview");
   const [mfaEnabled, setMfaEnabled] = useState(true);
@@ -152,6 +158,8 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
         setAccount(res.account);
         setNewPassword("");
         setConfirmPassword("");
+        onAccountRemediated?.(res.account);
+        onSummaryUpdated?.();
       }
     } catch (err: any) {
       setResetError(err.message || "Failed to reset password.");
@@ -170,11 +178,14 @@ export const UserPanel: React.FC<UserPanelProps> = ({ onSwitchToAdmin }) => {
         targetState,
         targetState ? "Breach Correlation & High Risk Detected" : undefined
       );
-      setAccount({
+      const updated = {
         ...account,
         is_blocked: targetState,
         blocked_reason: targetState ? "Breach Correlation & High Risk Detected" : undefined,
-      });
+      };
+      setAccount(updated);
+      onAccountRemediated?.(updated);
+      onSummaryUpdated?.();
     } catch (e) {
       console.error("Toggle block failed:", e);
     }
