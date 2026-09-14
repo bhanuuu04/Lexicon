@@ -30,7 +30,7 @@ ATTACK_TIME_BUDGET_MS = 30_000
 
 # Server Config
 HOST = os.getenv("LEXICON_HOST", "0.0.0.0")
-PORT = int(os.getenv("LEXICON_PORT", "8000"))
+PORT = int(os.getenv("PORT", os.getenv("LEXICON_PORT", "8000")))
 CORS_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",

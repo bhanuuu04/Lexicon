@@ -13,6 +13,7 @@ import { HIBPLiveModal } from "../HIBPCheck/HIBPLiveModal";
 import { AuditLogsView } from "./AuditLogsView";
 import { AdminSettings } from "./AdminSettings";
 import { CompromisedAccountsView } from "./CompromisedAccountsView";
+import { ComplianceThreatSurfaceView } from "./ComplianceThreatSurfaceView";
 import { GenerateDatasetModal } from "./GenerateDatasetModal";
 import { AuditSummary, Account, DatasetMetadata, GenerateDatasetResponse, DatabaseStatus } from "../../types";
 import {
@@ -140,6 +141,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const adminSubNav = [
     { id: "overview", label: "Defense Overview", icon: Activity, badge: null },
+    { id: "compliance", label: "Compliance & AD Threat Surface", icon: ShieldCheck, badge: "NIST/CIS" },
     { id: "compromised", label: "Compromised Accounts", icon: ShieldAlert, badge: "Action" },
     { id: "accounts", label: "Corporate Identities", icon: Users, badge: `${summary.total_accounts.toLocaleString()}` },
     { id: "blast-radius", label: "Blast Radius", icon: Network, badge: "805" },
@@ -171,160 +173,162 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         {/* Subtle Background Accent */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#0071E3]/[0.03] rounded-full blur-3xl -z-0 pointer-events-none"></div>
 
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left: Overall Health Dial & Defense Status (5 cols) */}
-          <div className="lg:col-span-5 flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 border-b lg:border-b-0 lg:border-r border-black/[0.06] pb-6 lg:pb-0 lg:pr-6">
-            <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <path
-                  className="text-[#E5E5EA]"
-                  strokeWidth="3.2"
-                  stroke="currentColor"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-                <path
-                  stroke={dialColor}
-                  strokeDasharray={`${defenseReadiness}, 100`}
-                  strokeWidth="3.2"
-                  strokeLinecap="round"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-              </svg>
-              <div className="absolute flex flex-col items-center">
-                <span className="text-2xl font-semibold text-[#1D1D1F] font-sans">{defenseReadiness}%</span>
-                <span className="text-[9px] uppercase font-bold text-[#86868B] tracking-wider">
-                  Readiness
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 text-center sm:text-left">
-              <div className="flex items-center justify-center sm:justify-start space-x-2">
-                <span className={`w-2 h-2 rounded-full animate-pulse ${defenseReadiness >= 75 ? "bg-[#34C759]" : (defenseReadiness >= 40 ? "bg-[#FF9500]" : "bg-[#FF3B30]")}`}></span>
-                <span className={`text-xs font-semibold uppercase tracking-wider ${defenseReadiness >= 75 ? "text-[#34C759]" : (defenseReadiness >= 40 ? "text-[#FF9500]" : "text-[#FF3B30]")}`}>
-                  {orgHealthStatus} Posture
-                </span>
-                {metadata && (
-                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-black/[0.05] text-[#86868B]">
-                    v{metadata.version} • {metadata.total_accounts.toLocaleString()} AD records
+        <div className="relative z-10 space-y-6">
+          {/* Top Row: Cockpit Readiness Dial (5 cols) & 4 Defense Telemetry Badges (7 cols) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left: Overall Health Dial & Defense Status (5 cols) */}
+            <div className="lg:col-span-5 flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 border-b lg:border-b-0 lg:border-r border-black/[0.06] pb-6 lg:pb-0 lg:pr-6">
+              <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    className="text-[#E5E5EA]"
+                    strokeWidth="3.2"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path
+                    stroke={dialColor}
+                    strokeDasharray={`${defenseReadiness}, 100`}
+                    strokeWidth="3.2"
+                    strokeLinecap="round"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className="text-2xl font-semibold text-[#1D1D1F] font-sans">{defenseReadiness}%</span>
+                  <span className="text-[9px] uppercase font-bold text-[#86868B] tracking-wider">
+                    Readiness
                   </span>
-                )}
-              </div>
-              <h2 className="text-lg sm:text-xl font-semibold text-[#1D1D1F] tracking-tight">
-                Enterprise Identity Safeguard
-              </h2>
-              <p className="text-xs text-[#6E6E73] leading-relaxed">
-                {isTopAdminCompromised ? (
-                  <span className="text-[#FF3B30] font-medium block">
-                    ⚠️ Top-Level Domain Admin (alex.morgan / Root) is insecure or blocked — existential root takeover threat active.
-                  </span>
-                ) : (
-                  <span className="text-[#34C759] font-medium block">
-                    🛡️ Top-Level Domain Admins are secured — root infrastructure fully shielded.
-                  </span>
-                )}
-                <span className="text-[11px] text-[#86868B] block mt-1">
-                  Admin Exposure: <strong>{adminExposurePct}%</strong> (75% domain weight) • Workforce Exposure: <strong>{workforceExposurePct}%</strong> (25% weight)
-                </span>
-              </p>
-            </div>
-          </div>
-
-          {/* Right: Key Defense Telemetry Metrics & Quick Action Suite (7 cols) */}
-          <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
-            {/* 4 Core Posture Badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]">
-                <span className="text-[10px] uppercase font-semibold text-[#86868B] block">Critical Tier</span>
-                <span className="text-base font-bold text-[#FF3B30] mt-0.5 block">
-                  {summary.critical_count.toLocaleString()}
-                </span>
-                <span className="text-[10px] text-[#86868B]">Immediate Action</span>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]">
-                <span className="text-[10px] uppercase font-semibold text-[#86868B] block">Admins Exposed</span>
-                <span className="text-base font-bold text-[#FF9500] mt-0.5 block">
-                  {summary.privileged_at_risk_count.toLocaleString()}
-                </span>
-                <span className="text-[10px] text-[#86868B]">of {summary.privileged_count} Total</span>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]">
-                <span className="text-[10px] uppercase font-semibold text-[#86868B] block">Breach Matches</span>
-                <span className="text-base font-bold text-[#5856D6] mt-0.5 block">
-                  {summary.breached_count.toLocaleString()}
-                </span>
-                <span className="text-[10px] text-[#86868B]">Known Leaks</span>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]">
-                <span className="text-[10px] uppercase font-semibold text-[#86868B] block">Reuse Families</span>
-                <span className="text-base font-bold text-[#0071E3] mt-0.5 block">
-                  {summary.reuse_cluster_count.toLocaleString()}
-                </span>
-                <span className="text-[10px] text-[#86868B]">Blast Radius Scope</span>
-              </div>
-            </div>
-
-            {/* Action Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={handleRefresh}
-                  disabled={isRunningLiveAnalysis}
-                  className="px-3.5 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-50 text-white text-xs font-semibold flex items-center space-x-1.5 shadow-sm transition active:scale-[0.98] cursor-pointer"
-                >
-                  <Zap className={`w-3.5 h-3.5 ${isRunningLiveAnalysis ? "animate-spin" : ""}`} />
-                  <span>{isRunningLiveAnalysis ? "Running Real-Time Analysis..." : "Run Security Analysis"}</span>
-                </button>
-
-                <button
-                  onClick={handleSyncToSupabase}
-                  disabled={isSyncingDb}
-                  className="px-3.5 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-1.5 transition active:scale-[0.98] cursor-pointer"
-                  title="Sync active dataset to Supabase PostgreSQL"
-                >
-                  <Database className={`w-3.5 h-3.5 text-[#34C759] ${isSyncingDb ? "animate-spin" : ""}`} />
-                  <span>{isSyncingDb ? "Syncing Supabase..." : "Sync Database"}</span>
-                </button>
-
-                <button
-                  onClick={() => setIsGenerateModalOpen(true)}
-                  className="px-3.5 py-2 rounded-xl bg-[#0071E3]/10 hover:bg-[#0071E3]/15 text-xs font-semibold text-[#0071E3] border border-[#0071E3]/20 flex items-center space-x-1.5 transition active:scale-[0.98]"
-                  title="Generate new synthetic dataset with custom size"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Generate Dataset</span>
-                </button>
-
-                {/* Supabase Status Pill */}
-                <div className="px-3 py-1.5 rounded-full bg-[#34C759]/10 border border-[#34C759]/20 text-[11px] font-semibold text-[#248A3D] flex items-center space-x-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#34C759] animate-pulse" />
-                  <span>{dbStatus?.connected ? "Supabase Cloud Active" : "Supabase PostgreSQL Ready"}</span>
                 </div>
               </div>
 
+              <div className="space-y-1.5 text-center sm:text-left">
+                <div className="flex items-center justify-center sm:justify-start space-x-2">
+                  <span className={`w-2 h-2 rounded-full animate-pulse ${defenseReadiness >= 75 ? "bg-[#34C759]" : (defenseReadiness >= 40 ? "bg-[#FF9500]" : "bg-[#FF3B30]")}`}></span>
+                  <span className={`text-xs font-semibold uppercase tracking-wider ${defenseReadiness >= 75 ? "text-[#34C759]" : (defenseReadiness >= 40 ? "text-[#FF9500]" : "text-[#FF3B30]")}`}>
+                    {orgHealthStatus} Posture
+                  </span>
+                  {metadata && (
+                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-black/[0.05] text-[#86868B]">
+                      v{metadata.version} • {metadata.total_accounts.toLocaleString()} AD records
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-lg sm:text-xl font-semibold text-[#1D1D1F] tracking-tight">
+                  Enterprise Identity Safeguard
+                </h2>
+                <p className="text-xs text-[#6E6E73] leading-relaxed">
+                  {isTopAdminCompromised ? (
+                    <span className="text-[#FF3B30] font-medium block">
+                      ⚠️ Top-Level Domain Admin (alex.morgan / Root) is insecure or blocked — existential root takeover threat active.
+                    </span>
+                  ) : (
+                    <span className="text-[#34C759] font-medium block">
+                      🛡️ Top-Level Domain Admins are secured — root infrastructure fully shielded.
+                    </span>
+                  )}
+                  <span className="text-[11px] text-[#86868B] block mt-1">
+                    Admin Exposure: <strong>{adminExposurePct}%</strong> (75% domain weight) • Workforce Exposure: <strong>{workforceExposurePct}%</strong> (25% weight)
+                  </span>
+                </p>
+              </div>
+            </div>
 
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={onHeroClick}
-                  className="px-4 py-2 rounded-xl bg-[#FF3B30]/10 hover:bg-[#FF3B30]/15 text-xs font-semibold text-[#FF3B30] border border-[#FF3B30]/20 flex items-center space-x-1.5 transition active:scale-[0.98]"
-                  title="Simulate attack against hero account alex.morgan (Cluster #42)"
-                >
-                  <ShieldAlert className="w-3.5 h-3.5" />
-                  <span>Simulate Hero Breach</span>
-                </button>
+            {/* Right: Key Defense Telemetry Metrics (7 cols) */}
+            <div className="lg:col-span-7">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]">
+                  <span className="text-[10px] uppercase font-semibold text-[#86868B] block">Critical Tier</span>
+                  <span className="text-base font-bold text-[#FF3B30] mt-0.5 block">
+                    {summary.critical_count.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-[#86868B]">Immediate Action</span>
+                </div>
 
-                <button
-                  onClick={() => setActiveAdminTab("remediation")}
-                  className="px-4 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-xs font-semibold text-white flex items-center space-x-1.5 shadow-xs transition active:scale-[0.98]"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>CISO Remediation</span>
-                </button>
+                <div className="p-3.5 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]">
+                  <span className="text-[10px] uppercase font-semibold text-[#86868B] block">Admins Exposed</span>
+                  <span className="text-base font-bold text-[#FF9500] mt-0.5 block">
+                    {summary.privileged_at_risk_count.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-[#86868B]">of {summary.privileged_count} Total</span>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]">
+                  <span className="text-[10px] uppercase font-semibold text-[#86868B] block">Breach Matches</span>
+                  <span className="text-base font-bold text-[#5856D6] mt-0.5 block">
+                    {summary.breached_count.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-[#86868B]">Known Leaks</span>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#FAFAFC] border border-black/[0.04]">
+                  <span className="text-[10px] uppercase font-semibold text-[#86868B] block">Reuse Families</span>
+                  <span className="text-base font-bold text-[#0071E3] mt-0.5 block">
+                    {summary.reuse_cluster_count.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] text-[#86868B]">Blast Radius Scope</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Full-Width Apple-Style SOC Operations Toolbar */}
+          <div className="border-t border-black/[0.06] pt-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Primary Operations & Data Controls */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={isRunningLiveAnalysis}
+                className="px-4 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] disabled:opacity-50 text-white text-xs font-semibold flex items-center space-x-2 shadow-xs transition active:scale-[0.98] cursor-pointer"
+              >
+                <Zap className={`w-3.5 h-3.5 ${isRunningLiveAnalysis ? "animate-spin" : ""}`} />
+                <span>{isRunningLiveAnalysis ? "Running Real-Time Analysis..." : "Run Security Analysis"}</span>
+              </button>
+
+              <button
+                onClick={handleSyncToSupabase}
+                disabled={isSyncingDb}
+                className="px-3.5 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-semibold text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-2 transition active:scale-[0.98] cursor-pointer"
+                title="Sync active dataset to Supabase PostgreSQL"
+              >
+                <Database className={`w-3.5 h-3.5 text-[#34C759] ${isSyncingDb ? "animate-spin" : ""}`} />
+                <span>{isSyncingDb ? "Syncing..." : "Sync Database"}</span>
+              </button>
+
+              <button
+                onClick={() => setIsGenerateModalOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-semibold text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-2 transition active:scale-[0.98] cursor-pointer"
+                title="Generate new synthetic dataset with custom size"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#0071E3]" />
+                <span>Generate Dataset</span>
+              </button>
+            </div>
+
+            {/* Tactical Actions & Supabase Live Status Chip */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={onHeroClick}
+                className="px-3.5 py-2 rounded-xl bg-[#FF3B30]/10 hover:bg-[#FF3B30]/15 text-xs font-semibold text-[#FF3B30] border border-[#FF3B30]/20 flex items-center space-x-2 transition active:scale-[0.98] cursor-pointer"
+                title="Simulate attack against hero account alex.morgan (Cluster #42)"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Simulate Hero Breach</span>
+              </button>
+
+              <button
+                onClick={() => setActiveAdminTab("remediation")}
+                className="px-4 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-xs font-semibold text-white flex items-center space-x-2 shadow-xs transition active:scale-[0.98] cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>CISO Remediation</span>
+              </button>
+
+              <div className="px-3 py-1.5 rounded-full bg-[#34C759]/10 border border-[#34C759]/20 text-[11px] font-semibold text-[#248A3D] flex items-center space-x-1.5 shrink-0">
+                <span className="w-2 h-2 rounded-full bg-[#34C759] animate-pulse" />
+                <span>{dbStatus?.connected ? "Supabase Cloud Active" : "Supabase PostgreSQL Ready"}</span>
               </div>
             </div>
           </div>
@@ -537,6 +541,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   refreshTrigger={refreshKey}
                 />
               </div>
+            </div>
+          )}
+
+          {/* VIEW: Compliance & AD Threat Surface */}
+          {activeAdminTab === "compliance" && (
+            <div className="space-y-6">
+              <ComplianceThreatSurfaceView
+                summary={summary}
+                onNavigateToAccounts={(tier) => {
+                  setActiveTierFilter(tier);
+                  setActiveAdminTab("accounts");
+                }}
+                onNavigateToCluster={(grpId) => {
+                  setActiveAdminTab("blast-radius");
+                }}
+              />
             </div>
           )}
 

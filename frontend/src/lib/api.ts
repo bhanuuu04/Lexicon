@@ -366,4 +366,43 @@ export function subscribeToRealtimeEvents(
   };
 }
 
+export async function fetchComplianceScorecard(): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/audit/compliance`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch compliance scorecard");
+  }
+  return res.json();
+}
 
+export async function fetchThreatSurface(): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/audit/threat-surface`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch Active Directory threat surface");
+  }
+  return res.json();
+}
+
+export async function fetchHardwareBenchmarks(): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/attack/hardware-benchmarks`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch hardware benchmarks");
+  }
+  return res.json();
+}
+
+export async function runServerAttackSimulation(payload: {
+  account_id: string;
+  algorithm?: string;
+  max_candidates?: number;
+  time_budget_ms?: number;
+}): Promise<any> {
+  const res = await fetch(`${API_BASE}/api/attack/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to run server attack simulation");
+  }
+  return res.json();
+}
