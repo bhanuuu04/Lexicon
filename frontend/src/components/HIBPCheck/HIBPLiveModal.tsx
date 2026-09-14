@@ -1,10 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
-import { Globe, ShieldCheck, Search, Lock, Info } from "lucide-react";
+import { Globe, ShieldCheck, Search, Lock, Info, X } from "lucide-react";
 import { checkHIBPPrefix } from "../../lib/api";
 
-export const HIBPLiveModal: React.FC = () => {
+interface HIBPLiveModalProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const HIBPLiveModal: React.FC<HIBPLiveModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const [passwordInput, setPasswordInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -44,7 +52,7 @@ export const HIBPLiveModal: React.FC = () => {
     }
   };
 
-  return (
+  const content = (
     <div className="space-y-6">
       {/* Distinction banner */}
       <div className="apple-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-[#0071E3]/20 bg-gradient-to-r from-[#0071E3]/[0.06] via-white to-white">
@@ -135,6 +143,24 @@ export const HIBPLiveModal: React.FC = () => {
       </div>
     </div>
   );
+
+  // If used as modal
+  if (isOpen !== undefined) {
+    if (!isOpen) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+        <div className="relative w-full max-w-3xl bg-[#F5F5F7] rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto border border-black/[0.08]">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white text-[#86868B] hover:text-[#1D1D1F] border border-black/[0.06] shadow-xs transition"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          {content}
+        </div>
+      </div>
+    );
+  }
+
+  return content;
 };
-
-
