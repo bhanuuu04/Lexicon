@@ -661,6 +661,7 @@ async def check_hibp_range(prefix: str):
     """
     Live HIBP k-anonymity check proxy.
     Only forwards the 5-character SHA-1 prefix to Have I Been Pwned.
+    Returns the real bucket of matching suffixes and counts.
     """
     if len(prefix) != 5 or not all(c in "0123456789ABCDEFabcdef" for c in prefix):
         raise HTTPException(status_code=400, detail="Prefix must be exactly 5 hex characters")
@@ -668,15 +669,23 @@ async def check_hibp_range(prefix: str):
     url = f"https://api.pwnedpasswords.com/range/{prefix.upper()}"
     import httpx
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=6.0) as client:
             resp = await client.get(url, headers={"User-Agent": "Lexicon-Platform-HIBP-Check"})
             if resp.status_code != 200:
-                return {"status": "unavailable", "message": f"HIBP returned HTTP {resp.status_code}", "hashes": []}
+                return {"status": "unavailable", "message": f"HIBP returned HTTP {resp.status_code}", "count": 0, "suffixes": {}}
+            
+            suffixes = {}
+            for line in resp.text.splitlines():
+                if ":" in line:
+                    sfx, cnt = line.split(":", 1)
+                    suffixes[sfx.strip().upper()] = int(cnt.strip())
+
             return {
                 "status": "ok",
                 "prefix": prefix.upper(),
                 "message": "Live HIBP k-anonymity range lookup successful",
-                "count": len(resp.text.splitlines())
+                "count": len(suffixes),
+                "suffixes": suffixes
             }
     except Exception as e:
-        return {"status": "error", "message": f"Live HIBP service currently unavailable: {str(e)}"}
+        return {"status": "error", "message": f"Live HIBP service currently unavailable: {str(e)}", "count": 0, "suffixes": {}}

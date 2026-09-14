@@ -4,7 +4,7 @@
   "total_accounts": 50000,
   "dataset_file": "accounts_50k.json",
   "is_custom_generated": false,
-  "blocked_count": 0,
+  "blocked_count": 1,
   "generator_config": {
     "reused_ratio": 0.6,
     "unique_weak_ratio": 0.3,
