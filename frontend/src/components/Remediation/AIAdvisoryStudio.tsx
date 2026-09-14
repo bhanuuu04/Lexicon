@@ -14,7 +14,7 @@ import {
   Ban,
   Calendar,
 } from "lucide-react";
-import { AuditSummary, RemediationReport } from "../../types";
+import { AuditSummary, RemediationReport, Account } from "../../types";
 import { generateRemediationReport, fetchAccounts } from "../../lib/api";
 
 interface AIAdvisoryStudioProps {
@@ -30,7 +30,7 @@ export const AIAdvisoryStudio: React.FC<AIAdvisoryStudioProps> = ({ summary }) =
     setLoading(true);
     try {
       // Fetch live critical accounts for the report
-      let liveAccounts = [];
+      let liveAccounts: Account[] = [];
       try {
         const critRes = await fetchAccounts({ tier: "Critical", page_size: 5 });
         if (critRes.accounts && critRes.accounts.length > 0) {
