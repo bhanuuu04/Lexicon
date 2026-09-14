@@ -31,7 +31,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
     "IDLE" | "ACCOUNT_SELECTED" | "RUNNING" | "MATCHED" | "BUDGET_EXHAUSTED" | "RESET"
   >(targetAccount ? "ACCOUNT_SELECTED" : "IDLE");
 
-  const [algorithm, setAlgorithm] = useState<"MD5" | "SHA-256">("MD5");
+  const [algorithm, setAlgorithm] = useState<"NTLM" | "MD5" | "SHA-256">("NTLM");
   const [maxCandidates, setMaxCandidates] = useState<number>(50000);
   const [timeBudgetMs, setTimeBudgetMs] = useState<number>(30000);
 
@@ -94,7 +94,11 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
     workerRef.current = worker;
 
     const targetHash =
-      algorithm === "MD5" ? targetAccount.hash_md5 : targetAccount.hash_sha256;
+      algorithm === "NTLM"
+        ? (targetAccount.hash_ntlm || targetAccount.hash_md5)
+        : algorithm === "MD5"
+        ? targetAccount.hash_md5
+        : targetAccount.hash_sha256;
 
     worker.postMessage({
       type: "START_ATTACK",
@@ -238,6 +242,15 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
           <div className="flex items-center space-x-3 text-xs">
             {/* Algorithm selector - Apple Segmented Control */}
             <div className="flex items-center space-x-1 p-1 rounded-xl bg-[#E5E5EA]">
+              <button
+                disabled={status === "RUNNING"}
+                onClick={() => setAlgorithm("NTLM")}
+                className={`px-3 py-1 rounded-lg transition font-medium ${
+                  algorithm === "NTLM" ? "bg-white text-[#1D1D1F] shadow-sm font-semibold" : "text-[#6E6E73] hover:text-[#1D1D1F]"
+                }`}
+              >
+                NTLM (AD)
+              </button>
               <button
                 disabled={status === "RUNNING"}
                 onClick={() => setAlgorithm("MD5")}

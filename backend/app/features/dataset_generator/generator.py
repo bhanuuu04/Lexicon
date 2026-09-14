@@ -256,6 +256,7 @@ def generate_accounts(total_accounts: int = TOTAL_ACCOUNTS) -> Tuple[List[Dict[s
 
     for a in final_accounts:
         hashes = hash_cache[a["plaintext_password"]]
+        a["hash_ntlm"] = hashes.get("hash_ntlm")
         a["hash_md5"] = hashes["hash_md5"]
         a["hash_sha256"] = hashes["hash_sha256"]
         a["hash_bcrypt"] = hashes["hash_bcrypt"]

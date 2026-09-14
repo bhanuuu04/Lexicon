@@ -16,6 +16,7 @@ class Account(BaseModel):
     password_group_id: Optional[int] = None
     plaintext_password: str  # Present strictly because dataset is synthetic
 
+    hash_ntlm: Optional[str] = None
     hash_md5: str
     hash_sha256: str
     hash_bcrypt: str

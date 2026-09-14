@@ -247,6 +247,73 @@ export const AccountDetailDrawer: React.FC<AccountDetailDrawerProps> = ({
                 </ul>
               )}
             </div>
+
+            {/* Active Directory Hashes Breakdown */}
+            <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.04] space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-[#6E6E73] font-medium flex items-center space-x-1.5">
+                  <KeyRound className="w-3.5 h-3.5 text-[#0071E3]" />
+                  <span>Cryptographic Hashes & AD Digests</span>
+                </span>
+                <span className="text-[10px] text-[#86868B] font-mono">Multi-Algorithm</span>
+              </div>
+
+              <div className="space-y-1.5">
+                {account.hash_ntlm && (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-black/[0.04]">
+                    <div className="min-w-0 flex-1 mr-2">
+                      <span className="text-[10px] font-semibold text-[#1D1D1F] block">NTLM (Active Directory)</span>
+                      <span className="text-[11px] font-mono text-[#86868B] truncate block">{account.hash_ntlm}</span>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(account.hash_ntlm!, "ntlm")}
+                      className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04] rounded-md transition shrink-0"
+                    >
+                      {copiedKey === "ntlm" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-black/[0.04]">
+                  <div className="min-w-0 flex-1 mr-2">
+                    <span className="text-[10px] font-semibold text-[#1D1D1F] block">SHA-256</span>
+                    <span className="text-[11px] font-mono text-[#86868B] truncate block">{account.hash_sha256}</span>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(account.hash_sha256, "sha256")}
+                    className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04] rounded-md transition shrink-0"
+                  >
+                    {copiedKey === "sha256" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-black/[0.04]">
+                  <div className="min-w-0 flex-1 mr-2">
+                    <span className="text-[10px] font-semibold text-[#1D1D1F] block">Bcrypt (Cost 12)</span>
+                    <span className="text-[11px] font-mono text-[#86868B] truncate block">{account.hash_bcrypt}</span>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(account.hash_bcrypt, "bcrypt")}
+                    className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04] rounded-md transition shrink-0"
+                  >
+                    {copiedKey === "bcrypt" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-black/[0.04]">
+                  <div className="min-w-0 flex-1 mr-2">
+                    <span className="text-[10px] font-semibold text-[#1D1D1F] block">Argon2id (64MB, 4 Passes)</span>
+                    <span className="text-[11px] font-mono text-[#86868B] truncate block">{account.hash_argon2id}</span>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(account.hash_argon2id, "argon2id")}
+                    className="p-1.5 text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04] rounded-md transition shrink-0"
+                  >
+                    {copiedKey === "argon2id" ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Attack Evidence Section */}

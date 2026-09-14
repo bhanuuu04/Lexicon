@@ -1,5 +1,15 @@
-import { md5, sha256 } from "hash-wasm";
+import { md4, md5, sha256 } from "hash-wasm";
 import { generateCandidateStream } from "../lib/mutationEngine";
+
+function stringToUtf16LeBytes(str: string): Uint8Array {
+  const bytes = new Uint8Array(str.length * 2);
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    bytes[i * 2] = code & 0xff;
+    bytes[i * 2 + 1] = (code >> 8) & 0xff;
+  }
+  return bytes;
+}
 
 let isCancelled = false;
 
@@ -53,7 +63,9 @@ self.onmessage = async (e: MessageEvent) => {
       const cand = item.candidate;
       let computedHash = "";
 
-      if (algoLower === "md5") {
+      if (algoLower === "ntlm") {
+        computedHash = await md4(stringToUtf16LeBytes(cand));
+      } else if (algoLower === "md5") {
         computedHash = await md5(cand);
       } else if (algoLower === "sha256" || algoLower === "sha-256") {
         computedHash = await sha256(cand);

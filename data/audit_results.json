@@ -1,111 +1,111 @@
 {
   "total_accounts": 50000,
-  "critical_count": 3057,
-  "high_risk_count": 20696,
-  "medium_risk_count": 16165,
-  "low_risk_count": 10082,
-  "breached_count": 26843,
+  "critical_count": 3025,
+  "high_risk_count": 20811,
+  "medium_risk_count": 16152,
+  "low_risk_count": 10012,
+  "breached_count": 26959,
   "reuse_cluster_count": 805,
   "total_reused_accounts": 30000,
   "privileged_count": 19411,
-  "privileged_at_risk_count": 11575,
-  "policy_violations_count": 79369,
+  "privileged_at_risk_count": 11595,
+  "policy_violations_count": 79367,
   "risk_distribution": {
-    "critical": 3057,
-    "high": 20696,
-    "medium": 16165,
-    "low": 10082
+    "critical": 3025,
+    "high": 20811,
+    "medium": 16152,
+    "low": 10012
   },
   "department_risk_summary": {
     "Information Technology": {
       "total": 6006,
-      "critical": 580,
-      "high": 2533,
-      "medium": 1936,
-      "low": 957,
+      "critical": 576,
+      "high": 2561,
+      "medium": 1920,
+      "low": 949,
       "privileged": 3753,
-      "breached": 3212,
-      "avg_risk": 0.4859
+      "breached": 3238,
+      "avg_risk": 0.4866
     },
     "Marketing": {
       "total": 3027,
-      "critical": 95,
-      "high": 1247,
-      "medium": 982,
-      "low": 703,
+      "critical": 96,
+      "high": 1242,
+      "medium": 987,
+      "low": 702,
       "privileged": 626,
-      "breached": 1633,
-      "avg_risk": 0.4248
+      "breached": 1629,
+      "avg_risk": 0.4249
     },
     "Operations": {
       "total": 7864,
-      "critical": 407,
-      "high": 3195,
-      "medium": 2597,
-      "low": 1665,
+      "critical": 402,
+      "high": 3208,
+      "medium": 2620,
+      "low": 1634,
       "privileged": 2641,
-      "breached": 4143,
-      "avg_risk": 0.4402
+      "breached": 4189,
+      "avg_risk": 0.4412
     },
     "Human Resources": {
       "total": 4016,
-      "critical": 241,
-      "high": 1630,
-      "medium": 1324,
-      "low": 821,
+      "critical": 239,
+      "high": 1646,
+      "medium": 1312,
+      "low": 819,
       "privileged": 1357,
-      "breached": 2164,
-      "avg_risk": 0.4455
+      "breached": 2183,
+      "avg_risk": 0.4469
     },
     "Engineering": {
       "total": 10974,
-      "critical": 511,
-      "high": 4542,
-      "medium": 3512,
-      "low": 2409,
+      "critical": 498,
+      "high": 4571,
+      "medium": 3500,
+      "low": 2405,
       "privileged": 3106,
-      "breached": 5939,
-      "avg_risk": 0.4363
+      "breached": 5943,
+      "avg_risk": 0.4362
     },
     "Finance": {
       "total": 7526,
-      "critical": 529,
-      "high": 3098,
-      "medium": 2435,
-      "low": 1464,
+      "critical": 525,
+      "high": 3117,
+      "medium": 2412,
+      "low": 1472,
       "privileged": 3238,
-      "breached": 4057,
-      "avg_risk": 0.4563
+      "breached": 4069,
+      "avg_risk": 0.4568
     },
     "Sales": {
       "total": 6121,
-      "critical": 181,
-      "high": 2497,
-      "medium": 1990,
-      "low": 1453,
+      "critical": 179,
+      "high": 2509,
+      "medium": 2008,
+      "low": 1425,
       "privileged": 1234,
-      "breached": 3283,
-      "avg_risk": 0.4198
+      "breached": 3296,
+      "avg_risk": 0.4211
     },
     "Legal": {
       "total": 2506,
-      "critical": 228,
-      "high": 1060,
-      "medium": 808,
-      "low": 410,
+      "critical": 225,
+      "high": 1056,
+      "medium": 821,
+      "low": 404,
       "privileged": 1496,
-      "breached": 1339,
-      "avg_risk": 0.482
+      "breached": 1332,
+      "avg_risk": 0.4813
     },
     "Executive": {
       "total": 1960,
       "critical": 285,
-      "high": 894,
-      "medium": 581,
-      "low": 200,
+      "high": 901,
+      "medium": 572,
+      "low": 202,
       "privileged": 1960,
-      "breached": 1073,
-      "avg_risk": 0.5428
+      "breached": 1080,
+      "avg_risk": 0.5442
     }
   },
   "top_reuse_clusters": [

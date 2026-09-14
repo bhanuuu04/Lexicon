@@ -1,8 +1,21 @@
 import pytest
 from fastapi.testclient import TestClient
 from backend.app.main import app
+from backend.app.features.dataset_api.router import get_accounts, save_accounts
 
 client = TestClient(app)
+
+@pytest.fixture(autouse=True)
+def restore_dataset_state():
+    accounts = get_accounts()
+    hero_snapshot = next((dict(a) for a in accounts if a["id"] == "ACC-00042"), None)
+    yield
+    if hero_snapshot:
+        for idx, a in enumerate(accounts):
+            if a["id"] == "ACC-00042":
+                accounts[idx] = dict(hero_snapshot)
+                break
+        save_accounts(accounts)
 
 def test_api_dataset_summary():
     response = client.get("/api/dataset/summary")

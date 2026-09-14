@@ -47,6 +47,7 @@ export interface Account {
   is_privileged: boolean;
   password_group_id: number | null;
   plaintext_password: string; // Synthetic only
+  hash_ntlm?: string;
   hash_md5: string;
   hash_sha256: string;
   hash_bcrypt: string;

@@ -512,6 +512,7 @@ def reset_password_endpoint(account_id: str, payload: ResetPasswordRequest):
     
     # Update account state
     target["plaintext_password"] = new_pwd
+    target["hash_ntlm"] = new_hashes.get("hash_ntlm")
     target["hash_md5"] = new_hashes["hash_md5"]
     target["hash_sha256"] = new_hashes["hash_sha256"]
     target["hash_bcrypt"] = new_hashes["hash_bcrypt"]
