@@ -722,6 +722,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   )}
                 </div>
               </div>
+            </div>
+          </div>
 
               {/* Account Directory preview in Overview */}
               <div className="space-y-2">
