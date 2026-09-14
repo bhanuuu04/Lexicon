@@ -242,7 +242,7 @@ class SupabaseService:
                             updated_at
                         ) VALUES %s
                     """
-                    execute_values(cur, insert_accounts_sql, account_records, page_size=2000)
+                    execute_values(cur, insert_accounts_sql, account_records, page_size=5000)
 
                     # 4. Insert Audit Summary
                     cur.execute(
