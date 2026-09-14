@@ -14,7 +14,7 @@
 ---
 
 <p align="center">
-  <img src="docs/images/lexicon_workflow.jpg" alt="Lexicon Platform - From Risky Credentials to a Safer Organization" width="100%" />
+  <img src="docs/images/lexicon_workflow_hd.jpg" alt="Lexicon Platform - From Risky Credentials to a Safer Organization" width="100%" />
 </p>
 
 ---
