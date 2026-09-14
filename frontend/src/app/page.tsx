@@ -78,6 +78,14 @@ export default function HomePage() {
           refreshSummary();
         }
         setTimeout(() => setRealtimeNotice(null), 5000);
+      } else if (event.type === "DATASET_GENERATED") {
+        setRealtimeNotice("✨ Real-Time: Enterprise Active Directory dataset regenerated and synchronized!");
+        if (event.data?.summary) {
+          setSummary(event.data.summary);
+        } else {
+          refreshSummary();
+        }
+        setTimeout(() => setRealtimeNotice(null), 5000);
       }
     });
 

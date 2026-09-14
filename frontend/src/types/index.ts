@@ -281,10 +281,11 @@ export interface BlockAllSensitiveResponse {
 }
 
 export interface RealtimeEvent {
-  type: "CONNECTED" | "ACCOUNT_BLOCKED" | "BULK_SENSITIVE_BLOCKED" | "PASSWORD_REMEDIATED" | "AUDIT_COMPLETED" | "DATABASE_SYNCED";
+  type: "CONNECTED" | "ACCOUNT_BLOCKED" | "BULK_SENSITIVE_BLOCKED" | "PASSWORD_REMEDIATED" | "AUDIT_COMPLETED" | "DATABASE_SYNCED" | "DATASET_GENERATED";
   timestamp: string;
   data?: any;
   message?: string;
 }
+
 
 
