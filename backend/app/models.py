@@ -134,12 +134,12 @@ class RemediationFinding(BaseModel):
     matched_rule: Optional[str] = None
 
 class RemediationRequest(BaseModel):
-    total_audited: int
-    critical_count: int
-    high_risk_count: int
-    privileged_at_risk: int
-    breached_count: int
-    sample_findings: List[RemediationFinding]
+    total_audited: int = 50000
+    critical_count: int = 0
+    high_risk_count: int = 0
+    privileged_at_risk: int = 0
+    breached_count: int = 0
+    sample_findings: List[RemediationFinding] = Field(default_factory=list)
 
 class PriorityAccountAction(BaseModel):
     username: str

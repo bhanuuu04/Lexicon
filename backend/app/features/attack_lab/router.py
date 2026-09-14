@@ -2,8 +2,7 @@ import json
 from fastapi import APIRouter, HTTPException
 from backend.app.models import AttackResultPayload, AttackRunResponse
 from backend.app.features.risk_engine.scoring import calculate_attack_adjustment, calculate_final_risk
-from backend.app.features.dataset_api.router import get_accounts
-from backend.app.config import ACCOUNTS_FILE
+from backend.app.features.dataset_api.router import get_accounts, save_accounts
 
 router = APIRouter(prefix="/api/attack", tags=["attack"])
 
@@ -47,8 +46,7 @@ def record_attack_result(payload: AttackResultPayload):
     }
     
     try:
-        with open(ACCOUNTS_FILE, "w", encoding="utf-8") as f:
-            json.dump(accounts, f)
+        save_accounts(accounts)
     except Exception as e:
         print(f"[AttackRouter] Warning: Failed to persist updated account: {e}")
         

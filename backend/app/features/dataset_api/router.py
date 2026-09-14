@@ -98,8 +98,14 @@ def invalidate_cache():
 def save_accounts(accounts: List[Dict[str, Any]]):
     global _accounts_cache
     _accounts_cache = accounts
-    with open(str(ACCOUNTS_FILE), "w", encoding="utf-8") as f:
-        json.dump(accounts, f)
+    try:
+        temp_file = ACCOUNTS_FILE.with_suffix(".tmp")
+        with open(str(temp_file), "w", encoding="utf-8") as f:
+            json.dump(accounts, f)
+        if temp_file.exists():
+            temp_file.replace(ACCOUNTS_FILE)
+    except Exception as e:
+        print(f"[DatasetAPI] Warning: disk save encountered {e}, in-memory state updated successfully.")
 
 @router.get("/dataset/metadata")
 def get_metadata():

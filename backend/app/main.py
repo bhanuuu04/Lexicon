@@ -28,6 +28,7 @@ app.include_router(attack_router)
 app.include_router(remediation_router)
 
 @app.get("/health", tags=["system"])
+@app.get("/api/health", tags=["system"])
 def health_check():
     """Health check endpoint."""
     return {"status": "ok", "service": "Lexicon Enterprise Risk API"}
