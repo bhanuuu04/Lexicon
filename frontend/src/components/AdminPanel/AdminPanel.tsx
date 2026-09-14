@@ -109,7 +109,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     { id: "accounts", label: "Corporate Identities", icon: Users, badge: `${summary.total_accounts.toLocaleString()}` },
     { id: "blast-radius", label: "Blast Radius", icon: Network, badge: "805" },
     { id: "attack-lab", label: "Attack Lab", icon: Zap, badge: "Live" },
-    { id: "hash-race", label: "Hash Race", icon: Cpu, badge: "4 Algos" },
+    { id: "hash-race", label: "Hash Race", icon: Cpu, badge: "5 Algos" },
     { id: "remediation", label: "AI Advisory", icon: FileText, badge: "CISO" },
     { id: "hibp", label: "k-Anonymity HIBP", icon: Globe, badge: null },
     { id: "audit-logs", label: "Audit Trail", icon: History, badge: null },

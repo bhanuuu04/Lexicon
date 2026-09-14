@@ -182,7 +182,7 @@ export interface AttackCandidateProgress {
 }
 
 export interface HashRaceResult {
-  algorithm: "MD5" | "SHA-256" | "bcrypt" | "Argon2id";
+  algorithm: "NTLM" | "MD5" | "SHA-256" | "bcrypt" | "Argon2id";
   candidates_tested: number;
   elapsed_ms: number;
   throughput: number; // hashes per second

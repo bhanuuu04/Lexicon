@@ -1,4 +1,4 @@
-import { md5, sha256, bcrypt, argon2id } from "hash-wasm";
+import { md4, md5, sha256, bcrypt, argon2id } from "hash-wasm";
 
 self.onmessage = async (e: MessageEvent) => {
   const { algorithm, workload, salt = "$2b$10$N9qo8uLOickgx2ZMRZoMye" } = e.data;
@@ -12,7 +12,36 @@ self.onmessage = async (e: MessageEvent) => {
   let completed = 0;
 
   try {
-    if (algorithm === "MD5") {
+    if (algorithm === "NTLM") {
+      // Run NTLM (UTF-16LE MD4) batch
+      const iterations = 500;
+      for (let i = 0; i < iterations; i++) {
+        const pwd = testCandidates[i % testCandidates.length];
+        const bytes = new Uint8Array(pwd.length * 2);
+        for (let j = 0; j < pwd.length; j++) {
+          const code = pwd.charCodeAt(j);
+          bytes[j * 2] = code & 0xff;
+          bytes[j * 2 + 1] = (code >> 8) & 0xff;
+        }
+        await md4(bytes);
+        completed++;
+      }
+      const elapsed = performance.now() - startTime;
+      const throughput = Math.round((completed / (elapsed / 1000)));
+
+      self.postMessage({
+        type: "RACE_RESULT",
+        payload: {
+          algorithm: "NTLM",
+          candidates_tested: completed,
+          elapsed_ms: Math.round(elapsed * 10) / 10,
+          throughput,
+          memory_cost: "0 KB",
+          iterations: "1 (AD Default)",
+          status: "completed",
+        },
+      });
+    } else if (algorithm === "MD5") {
       // Run MD5 batch
       const iterations = 500;
       for (let i = 0; i < iterations; i++) {

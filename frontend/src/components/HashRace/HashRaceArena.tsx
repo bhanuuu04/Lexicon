@@ -8,6 +8,15 @@ import { HashRaceResult } from "../../types";
 export const HashRaceArena: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<Record<string, HashRaceResult>>({
+    NTLM: {
+      algorithm: "NTLM",
+      candidates_tested: 0,
+      elapsed_ms: 0,
+      throughput: 0,
+      memory_cost: "0 KB",
+      iterations: "1 (AD Default)",
+      status: "pending",
+    },
     MD5: {
       algorithm: "MD5",
       candidates_tested: 0,
@@ -48,7 +57,7 @@ export const HashRaceArena: React.FC = () => {
 
   const runRace = () => {
     setIsRunning(true);
-    const algos: ("MD5" | "SHA-256" | "bcrypt" | "Argon2id")[] = ["MD5", "SHA-256", "bcrypt", "Argon2id"];
+    const algos: ("NTLM" | "MD5" | "SHA-256" | "bcrypt" | "Argon2id")[] = ["NTLM", "MD5", "SHA-256", "bcrypt", "Argon2id"];
 
     setResults((prev) => {
       const next = { ...prev };
@@ -85,6 +94,7 @@ export const HashRaceArena: React.FC = () => {
   };
 
   const chartData = [
+    { name: "NTLM (AD)", throughput: results["NTLM"].throughput, fill: "#FF2D55" },
     { name: "MD5", throughput: results["MD5"].throughput, fill: "#FF3B30" },
     { name: "SHA-256", throughput: results["SHA-256"].throughput, fill: "#FF9500" },
     { name: "bcrypt", throughput: results["bcrypt"].throughput, fill: "#0071E3" },
@@ -127,8 +137,43 @@ export const HashRaceArena: React.FC = () => {
         </button>
       </div>
 
-      {/* 4 Lanes Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 5 Lanes Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* NTLM */}
+        <div className="apple-card p-5 flex flex-col justify-between space-y-4 border border-[#FF2D55]/20 bg-white">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase px-2.5 py-0.5 rounded-full bg-[#FF2D55]/[0.08] text-[#FF2D55] border border-[#FF2D55]/20 font-semibold">
+                AD Baseline
+              </span>
+              <span className="text-xs text-[#86868B] font-mono">MD4-LE</span>
+            </div>
+            <h3 className="text-xl font-semibold text-[#1D1D1F] mt-2 font-sans">NTLM</h3>
+            <p className="text-xs text-[#6E6E73] mt-1">Windows Active Directory default. Highly vulnerable to rapid cracking.</p>
+          </div>
+
+          <div className="space-y-2 text-xs pt-3 border-t border-black/[0.06]">
+            <div className="flex justify-between">
+              <span className="text-[#6E6E73]">Measured Rate:</span>
+              <span className="text-[#FF2D55] font-semibold font-sans">
+                {results["NTLM"].throughput > 0
+                  ? `${results["NTLM"].throughput.toLocaleString()} /sec`
+                  : isRunning
+                  ? "Benchmarking..."
+                  : "Ready"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#6E6E73]">Elapsed Time:</span>
+              <span className="text-[#1D1D1F] font-mono">{results["NTLM"].elapsed_ms}ms</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#6E6E73]">Memory Hardness:</span>
+              <span className="text-[#FF2D55] font-medium">0 KB (Zero RAM)</span>
+            </div>
+          </div>
+        </div>
+
         {/* MD5 */}
         <div className="apple-card p-5 flex flex-col justify-between space-y-4">
           <div>

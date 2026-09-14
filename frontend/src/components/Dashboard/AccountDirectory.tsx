@@ -209,6 +209,11 @@ export const AccountDirectory: React.FC<AccountDirectoryProps> = ({
                             HERO TARGET
                           </span>
                         )}
+                        {acc.is_blocked && (
+                          <span className="px-2 py-0.5 rounded-full bg-[#1D1D1F] text-white text-[10px] font-semibold shadow-sm">
+                            BLOCKED
+                          </span>
+                        )}
                         <span className="font-semibold text-[#1D1D1F] font-sans">{acc.username}</span>
                       </div>
                       <div className="text-[11px] text-[#86868B] mt-0.5 font-mono">{acc.id}</div>
