@@ -40,8 +40,8 @@ export const RiskDistributionChart: React.FC<RiskDistributionChartProps> = ({ su
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* 1. LEFT PANEL: Enterprise Risk Distribution (67% width) */}
-      <div className="lg:col-span-8 apple-card p-6 flex flex-col justify-between">
+      {/* 1. LEFT PANEL: Enterprise Risk Distribution (58% width) */}
+      <div className="lg:col-span-7 apple-card p-6 flex flex-col justify-between">
         <div>
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -142,8 +142,8 @@ export const RiskDistributionChart: React.FC<RiskDistributionChartProps> = ({ su
         </div>
       </div>
 
-      {/* 2. RIGHT PANEL: Department Risk Matrix (33% width) */}
-      <div className="lg:col-span-4 apple-card p-6 flex flex-col justify-between">
+      {/* 2. RIGHT PANEL: Department Risk Matrix (42% width) */}
+      <div className="lg:col-span-5 apple-card p-6 flex flex-col justify-between">
         <div>
           {/* Header */}
           <div className="mb-4">
@@ -151,35 +151,37 @@ export const RiskDistributionChart: React.FC<RiskDistributionChartProps> = ({ su
               Department Risk Matrix
             </h3>
             <p className="text-xs text-[#6E6E73] font-normal mt-0.5">
-              Ranked by Critical accounts & average exposure
+              Ranked by Critical exposure & lateral breach vulnerability
             </p>
           </div>
 
           {/* Department List */}
-          <div className="overflow-y-auto max-h-[310px] space-y-2 pr-1.5 custom-scrollbar">
+          <div className="overflow-y-auto max-h-[320px] space-y-2.5 pr-1 custom-scrollbar">
             {deptList.map((d) => (
               <div
                 key={d.name}
                 className="p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.04] hover:border-black/[0.08] hover:bg-[#EBEBED] transition-all flex items-center justify-between gap-3 text-xs"
               >
                 {/* Left: Department & Stats */}
-                <div className="min-w-0">
-                  <div className="font-semibold text-[#1D1D1F] truncate text-xs sm:text-sm font-sans">
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-[#1D1D1F] text-xs sm:text-sm font-sans">
                     {d.name}
                   </div>
-                  <div className="text-[11px] text-[#6E6E73] mt-0.5 truncate">
-                    {d.total.toLocaleString()} users • {d.privileged} admins • {d.breached} breached
+                  <div className="text-[11px] text-[#6E6E73] mt-0.5 flex items-center space-x-2">
+                    <span>{d.total.toLocaleString()} identities</span>
+                    <span>•</span>
+                    <span className="text-[#1D1D1F] font-medium">{d.privileged} admins</span>
                   </div>
                 </div>
 
                 {/* Right: Critical Badge & Average Risk */}
-                <div className="text-right shrink-0">
-                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#FF3B30]/[0.08] border border-[#FF3B30]/20 text-[#FF3B30] font-semibold text-[11px]">
+                <div className="text-right shrink-0 flex items-center space-x-2">
+                  <span className="px-2.5 py-1 rounded-full bg-[#FF3B30]/[0.08] border border-[#FF3B30]/20 text-[#FF3B30] font-semibold text-[11px]">
                     {d.critical} CRIT
                   </span>
-                  <div className="text-[11px] text-[#6E6E73] mt-0.5 font-medium">
-                    Avg: {(d.avg_risk * 100).toFixed(0)}%
-                  </div>
+                  <span className="px-2 py-1 rounded-lg bg-white border border-black/[0.06] text-[#6E6E73] text-[11px] font-medium">
+                    {(d.avg_risk * 100).toFixed(0)}%
+                  </span>
                 </div>
               </div>
             ))}
@@ -188,8 +190,8 @@ export const RiskDistributionChart: React.FC<RiskDistributionChartProps> = ({ su
 
         {/* Anchored Footer: Total Policy Violations */}
         <div className="pt-4 mt-4 border-t border-black/[0.06] flex items-center justify-between text-xs">
-          <span className="text-[#6E6E73] font-medium">Total Policy Violations:</span>
-          <span className="text-[#FF9500] font-bold text-sm font-sans">
+          <span className="text-[#6E6E73] font-medium">Total Active Directory Policy Violations:</span>
+          <span className="text-[#FF9500] font-bold text-sm font-sans bg-[#FF9500]/10 px-2.5 py-0.5 rounded-full">
             {summary.policy_violations_count.toLocaleString()}
           </span>
         </div>
