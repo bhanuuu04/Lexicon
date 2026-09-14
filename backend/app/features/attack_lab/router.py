@@ -1,4 +1,5 @@
 import json
+# pyrefly: ignore [missing-import]
 from fastapi import APIRouter, HTTPException
 from backend.app.models import AttackResultPayload, AttackRunResponse
 from backend.app.features.risk_engine.scoring import calculate_attack_adjustment, calculate_final_risk
@@ -9,9 +10,7 @@ router = APIRouter(prefix="/api/attack", tags=["attack"])
 @router.post("/result", response_model=AttackRunResponse)
 def record_attack_result(payload: AttackResultPayload):
     """
-    Receive summarized empirical results from client-side bounded Attack Lab.
-    NEVER receives the candidate stream.
-    Updates account final risk score deterministically.
+    Receive summarized ore deterministically.
     """
     accounts = get_accounts()
     target_account = None

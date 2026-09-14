@@ -69,8 +69,6 @@ export default function HomePage() {
     try {
       const sum = await fetchAuditSummary();
       setSummary(sum);
-      const hero = await fetchHeroAccount();
-      setAttackTargetAccount(hero);
     } catch (e) {
       console.error("Failed to refresh audit summary:", e);
     }

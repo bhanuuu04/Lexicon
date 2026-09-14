@@ -50,6 +50,8 @@ self.onmessage = async (e: MessageEvent) => {
 
     const algoLower = algorithm.toLowerCase().replace("-", "").replace("_", "");
 
+    let lastCandidateTested = "";
+
     for (const item of stream) {
       if (isCancelled) {
         self.postMessage({
@@ -61,6 +63,7 @@ self.onmessage = async (e: MessageEvent) => {
 
       candidatesTested++;
       const cand = item.candidate;
+      lastCandidateTested = cand;
       let computedHash = "";
 
       if (algoLower === "ntlm") {
@@ -121,6 +124,7 @@ self.onmessage = async (e: MessageEvent) => {
         matched,
         matched_password: matched ? matchedPassword : null,
         matched_rule: matched ? matchedRule : null,
+        last_candidate: matched ? matchedPassword : lastCandidateTested,
         time_budget_ms,
         status: matched ? "MATCHED" : "BUDGET_EXHAUSTED",
       },

@@ -55,13 +55,32 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
   } | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
+  const lastTargetAccountIdRef = useRef<string | null>(targetAccount?.id || null);
 
+  // When switching to a DIFFERENT account ID, reset the attack state
   useEffect(() => {
     if (targetAccount) {
-      setStatus("ACCOUNT_SELECTED");
+      if (lastTargetAccountIdRef.current !== targetAccount.id) {
+        lastTargetAccountIdRef.current = targetAccount.id;
+        resetAttack();
+        setStatus("ACCOUNT_SELECTED");
+      }
+    } else {
+      lastTargetAccountIdRef.current = null;
       resetAttack();
+      setStatus("IDLE");
     }
-  }, [targetAccount]);
+  }, [targetAccount?.id]);
+
+  // Clean up worker on component unmount
+  useEffect(() => {
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
+    };
+  }, []);
 
   const resetAttack = () => {
     if (workerRef.current) {
@@ -85,8 +104,23 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
   const startAttack = () => {
     if (!targetAccount) return;
 
-    resetAttack();
+    if (workerRef.current) {
+      workerRef.current.postMessage({ type: "CANCEL" });
+      workerRef.current.terminate();
+      workerRef.current = null;
+    }
+
+    setAttackResult(null);
+    setUpdatedRiskInfo(null);
     setStatus("RUNNING");
+    setProgress({
+      candidates_tested: 0,
+      elapsed_ms: 0,
+      current_rate: 0,
+      current_candidate: "Initializing candidate generator...",
+      matched: false,
+      status: "RUNNING",
+    });
 
     const worker = new Worker(new URL("../../workers/attackWorker.ts", import.meta.url), {
       type: "module",
@@ -120,18 +154,31 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
       if (type === "PROGRESS") {
         setProgress(payload);
       } else if (type === "RESULT") {
-        setStatus(payload.matched ? "MATCHED" : "BUDGET_EXHAUSTED");
-        setProgress((prev) => ({
-          ...prev,
+        const finalCandidate = payload.matched
+          ? (payload.matched_password || payload.last_candidate || "Match recovered")
+          : (payload.last_candidate || "Search budget exhausted");
+
+        const finalStatus = payload.matched ? "MATCHED" : "BUDGET_EXHAUSTED";
+        setStatus(finalStatus);
+
+        // Freeze telemetry with final empirical values
+        setProgress({
           candidates_tested: payload.candidates_tested,
           elapsed_ms: payload.elapsed_ms,
           current_rate: payload.current_rate,
+          current_candidate: finalCandidate,
           matched: payload.matched,
           matched_password: payload.matched_password,
           matched_rule: payload.matched_rule,
           status: payload.status,
-        }));
+        });
         setAttackResult(payload);
+
+        // Terminate and clean up worker immediately
+        if (workerRef.current) {
+          workerRef.current.terminate();
+          workerRef.current = null;
+        }
 
         setIsSubmitting(true);
         try {
@@ -165,9 +212,6 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
         } finally {
           setIsSubmitting(false);
         }
-
-        worker.terminate();
-        workerRef.current = null;
       }
     };
   };
