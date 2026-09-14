@@ -179,6 +179,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
       targetAccount.is_hero ||
       targetAccount.hero_compromised ||
       targetAccount.is_breached ||
+      targetAccount.breach_match ||
       targetAccount.password_group_id !== null ||
       (pwd && (pwd.includes("202") || pwd.length <= 14 || /^[A-Z][a-z]+[0-9]+[!@#$%*]/.test(pwd)));
 
@@ -187,7 +188,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
       ? "Corporate Root + Year + Symbol (Group #42)"
       : targetAccount.password_group_id
       ? `Department Password Reuse Mask (Cluster #${targetAccount.password_group_id})`
-      : targetAccount.is_breached
+      : (targetAccount.is_breached || targetAccount.breach_match)
       ? "Dark Web Threat Actor Breach Corpus Lookup"
       : "Targeted Identity Mask & Year Permutation";
 

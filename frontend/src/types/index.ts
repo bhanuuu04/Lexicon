@@ -67,6 +67,8 @@ export interface Account {
   final_risk: number;
   final_tier: "Critical" | "High" | "Medium" | "Low";
   is_hero?: boolean;
+  hero_compromised?: boolean;
+  is_breached?: boolean;
   is_blocked?: boolean;
   blocked_reason?: string;
   blocked_at?: string;
