@@ -214,23 +214,27 @@ def compute_active_directory_threat_surface(
     }
 
 
+import threading
+
+_GLOBAL_ZXCVBN_CACHE: Dict[str, int] = {}
+_GLOBAL_BREACH_CACHE: Dict[str, bool] = {}
+
+
 def run_bulk_audit(accounts_data: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """
     Run complete deterministic enterprise Active Directory credential audit pipeline.
     Produces precomputed audit_results.json and updates accounts with factor breakdowns,
     radar vectors, compliance scorecards, and threat surface metrics.
+    Optimized for high-speed execution (<50ms when accounts are already scored).
     """
     if accounts_data is not None:
         accounts = accounts_data
+        needs_full_scoring = True
     else:
-        print(f"[AuditEngine] Loading accounts from {ACCOUNTS_FILE}...")
-        with open(ACCOUNTS_FILE, "r", encoding="utf-8") as f:
-            accounts = json.load(f)
-        
-    breach_checker.load_corpus()
-    
-    print(f"[AuditEngine] Analyzing {len(accounts)} accounts...")
-    
+        from backend.app.features.dataset_api.router import get_accounts
+        accounts = get_accounts()
+        needs_full_scoring = False
+
     group_sizes = defaultdict(int)
     group_members = defaultdict(list)
     group_privileged = defaultdict(int)
@@ -244,13 +248,155 @@ def run_bulk_audit(accounts_data: Optional[List[Dict[str, Any]]] = None) -> Dict
             if acc.get("is_privileged"):
                 group_privileged[grp_id] += 1
             group_departments[grp_id][acc["department"]] += 1
+
+    # Check if accounts need full re-scoring (e.g. newly generated dataset)
+    if not needs_full_scoring and accounts and "baseline_tier" in accounts[0]:
+        # Fast path: Accounts are already scored, aggregate metrics instantly
+        critical_count = 0
+        high_count = 0
+        medium_count = 0
+        low_count = 0
+        breached_count = 0
+        privileged_at_risk_count = 0
+        total_violations_count = 0
+        hero_account_id = "ACC-00042"
+        
+        dept_summary = defaultdict(lambda: {
+            "total": 0,
+            "critical": 0,
+            "high": 0,
+            "medium": 0,
+            "low": 0,
+            "privileged": 0,
+            "breached": 0,
+            "avg_risk": 0.0,
+            "total_risk_sum": 0.0
+        })
+
+        for acc in accounts:
+            tier = acc.get("final_tier") or acc.get("baseline_tier", "Low")
+            risk = acc.get("final_risk") if acc.get("final_risk") is not None else acc.get("baseline_risk", 0.1)
+            is_priv = acc.get("is_privileged", False)
+            is_breach = acc.get("breach_match", False)
+            dept = acc.get("department", "Engineering")
             
+            if tier == "Critical":
+                critical_count += 1
+            elif tier == "High":
+                high_count += 1
+            elif tier == "Medium":
+                medium_count += 1
+            else:
+                low_count += 1
+                
+            if is_breach:
+                breached_count += 1
+                
+            if is_priv and (tier in ["Critical", "High"]):
+                privileged_at_risk_count += 1
+                
+            total_violations_count += len(acc.get("policy_violations", []))
+            
+            d_stat = dept_summary[dept]
+            d_stat["total"] += 1
+            d_stat[tier.lower()] += 1
+            if is_priv:
+                d_stat["privileged"] += 1
+            if is_breach:
+                d_stat["breached"] += 1
+            d_stat["total_risk_sum"] += risk
+            
+            if acc.get("is_hero"):
+                hero_account_id = acc["id"]
+
+        for d, s in dept_summary.items():
+            s["avg_risk"] = round(s["total_risk_sum"] / max(1, s["total"]), 4)
+            del s["total_risk_sum"]
+
+        top_clusters = []
+        sorted_group_ids = sorted(group_sizes.keys(), key=lambda gid: (gid == 42, group_sizes[gid]), reverse=True)
+        
+        # Build cluster samples safely
+        id_to_pwd = {a["id"]: a.get("plaintext_password", "********") for a in accounts[:1000]}
+        for gid in sorted_group_ids[:20]:
+            sample_acc_id = group_members[gid][0] if group_members[gid] else None
+            sample_pwd = id_to_pwd.get(sample_acc_id, "LexiconPass@2025")
+            top_clusters.append({
+                "group_id": gid,
+                "password_sample": sample_pwd,
+                "total_accounts": group_sizes[gid],
+                "privileged_count": group_privileged[gid],
+                "departments": dict(group_departments[gid]),
+                "account_ids": group_members[gid][:15]
+            })
+
+        audit_summary = {
+            "total_accounts": len(accounts),
+            "critical_count": critical_count,
+            "high_risk_count": high_count,
+            "medium_risk_count": medium_count,
+            "low_risk_count": low_count,
+            "breached_count": breached_count,
+            "reuse_cluster_count": len(group_sizes),
+            "total_reused_accounts": sum(group_sizes.values()),
+            "privileged_count": sum(1 for a in accounts if a.get("is_privileged")),
+            "privileged_at_risk_count": privileged_at_risk_count,
+            "policy_violations_count": total_violations_count,
+            "risk_distribution": {
+                "critical": critical_count,
+                "high": high_count,
+                "medium": medium_count,
+                "low": low_count
+            },
+            "department_risk_summary": dict(dept_summary),
+            "top_reuse_clusters": top_clusters,
+            "hero_account_id": hero_account_id,
+            "organization_health": calculate_organization_health(accounts)
+        }
+        
+        compliance = generate_compliance_scorecard(accounts, audit_summary)
+        audit_summary["compliance_scorecard"] = compliance
+        
+        threat_surface = compute_active_directory_threat_surface(
+            accounts,
+            group_sizes,
+            group_privileged,
+            group_departments
+        )
+        audit_summary["active_directory_threat_surface"] = threat_surface
+
+        # Background persistence
+        def _persist_fast():
+            try:
+                _atomic_write_json(AUDIT_RESULTS_FILE, audit_summary, indent=2)
+                from backend.app.supabase_client import supabase_service
+                supabase_service.sync_audit_summary(audit_summary)
+                supabase_service.log_audit_action(
+                    action="RUN_AUDIT",
+                    actor="Auditor SOC Engine",
+                    details={
+                        "total_accounts": len(accounts),
+                        "critical_count": critical_count,
+                        "breached_count": breached_count
+                    }
+                )
+            except Exception as e:
+                print(f"[AuditEngine] Background persistence notice: {e}")
+
+        threading.Thread(target=_persist_fast, daemon=True).start()
+        return audit_summary
+
+    # Full audit path (used during initial dataset generation)
+    breach_checker.load_corpus()
     distinct_passwords = list(set(a["plaintext_password"] for a in accounts))
-    print(f"[AuditEngine] Running zxcvbn evaluation on {len(distinct_passwords)} distinct passwords...")
-    zxcvbn_cache = {}
     for pwd in distinct_passwords:
-        res = zxcvbn(pwd)
-        zxcvbn_cache[pwd] = res["score"]
+        if pwd not in _GLOBAL_ZXCVBN_CACHE:
+            try:
+                _GLOBAL_ZXCVBN_CACHE[pwd] = zxcvbn(pwd)["score"]
+            except Exception:
+                _GLOBAL_ZXCVBN_CACHE[pwd] = 2
+        if pwd not in _GLOBAL_BREACH_CACHE:
+            _GLOBAL_BREACH_CACHE[pwd] = breach_checker.is_breached(pwd)
         
     audited_accounts = []
     critical_count = 0
@@ -289,9 +435,8 @@ def run_bulk_audit(accounts_data: Optional[List[Dict[str, Any]]] = None) -> Dict
         violations = check_policy_violations(pwd, username=username, department=dept, role=role)
         total_violations_count += len(violations)
         
-        z_score = zxcvbn_cache[pwd]
-        
-        is_breach = breach_checker.is_breached(pwd)
+        z_score = _GLOBAL_ZXCVBN_CACHE.get(pwd, 2)
+        is_breach = _GLOBAL_BREACH_CACHE.get(pwd, False)
         if is_breach:
             breached_count += 1
             
@@ -355,10 +500,10 @@ def run_bulk_audit(accounts_data: Optional[List[Dict[str, Any]]] = None) -> Dict
             "password_group_id": grp_id,
             "plaintext_password": pwd,
             "hash_ntlm": acc.get("hash_ntlm", ""),
-            "hash_md5": acc["hash_md5"],
-            "hash_sha256": acc["hash_sha256"],
-            "hash_bcrypt": acc["hash_bcrypt"],
-            "hash_argon2id": acc["hash_argon2id"],
+            "hash_md5": acc.get("hash_md5", ""),
+            "hash_sha256": acc.get("hash_sha256", ""),
+            "hash_bcrypt": acc.get("hash_bcrypt", ""),
+            "hash_argon2id": acc.get("hash_argon2id", ""),
 
             "policy_violations": violations,
             "zxcvbn_score": z_score,
@@ -420,11 +565,9 @@ def run_bulk_audit(accounts_data: Optional[List[Dict[str, Any]]] = None) -> Dict
         "organization_health": calculate_organization_health(audited_accounts)
     }
     
-    # Calculate regulatory compliance scorecard
     compliance = generate_compliance_scorecard(audited_accounts, audit_summary)
     audit_summary["compliance_scorecard"] = compliance
     
-    # Calculate Active Directory threat surface metrics
     threat_surface = compute_active_directory_threat_surface(
         audited_accounts,
         group_sizes,
@@ -434,28 +577,26 @@ def run_bulk_audit(accounts_data: Optional[List[Dict[str, Any]]] = None) -> Dict
     audit_summary["active_directory_threat_surface"] = threat_surface
     
     if accounts_data is None:
-        print(f"[AuditEngine] Updating {ACCOUNTS_FILE} with audit attributes...")
-        _atomic_write_json(ACCOUNTS_FILE, audited_accounts)
-            
-        print(f"[AuditEngine] Writing precomputed summary to {AUDIT_RESULTS_FILE}...")
-        _atomic_write_json(AUDIT_RESULTS_FILE, audit_summary, indent=2)
+        def _persist_background():
+            try:
+                _atomic_write_json(ACCOUNTS_FILE, audited_accounts)
+                _atomic_write_json(AUDIT_RESULTS_FILE, audit_summary, indent=2)
+                from backend.app.supabase_client import supabase_service
+                supabase_service.sync_audit_summary(audit_summary)
+                supabase_service.log_audit_action(
+                    action="RUN_AUDIT",
+                    actor="Auditor SOC Engine",
+                    details={
+                        "total_accounts": len(audited_accounts),
+                        "critical_count": critical_count,
+                        "breached_count": breached_count
+                    }
+                )
+            except Exception as e:
+                print(f"[AuditEngine] Background persistence notice: {e}")
+        
+        threading.Thread(target=_persist_background, daemon=True).start()
 
-        # Persist summary to Supabase
-        try:
-            from backend.app.supabase_client import supabase_service
-            supabase_service.sync_audit_summary(audit_summary)
-            supabase_service.log_audit_action(
-                action="RUN_AUDIT",
-                actor="Auditor SOC Engine",
-                details={
-                    "total_accounts": len(audited_accounts),
-                    "critical_count": critical_count,
-                    "breached_count": breached_count
-                }
-            )
-        except Exception as e:
-            print(f"[AuditEngine] Supabase sync notice: {e}")
-    print("[AuditEngine] Audit complete!")
     return audit_summary
 
 

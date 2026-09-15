@@ -1,22 +1,23 @@
 "use client";
 
 import React from "react";
-import {
-  Shield,
-  ShieldAlert,
-  UserCheck,
-  Compass,
-  Layers,
-  ShieldCheck,
-} from "lucide-react";
+import { Shield, ShieldCheck, LogOut, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { Account } from "../types";
 
 export type ExperienceMode = "landing" | "user" | "admin";
 
 interface HeaderProps {
-  experienceMode: ExperienceMode;
-  setExperienceMode: (mode: ExperienceMode) => void;
-  onHeroClick: () => void;
+  experienceMode?: ExperienceMode;
+  setExperienceMode?: (mode: ExperienceMode) => void;
+  onHeroClick?: () => void;
   totalAccounts?: number;
+  currentUser?: Account | null;
+  onRequestLogin?: (targetMode?: ExperienceMode) => void;
+  onSignOut?: () => void;
+  canGoBack?: boolean;
+  canGoForward?: boolean;
+  onGoBack?: () => void;
+  onGoForward?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,101 +25,101 @@ export const Header: React.FC<HeaderProps> = ({
   setExperienceMode,
   onHeroClick,
   totalAccounts = 50000,
+  currentUser,
+  onRequestLogin,
+  onSignOut,
+  canGoBack = false,
+  canGoForward = false,
+  onGoBack,
+  onGoForward,
 }) => {
   return (
-    <header className="sticky top-0 z-40 border-b border-black/[0.06] bg-[#F5F5F7]/80 backdrop-blur-xl supports-[backdrop-filter]:bg-[#F5F5F7]/75 transition-all duration-200">
+    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur-md transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
-          {/* ZONE 1: BRAND */}
-          <div
-            className="flex items-center space-x-3 cursor-pointer shrink-0 group"
-            onClick={() => setExperienceMode("landing")}
-          >
-            <div className="w-8 h-8 min-w-[32px] max-w-[32px] min-h-[32px] max-h-[32px] rounded-xl bg-white border border-black/[0.08] flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform duration-200 overflow-hidden shrink-0">
-              <img
-                src="/lexicon-logo.png"
-                alt="Lexicon"
-                className="w-8 h-8 object-contain block"
-                style={{ width: "32px", height: "32px", maxWidth: "32px", maxHeight: "32px" }}
-              />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-base tracking-tight text-[#1D1D1F] font-sans">
+        <div className="flex items-center justify-between h-14 gap-4">
+          {/* ZONE 1: BRAND + BACK/FORWARD CONTROLS */}
+          <div className="flex items-center space-x-3 shrink-0">
+            <div
+              className="flex items-center space-x-3 cursor-pointer group select-none"
+              onClick={() => setExperienceMode && setExperienceMode("landing")}
+              title="Return to Lexicon Platform"
+            >
+              <div className="w-11 h-11 rounded-xl p-0.5 flex items-center justify-center shrink-0 overflow-hidden">
+                <img
+                  src="/lexicon-logo.png"
+                  alt="LEXICON"
+                  className="w-full h-full object-contain"
+                  style={{ mixBlendMode: "multiply" }}
+                />
+              </div>
+              <div className="flex items-baseline space-x-2">
+                <span className="font-bold text-sm tracking-tight text-gray-900 font-sans">
                   LEXICON
                 </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#34C759]/10 text-[#34C759] border border-[#34C759]/20">
-                  Protected
+                <span className="text-[11px] text-gray-500 font-normal hidden sm:inline">
+                  Enterprise Password Security
                 </span>
               </div>
-              <span className="text-[10px] uppercase font-semibold text-[#86868B] tracking-wider hidden sm:block leading-tight">
-                Enterprise Password Risk Intelligence
-              </span>
             </div>
+
+            {/* Back & Forward Navigation Controls */}
+            {(onGoBack || onGoForward) && (
+              <div className="flex items-center space-x-1 pl-2.5 ml-1 border-l border-gray-200">
+                <button
+                  onClick={onGoBack}
+                  disabled={!canGoBack}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Go Back"
+                  aria-label="Go Back"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={onGoForward}
+                  disabled={!canGoForward}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-600 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-25 disabled:cursor-not-allowed transition cursor-pointer"
+                  title={!currentUser ? "Login required to move forward" : "Go Forward"}
+                  aria-label="Go Forward"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* ZONE 2: HERO SHORTCUT & PROTECTION BADGE */}
-          <div className="hidden lg:flex items-center space-x-2.5 shrink-0">
-            <button
-              onClick={() => {
-                setExperienceMode("admin");
-                onHeroClick();
-              }}
-              className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-[#FF3B30]/[0.08] border border-[#FF3B30]/20 text-[#FF3B30] hover:bg-[#FF3B30]/[0.12] hover:border-[#FF3B30]/30 transition-all text-xs font-medium group active:scale-[0.98]"
-              title="Jump directly to Attack Lab with High Risk Target (alex.morgan - Cluster #42)"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-[#FF3B30] group-hover:scale-110 transition-transform" />
-              <span>Target High Risk Hero (alex.morgan)</span>
-            </button>
-            <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-white border border-black/[0.06] text-xs font-medium text-[#6E6E73] shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-[#34C759]"></span>
-              <span>{totalAccounts.toLocaleString()} Protected Corporate Accounts</span>
-            </div>
+          {/* ZONE 2: TOP RIGHT USER / LOGIN BUTTON */}
+          <div className="flex items-center space-x-2.5 shrink-0">
+            {currentUser ? (
+              <div className="flex items-center space-x-2">
+                <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-xl bg-gray-50 border border-gray-200/80 text-xs text-gray-800">
+                  <div className="w-5 h-5 rounded-md bg-[#0F172A] text-white flex items-center justify-center text-[10px] font-bold">
+                    {currentUser.username.slice(0, 2).toUpperCase()}
+                  </div>
+                  <span className="font-semibold text-gray-900">{currentUser.username}</span>
+                  <span className="text-[10px] text-gray-400">({currentUser.role || "User"})</span>
+                </div>
+                <button
+                  onClick={onSignOut}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200/80 text-gray-700 text-xs font-medium border border-gray-200/60 transition cursor-pointer"
+                  title="Sign out of enterprise account"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-gray-500" />
+                  <span className="hidden sm:inline">Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => onRequestLogin?.("admin")}
+                className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-semibold shadow-2xs transition active:scale-[0.98] cursor-pointer"
+              >
+                <Shield className="w-3.5 h-3.5 text-white" />
+                <span>Enterprise Login</span>
+              </button>
+            )}
           </div>
-
-          {/* ZONE 3: 3-EXPERIENCE SEGMENTED SELECTOR */}
-          <nav className="flex items-center p-1 rounded-xl bg-[#E5E5EA]/80 border border-black/[0.04] shrink-0">
-            <button
-              onClick={() => setExperienceMode("landing")}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                experienceMode === "landing"
-                  ? "bg-white text-[#1D1D1F] shadow-xs font-semibold"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F]"
-              }`}
-            >
-              <Compass className={`w-3.5 h-3.5 ${experienceMode === "landing" ? "text-[#0071E3]" : "text-[#86868B]"}`} />
-              <span className="hidden sm:inline">Platform & Defense</span>
-              <span className="sm:hidden">Site</span>
-            </button>
-
-            <button
-              onClick={() => setExperienceMode("user")}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                experienceMode === "user"
-                  ? "bg-white text-[#1D1D1F] shadow-xs font-semibold"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F]"
-              }`}
-            >
-              <UserCheck className={`w-3.5 h-3.5 ${experienceMode === "user" ? "text-[#0071E3]" : "text-[#86868B]"}`} />
-              <span className="hidden sm:inline">Employee Shield (Alex)</span>
-              <span className="sm:hidden">Employee</span>
-            </button>
-
-            <button
-              onClick={() => setExperienceMode("admin")}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                experienceMode === "admin"
-                  ? "bg-white text-[#1D1D1F] shadow-xs font-semibold"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F]"
-              }`}
-            >
-              <Layers className={`w-3.5 h-3.5 ${experienceMode === "admin" ? "text-[#0071E3]" : "text-[#86868B]"}`} />
-              <span className="hidden sm:inline">SOC Defense Center</span>
-              <span className="sm:hidden">SOC</span>
-            </button>
-          </nav>
         </div>
       </div>
     </header>
   );
 };
+

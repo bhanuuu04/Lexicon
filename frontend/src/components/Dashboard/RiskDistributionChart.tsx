@@ -17,10 +17,10 @@ interface RiskDistributionChartProps {
 }
 
 const TIER_COLORS: Record<string, string> = {
-  Critical: "#FF3B30",
-  High: "#FF9500",
-  Medium: "#E5A000",
-  Low: "#34C759",
+  Critical: "#EF4444",
+  High: "#F59E0B",
+  Medium: "#9CA3AF",
+  Low: "#10B981",
 };
 
 export const RiskDistributionChart: React.FC<RiskDistributionChartProps> = ({ summary }) => {
@@ -31,173 +31,107 @@ export const RiskDistributionChart: React.FC<RiskDistributionChartProps> = ({ su
     { name: "Low (<0.25)", count: summary.low_risk_count, tier: "Low" },
   ];
 
-  const deptList = Object.entries(summary.department_risk_summary || {})
-    .map(([name, stat]) => ({
-      name,
-      ...stat,
-    }))
-    .sort((a, b) => b.critical - a.critical);
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* 1. LEFT PANEL: Enterprise Risk Distribution (58% width) */}
-      <div className="lg:col-span-7 apple-card p-6 flex flex-col justify-between">
-        <div>
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div>
-              <h3 className="text-base sm:text-lg font-semibold text-[#1D1D1F] tracking-tight font-sans">
-                Enterprise Posture & Exposure Distribution
-              </h3>
-              <p className="text-xs text-[#6E6E73] font-normal mt-0.5">
-                Continuous identity threat posture evaluated across 50,000 corporate identities
-              </p>
-            </div>
-            <div className="flex items-center space-x-2 text-xs shrink-0">
-              <span className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-[#FF3B30]/[0.08] border border-[#FF3B30]/20 text-[#FF3B30] font-medium">
-                <span className="w-2 h-2 rounded-full bg-[#FF3B30]"></span>
-                <span>Critical: {summary.critical_count.toLocaleString()}</span>
-              </span>
-              <span className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-[#FF9500]/[0.08] border border-[#FF9500]/20 text-[#FF9500] font-medium">
-                <span className="w-2 h-2 rounded-full bg-[#FF9500]"></span>
-                <span>High: {summary.high_risk_count.toLocaleString()}</span>
-              </span>
-            </div>
+    <div className="p-5 flex flex-col justify-between bg-white border border-gray-200 rounded-xl shadow-2xs">
+      <div>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 tracking-tight font-sans">
+              Password Risk Distribution
+            </h3>
+            <p className="text-xs text-gray-500 font-normal mt-0.5">
+              Deterministic risk score breakdown across {summary.total_accounts.toLocaleString()} Active Directory accounts
+            </p>
           </div>
-
-          {/* Bar Chart */}
-          <div className="h-64 sm:h-72 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
-                <XAxis
-                  dataKey="name"
-                  stroke="#86868B"
-                  tick={{ fontSize: 12, fill: "#6E6E73" }}
-                  tickLine={false}
-                  axisLine={{ stroke: "rgba(0, 0, 0, 0.08)" }}
-                />
-                <YAxis
-                  stroke="#86868B"
-                  tick={{ fontSize: 12, fill: "#6E6E73" }}
-                  tickLine={false}
-                  axisLine={{ stroke: "rgba(0, 0, 0, 0.08)" }}
-                  tickFormatter={(val) => val.toLocaleString()}
-                />
-                <Tooltip
-                  cursor={{ fill: "rgba(0, 0, 0, 0.03)" }}
-                  contentStyle={{
-                    backgroundColor: "#FFFFFF",
-                    borderColor: "rgba(0, 0, 0, 0.08)",
-                    borderRadius: "12px",
-                    color: "#1D1D1F",
-                    fontSize: "12px",
-                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.08)",
-                  }}
-                  formatter={(val: number) => [`${val.toLocaleString()} Accounts`, "Count"]}
-                />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={60}>
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={TIER_COLORS[entry.tier]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="flex items-center space-x-2 text-xs shrink-0">
+            <span className="flex items-center space-x-1 px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200/60 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+              <span>Critical: {summary.critical_count.toLocaleString()}</span>
+            </span>
+            <span className="flex items-center space-x-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+              <span>High: {summary.high_risk_count.toLocaleString()}</span>
+            </span>
           </div>
         </div>
 
-        {/* Bottom Tier Percentage Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-5 border-t border-black/[0.06] text-center">
-          <div className="p-3 rounded-xl bg-[#FF3B30]/[0.05] border border-[#FF3B30]/15">
-            <span className="text-[#FF3B30] font-semibold text-base block font-sans">
-              {((summary.critical_count / 50000) * 100).toFixed(1)}%
-            </span>
-            <span className="text-[#6E6E73] text-xs block mt-0.5 font-medium">
-              Critical ({summary.critical_count.toLocaleString()})
-            </span>
-          </div>
-          <div className="p-3 rounded-xl bg-[#FF9500]/[0.05] border border-[#FF9500]/15">
-            <span className="text-[#FF9500] font-semibold text-base block font-sans">
-              {((summary.high_risk_count / 50000) * 100).toFixed(1)}%
-            </span>
-            <span className="text-[#6E6E73] text-xs block mt-0.5 font-medium">
-              High ({summary.high_risk_count.toLocaleString()})
-            </span>
-          </div>
-          <div className="p-3 rounded-xl bg-[#E5A000]/[0.05] border border-[#E5A000]/15">
-            <span className="text-[#E5A000] font-semibold text-base block font-sans">
-              {((summary.medium_risk_count / 50000) * 100).toFixed(1)}%
-            </span>
-            <span className="text-[#6E6E73] text-xs block mt-0.5 font-medium">
-              Medium ({summary.medium_risk_count.toLocaleString()})
-            </span>
-          </div>
-          <div className="p-3 rounded-xl bg-[#34C759]/[0.05] border border-[#34C759]/15">
-            <span className="text-[#34C759] font-semibold text-base block font-sans">
-              {((summary.low_risk_count / 50000) * 100).toFixed(1)}%
-            </span>
-            <span className="text-[#6E6E73] text-xs block mt-0.5 font-medium">
-              Low ({summary.low_risk_count.toLocaleString()})
-            </span>
-          </div>
+        {/* Bar Chart */}
+        <div className="h-60 sm:h-64 w-full pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
+              <XAxis
+                dataKey="name"
+                stroke="#9CA3AF"
+                tick={{ fontSize: 11, fill: "#6B7280" }}
+                tickLine={false}
+                axisLine={{ stroke: "#E5E7EB" }}
+              />
+              <YAxis
+                stroke="#9CA3AF"
+                tick={{ fontSize: 11, fill: "#6B7280" }}
+                tickLine={false}
+                axisLine={{ stroke: "#E5E7EB" }}
+                tickFormatter={(val) => val.toLocaleString()}
+              />
+              <Tooltip
+                cursor={{ fill: "rgba(0, 0, 0, 0.02)" }}
+                contentStyle={{
+                  backgroundColor: "#FFFFFF",
+                  borderColor: "#E5E7EB",
+                  borderRadius: "8px",
+                  color: "#111827",
+                  fontSize: "12px",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                }}
+                formatter={(val: number) => [`${val.toLocaleString()} Accounts`, "Count"]}
+              />
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={TIER_COLORS[entry.tier]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      {/* 2. RIGHT PANEL: Department Risk Matrix (42% width) */}
-      <div className="lg:col-span-5 apple-card p-6 flex flex-col justify-between">
-        <div>
-          {/* Header */}
-          <div className="mb-4">
-            <h3 className="text-base sm:text-lg font-semibold text-[#1D1D1F] tracking-tight font-sans">
-              Department Risk Matrix
-            </h3>
-            <p className="text-xs text-[#6E6E73] font-normal mt-0.5">
-              Ranked by Critical exposure & lateral breach vulnerability
-            </p>
-          </div>
-
-          {/* Department List */}
-          <div className="overflow-y-auto max-h-[320px] space-y-2.5 pr-1 custom-scrollbar">
-            {deptList.map((d) => (
-              <div
-                key={d.name}
-                className="p-3 rounded-xl bg-[#F5F5F7] border border-black/[0.04] hover:border-black/[0.08] hover:bg-[#EBEBED] transition-all flex items-center justify-between gap-3 text-xs"
-              >
-                {/* Left: Department & Stats */}
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-[#1D1D1F] text-xs sm:text-sm font-sans">
-                    {d.name}
-                  </div>
-                  <div className="text-[11px] text-[#6E6E73] mt-0.5 flex items-center space-x-2">
-                    <span>{d.total.toLocaleString()} identities</span>
-                    <span>•</span>
-                    <span className="text-[#1D1D1F] font-medium">{d.privileged} admins</span>
-                  </div>
-                </div>
-
-                {/* Right: Critical Badge & Average Risk */}
-                <div className="text-right shrink-0 flex items-center space-x-2">
-                  <span className="px-2.5 py-1 rounded-full bg-[#FF3B30]/[0.08] border border-[#FF3B30]/20 text-[#FF3B30] font-semibold text-[11px]">
-                    {d.critical} CRIT
-                  </span>
-                  <span className="px-2 py-1 rounded-lg bg-white border border-black/[0.06] text-[#6E6E73] text-[11px] font-medium">
-                    {(d.avg_risk * 100).toFixed(0)}%
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Bottom Tier Percentage Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-4 border-t border-gray-100 text-center">
+        <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200/60">
+          <span className="text-red-600 font-semibold text-sm block font-sans">
+            {((summary.critical_count / summary.total_accounts) * 100).toFixed(1)}%
+          </span>
+          <span className="text-gray-500 text-[11px] block mt-0.5">
+            Critical ({summary.critical_count.toLocaleString()})
+          </span>
         </div>
-
-        {/* Anchored Footer: Total Policy Violations */}
-        <div className="pt-4 mt-4 border-t border-black/[0.06] flex items-center justify-between text-xs">
-          <span className="text-[#6E6E73] font-medium">Total Active Directory Policy Violations:</span>
-          <span className="text-[#FF9500] font-bold text-sm font-sans bg-[#FF9500]/10 px-2.5 py-0.5 rounded-full">
-            {summary.policy_violations_count.toLocaleString()}
+        <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200/60">
+          <span className="text-amber-600 font-semibold text-sm block font-sans">
+            {((summary.high_risk_count / summary.total_accounts) * 100).toFixed(1)}%
+          </span>
+          <span className="text-gray-500 text-[11px] block mt-0.5">
+            High ({summary.high_risk_count.toLocaleString()})
+          </span>
+        </div>
+        <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200/60">
+          <span className="text-gray-700 font-semibold text-sm block font-sans">
+            {((summary.medium_risk_count / summary.total_accounts) * 100).toFixed(1)}%
+          </span>
+          <span className="text-gray-500 text-[11px] block mt-0.5">
+            Medium ({summary.medium_risk_count.toLocaleString()})
+          </span>
+        </div>
+        <div className="p-2.5 rounded-lg bg-gray-50 border border-gray-200/60">
+          <span className="text-emerald-600 font-semibold text-sm block font-sans">
+            {((summary.low_risk_count / summary.total_accounts) * 100).toFixed(1)}%
+          </span>
+          <span className="text-gray-500 text-[11px] block mt-0.5">
+            Low ({summary.low_risk_count.toLocaleString()})
           </span>
         </div>
       </div>
     </div>
   );
 };
-
 

@@ -10,19 +10,39 @@ const API_BASE =
     : "http://127.0.0.1:8000";
 
 export async function fetchAuditSummary(): Promise<AuditSummary> {
-  const res = await fetch(`${API_BASE}/api/dataset/summary`);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch audit summary: ${res.statusText}`);
+  try {
+    const res = await fetch(`${API_BASE}/api/dataset/summary`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (e) {
+    console.warn("Proxy /api/dataset/summary failed, attempting direct backend fallback...", e);
   }
-  return res.json();
+
+  // Direct backend fallback for local development
+  try {
+    const directRes = await fetch("http://127.0.0.1:8000/api/dataset/summary");
+    if (directRes.ok) {
+      return await directRes.json();
+    }
+  } catch (e) {
+    console.error("Direct backend fallback failed:", e);
+  }
+
+  throw new Error("Unable to connect to Lexicon backend service.");
 }
 
 export async function fetchHeroAccount(): Promise<Account> {
-  const res = await fetch(`${API_BASE}/api/dataset/hero-account`);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch hero account: ${res.statusText}`);
+  try {
+    const res = await fetch(`${API_BASE}/api/dataset/hero-account`);
+    if (res.ok) return await res.json();
+  } catch (e) {}
+  
+  const directRes = await fetch("http://127.0.0.1:8000/api/dataset/hero-account");
+  if (!directRes.ok) {
+    throw new Error(`Failed to fetch hero account: ${directRes.statusText}`);
   }
-  return res.json();
+  return directRes.json();
 }
 
 export async function fetchAccounts(params: {

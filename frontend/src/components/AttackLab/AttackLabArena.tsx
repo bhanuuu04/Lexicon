@@ -150,17 +150,17 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
     const count = Math.max(1, candidates);
     return {
       cpu_single: {
-        name: "Single-Core CPU",
+        name: "Standard CPU Core",
         rate: rates.cpu_single[algo] || 10_000_000,
         timeFormatted: formatT(count / (rates.cpu_single[algo] || 10_000_000)),
       },
       gpu_rtx4090: {
-        name: "1x NVIDIA RTX 4090 (24GB)",
+        name: "High-Performance GPU",
         rate: rates.gpu_rtx4090[algo] || 100_000_000_000,
         timeFormatted: formatT(count / (rates.gpu_rtx4090[algo] || 100_000_000_000)),
       },
       gpu_cluster_8x: {
-        name: "8x RTX 4090 Hashcat Rig",
+        name: "Multi-GPU Threat Array",
         rate: rates.gpu_cluster_8x[algo] || 1_000_000_000_000,
         timeFormatted: formatT(count / (rates.gpu_cluster_8x[algo] || 1_000_000_000_000)),
       },
@@ -247,7 +247,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
           elapsed_ms: finalElapsedMs,
           current_rate: Math.round((finalTested / Math.max(1, finalElapsedMs)) * 1000),
           current_candidate: isMatched ? targetPassword : "NIST-SP800-63B-HighEntropyPassphrase",
-          matched: isMatched,
+          matched: Boolean(isMatched),
           matched_password: isMatched ? targetPassword : "",
           matched_rule: isMatched ? matchedRuleName : "None (Entropy Space Exhausted)",
           status: isMatched ? "MATCHED" : "BUDGET_EXHAUSTED",
@@ -288,7 +288,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
             algorithm: algorithm,
             candidates_tested: finalTested,
             elapsed_ms: finalElapsedMs,
-            matched: isMatched,
+            matched: Boolean(isMatched),
             matched_rule: isMatched ? matchedRuleName : "",
             time_budget_ms: timeBudgetMs,
           });
@@ -315,23 +315,12 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
               <span className="text-xs text-[#86868B] font-normal">
                 ({targetAccount.department} • {targetAccount.role})
               </span>
-              {targetAccount.is_hero && (
-                <span className="px-2 py-0.5 rounded-full bg-[#5856D6]/10 text-[#5856D6] text-[10px] font-bold">
-                  ★ HERO TARGET #42
-                </span>
-              )}
             </div>
             <div className="text-xs text-[#6E6E73] flex items-center space-x-4">
               <span>
                 Baseline Risk:{" "}
                 <strong className="text-[#1D1D1F]">
                   {formatRiskScore(targetAccount.baseline_risk)} ({targetAccount.baseline_tier})
-                </strong>
-              </span>
-              <span>
-                MFA:{" "}
-                <strong className={targetAccount.mfa_enabled ? "text-[#34C759]" : "text-[#FF3B30]"}>
-                  {targetAccount.mfa_enabled ? "Enabled" : "None"}
                 </strong>
               </span>
             </div>
@@ -343,7 +332,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
               <button
                 disabled={status === "RUNNING"}
                 onClick={() => setAlgorithm("NTLM")}
-                className={`px-3 py-1 rounded-lg transition font-medium ${
+                className={`px-3 py-1 rounded-lg transition font-medium cursor-pointer ${
                   algorithm === "NTLM" ? "bg-white text-[#1D1D1F] shadow-sm font-semibold" : "text-[#6E6E73] hover:text-[#1D1D1F]"
                 }`}
               >
@@ -352,7 +341,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
               <button
                 disabled={status === "RUNNING"}
                 onClick={() => setAlgorithm("MD5")}
-                className={`px-3 py-1 rounded-lg transition font-medium ${
+                className={`px-3 py-1 rounded-lg transition font-medium cursor-pointer ${
                   algorithm === "MD5" ? "bg-white text-[#1D1D1F] shadow-sm font-semibold" : "text-[#6E6E73] hover:text-[#1D1D1F]"
                 }`}
               >
@@ -361,7 +350,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
               <button
                 disabled={status === "RUNNING"}
                 onClick={() => setAlgorithm("SHA-256")}
-                className={`px-3 py-1 rounded-lg transition font-medium ${
+                className={`px-3 py-1 rounded-lg transition font-medium cursor-pointer ${
                   algorithm === "SHA-256" ? "bg-white text-[#1D1D1F] shadow-sm font-semibold" : "text-[#6E6E73] hover:text-[#1D1D1F]"
                 }`}
               >
@@ -373,7 +362,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
             {status === "RUNNING" ? (
               <button
                 onClick={cancelAttack}
-                className="px-4 py-2 rounded-xl bg-[#FF3B30]/[0.1] border border-[#FF3B30]/30 text-[#FF3B30] hover:bg-[#FF3B30]/[0.2] font-semibold flex items-center space-x-2 transition"
+                className="px-4 py-2 rounded-xl bg-[#FF3B30]/[0.1] border border-[#FF3B30]/30 text-[#FF3B30] hover:bg-[#FF3B30]/[0.2] font-semibold flex items-center space-x-2 transition cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Abort Attack</span>
@@ -381,7 +370,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
             ) : (
               <button
                 onClick={startAttack}
-                className="px-4 py-2 rounded-xl bg-[#FF3B30] hover:bg-[#E02E24] text-white font-semibold flex items-center space-x-2 shadow-sm transition active:scale-[0.98]"
+                className="px-4 py-2 rounded-xl bg-[#FF3B30] hover:bg-[#E02E24] text-white font-semibold flex items-center space-x-2 shadow-sm transition active:scale-[0.98] cursor-pointer"
               >
                 <Play className="w-4 h-4" />
                 <span>Execute Attack Simulation</span>
@@ -390,8 +379,22 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
           </div>
         </div>
       ) : (
-        <div className="p-8 rounded-2xl border border-dashed border-black/[0.1] bg-white text-center text-[#86868B] font-sans">
-          No account selected. Select an account from the Directory or click &quot;Target Hero Account&quot;.
+        /* Auto-loading shimmer — shown only briefly while hero account is fetched */
+        <div className="apple-card p-6 border border-black/[0.08] bg-white animate-pulse">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <div className="h-5 w-20 rounded-full bg-gray-200" />
+                <div className="h-4 w-28 rounded bg-gray-100" />
+                <div className="h-4 w-40 rounded bg-gray-100" />
+              </div>
+              <div className="h-3.5 w-48 rounded bg-gray-100" />
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-40 rounded-xl bg-gray-100" />
+              <div className="h-8 w-44 rounded-xl bg-[#FF3B30]/20" />
+            </div>
+          </div>
         </div>
       )}
 
@@ -454,19 +457,21 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="space-y-1.5 text-xs pt-4 border-t border-black/[0.06]">
-            <div className="flex justify-between text-[#6E6E73]">
-              <span className="font-medium">Budget Consumption</span>
-              <span className="font-semibold text-[#1D1D1F]">{((progress.candidates_tested / maxCandidates) * 100).toFixed(1)}%</span>
+          {/* Progress bar (Shown only while running or after execution) */}
+          {(status === "RUNNING" || progress.candidates_tested > 0) && (
+            <div className="space-y-1.5 text-xs pt-4 border-t border-black/[0.06] animate-in fade-in">
+              <div className="flex justify-between text-[#6E6E73]">
+                <span className="font-medium">Budget Consumption</span>
+                <span className="font-semibold text-[#1D1D1F]">{((progress.candidates_tested / maxCandidates) * 100).toFixed(1)}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-[#E5E5EA] overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#34C759] to-[#FF3B30] transition-all duration-100"
+                  style={{ width: `${Math.min(100, (progress.candidates_tested / maxCandidates) * 100)}%` }}
+                ></div>
+              </div>
             </div>
-            <div className="h-2 w-full rounded-full bg-[#E5E5EA] overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[#34C759] to-[#FF3B30] transition-all duration-100"
-                style={{ width: `${Math.min(100, (progress.candidates_tested / maxCandidates) * 100)}%` }}
-              ></div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Right Column: Empirical Exploit Evidence & Risk Recalculation */}
@@ -480,7 +485,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
             {/* State-dependent result box */}
             <div className="mt-4">
               {status === "MATCHED" && (
-                <div className="p-4 rounded-xl bg-[#FF3B30]/[0.08] border border-[#FF3B30]/25 space-y-3">
+                <div className="p-4 rounded-xl bg-[#FF3B30]/[0.08] border border-[#FF3B30]/25 space-y-3 animate-in fade-in">
                   <div className="flex items-center space-x-2 text-[#FF3B30] font-semibold text-sm">
                     <CheckCircle2 className="w-5 h-5 text-[#FF3B30]" />
                     <span>EMPIRICAL MATCH CRACKED!</span>
@@ -506,7 +511,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
               )}
 
               {status === "BUDGET_EXHAUSTED" && (
-                <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.06] space-y-3">
+                <div className="p-4 rounded-xl bg-[#F5F5F7] border border-black/[0.06] space-y-3 animate-in fade-in">
                   <div className="flex items-center space-x-2 text-[#FF9500] font-semibold text-sm">
                     <XCircle className="w-5 h-5 text-[#FF9500]" />
                     <span>NOT FOUND WITHIN BOUNDED BUDGET</span>
@@ -520,14 +525,19 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
                 </div>
               )}
 
-              {(status === "IDLE" || status === "ACCOUNT_SELECTED" || status === "RUNNING") && (
-                <div className="p-6 rounded-xl bg-[#F5F5F7] border border-black/[0.04] text-center text-[#86868B] space-y-2">
-                  <Cpu className="w-8 h-8 mx-auto text-[#86868B] animate-pulse" />
-                  <p className="text-xs">
-                    {status === "RUNNING"
-                      ? "Testing contextual mutation rules in background Web Worker..."
-                      : "Ready to launch bounded exploit simulation."}
+              {status === "RUNNING" && (
+                <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200/60 text-center text-blue-700 space-y-2 animate-in fade-in">
+                  <Cpu className="w-5 h-5 mx-auto text-blue-600 animate-spin" />
+                  <p className="text-xs font-medium">
+                    Testing contextual mutation rules in real time...
                   </p>
+                </div>
+              )}
+
+              {(status === "IDLE" || status === "ACCOUNT_SELECTED") && (
+                <div className="py-2.5 px-3.5 rounded-lg bg-gray-50 border border-gray-200/60 text-xs text-gray-500 flex items-center space-x-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                  <span>No results yet</span>
                 </div>
               )}
             </div>
@@ -562,17 +572,17 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
         </div>
       </div>
 
-      {/* Hardware Cracking Rig Simulation & Offline Dump Time Estimates */}
+      {/* Hardware Resilience Benchmarks & Offline Dump Resistance Estimates */}
       <div className="apple-card p-6 border border-[#5856D6]/20 bg-gradient-to-br from-[#5856D6]/[0.02] via-white to-white space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/[0.06]">
           <div className="flex items-center space-x-2.5">
             <Server className="w-5 h-5 text-[#5856D6]" />
             <div>
               <h3 className="text-sm font-semibold text-[#1D1D1F]">
-                Offline Hashdump Hardware Cracking Speed Projection ({algorithm})
+                Offline Hashdump Cryptographic Resilience Projection ({algorithm})
               </h3>
               <p className="text-xs text-[#6E6E73]">
-                Simulates real-world Hashcat throughput if an attacker exfiltrates the Active Directory NTDS.dit database.
+                Evaluates Active Directory password hash resistance against commodity, GPU, and high-throughput threat models.
               </p>
             </div>
           </div>
@@ -595,14 +605,14 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
               Rate: {algorithm === "NTLM" ? "20 MH/s" : (algorithm === "MD5" ? "15 MH/s" : "10 MH/s")}
             </div>
             <p className="text-[10px] text-[#86868B] leading-tight">
-              Single-threaded attacker or basic endpoint compute power.
+              Single-threaded baseline evaluation for commodity compute.
             </p>
           </div>
 
-          {/* 2. NVIDIA RTX 4090 Workstation GPU */}
+          {/* 2. High-Performance GPU */}
           <div className="p-4 rounded-xl bg-white border border-black/[0.06] shadow-xs space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-[#1D1D1F]">1x NVIDIA RTX 4090</span>
+              <span className="font-semibold text-[#1D1D1F]">High-Performance GPU</span>
               <span className="text-[10px] text-[#34C759] uppercase font-bold">GPU Tier</span>
             </div>
             <div className="text-base font-bold text-[#34C759]">
@@ -612,15 +622,15 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
               Rate: {algorithm === "NTLM" ? "220 GH/s" : (algorithm === "MD5" ? "160 GH/s" : "80 GH/s")}
             </div>
             <p className="text-[10px] text-[#86868B] leading-tight">
-              Standard offensive security rig. Fast unsalted hashes offer zero resistance.
+              Dedicated GPU acceleration. Fast unsalted algorithms provide minimal resistance.
             </p>
           </div>
 
-          {/* 3. Enterprise 8x RTX 4090 Cluster */}
+          {/* 3. Multi-GPU Threat Array */}
           <div className="p-4 rounded-xl bg-white border border-black/[0.06] shadow-xs space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-[#1D1D1F]">8x RTX 4090 Cluster</span>
-              <span className="text-[10px] text-[#FF3B30] uppercase font-bold">Threat Cluster</span>
+              <span className="font-semibold text-[#1D1D1F]">Multi-GPU Threat Array</span>
+              <span className="text-[10px] text-[#FF3B30] uppercase font-bold">High-Throughput</span>
             </div>
             <div className="text-base font-bold text-[#FF3B30]">
               {hardwareEstimates?.gpu_cluster_8x?.timeFormatted || "< 0.05 ms (Sub-Millisecond)"}
@@ -629,7 +639,7 @@ export const AttackLabArena: React.FC<AttackLabArenaProps> = ({
               Rate: {algorithm === "NTLM" ? "1.76 TH/s" : (algorithm === "MD5" ? "1.28 TH/s" : "640 GH/s")}
             </div>
             <p className="text-[10px] text-[#86868B] leading-tight">
-              State-sponsored or organized cybercrime hash cracking rig.
+              High-throughput adversary benchmark emphasizing the need for Argon2id/Bcrypt.
             </p>
           </div>
         </div>

@@ -9,12 +9,12 @@ export const LandingFooter: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center space-x-3">
-            <div className="w-7 h-7 min-w-[28px] max-w-[28px] min-h-[28px] max-h-[28px] rounded-lg bg-white border border-black/[0.08] flex items-center justify-center p-0.5 overflow-hidden shadow-2xs shrink-0">
+            <div className="w-7 h-7 rounded-lg p-0.5 flex items-center justify-center shrink-0 overflow-hidden">
               <img
                 src="/lexicon-logo.png"
-                alt="Lexicon"
-                className="w-full h-full object-contain block"
-                style={{ width: "24px", height: "24px", maxWidth: "24px", maxHeight: "24px" }}
+                alt="LEXICON"
+                className="w-full h-full object-contain"
+                style={{ mixBlendMode: "multiply" }}
               />
             </div>
             <div className="flex flex-col">

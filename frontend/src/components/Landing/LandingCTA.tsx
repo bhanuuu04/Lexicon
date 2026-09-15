@@ -23,11 +23,6 @@ export const LandingCTA: React.FC<LandingCTAProps> = ({
           transition={{ duration: 0.5 }}
           className="max-w-3xl mx-auto space-y-6"
         >
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/10 text-white text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-[#34C759]"></span>
-            <span>Continuous Enterprise Protection Active</span>
-          </div>
-
           <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight leading-tight">
             Ready to shield your enterprise identity perimeter?
           </h2>

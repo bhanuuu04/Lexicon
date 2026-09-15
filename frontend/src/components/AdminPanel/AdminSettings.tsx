@@ -1,9 +1,28 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sliders, Shield, Database, Cpu, Save, Check } from "lucide-react";
+import { Sliders, Shield, Database, Cpu, Save, Check, RefreshCw, UploadCloud, Sparkles, Server } from "lucide-react";
+import { DatasetMetadata, DatabaseStatus } from "../../types";
 
-export const AdminSettings: React.FC = () => {
+interface AdminSettingsProps {
+  onOpenGenerateModal?: () => void;
+  onOpenImportBreach?: () => void;
+  onSyncDatabase?: () => void;
+  isSyncingDb?: boolean;
+  metadata?: DatasetMetadata | null;
+  dbStatus?: DatabaseStatus | null;
+  totalAccounts?: number;
+}
+
+export const AdminSettings: React.FC<AdminSettingsProps> = ({
+  onOpenGenerateModal,
+  onOpenImportBreach,
+  onSyncDatabase,
+  isSyncingDb = false,
+  metadata,
+  dbStatus,
+  totalAccounts = 50000,
+}) => {
   const [entropyWeight, setEntropyWeight] = useState(30);
   const [policyWeight, setPolicyWeight] = useState(25);
   const [breachWeight, setBreachWeight] = useState(20);
@@ -22,6 +41,87 @@ export const AdminSettings: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Developer & Dataset Management Controls */}
+      <div className="apple-card p-6 bg-white border border-black/[0.06] rounded-2xl shadow-card space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-black/[0.06] gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-[#1D1D1F] flex items-center space-x-2">
+              <Server className="w-5 h-5 text-[#0071E3]" />
+              <span>Developer & Dataset Tools</span>
+            </h2>
+            <p className="text-xs text-[#6E6E73]">
+              Generate synthetic Active Directory corpora, import custom breach dictionaries, or sync records to Cloud DB.
+            </p>
+          </div>
+
+          {metadata && (
+            <span className="text-xs font-mono font-semibold px-3 py-1 rounded-lg bg-black/[0.04] text-[#1D1D1F] self-start sm:self-auto">
+              v{metadata.version} • {totalAccounts.toLocaleString()} Records
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          {/* 1. Generate Dataset */}
+          <div className="p-4 rounded-xl bg-[#FAFAFC] border border-black/[0.04] flex flex-col justify-between space-y-3">
+            <div>
+              <span className="text-xs font-semibold text-[#1D1D1F] block">Generate Dataset</span>
+              <p className="text-[11px] text-[#86868B] mt-0.5">
+                Create synthetic Active Directory accounts with seeded security posture flaws.
+              </p>
+            </div>
+            <button
+              onClick={onOpenGenerateModal}
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-50 text-[#1D1D1F] text-xs font-semibold flex items-center justify-center space-x-1.5 border border-black/[0.08] shadow-2xs transition active:scale-[0.98] cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#0071E3]" />
+              <span>Generate Dataset</span>
+            </button>
+          </div>
+
+          {/* 2. Import Threat Dump */}
+          <div className="p-4 rounded-xl bg-[#FAFAFC] border border-black/[0.04] flex flex-col justify-between space-y-3">
+            <div>
+              <span className="text-xs font-semibold text-[#1D1D1F] block">Import Threat Intel</span>
+              <p className="text-[11px] text-[#86868B] mt-0.5">
+                Ingest custom plaintext, NTLM hash lists, or RockYou threat dictionaries.
+              </p>
+            </div>
+            <button
+              onClick={onOpenImportBreach}
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-50 text-[#1D1D1F] text-xs font-semibold flex items-center justify-center space-x-1.5 border border-black/[0.08] shadow-2xs transition active:scale-[0.98] cursor-pointer"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-[#5856D6]" />
+              <span>Import Threat Dump</span>
+            </button>
+          </div>
+
+          {/* 3. Sync Database */}
+          <div className="p-4 rounded-xl bg-[#FAFAFC] border border-black/[0.04] flex flex-col justify-between space-y-3">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-[#1D1D1F]">Cloud Database</span>
+                {dbStatus?.connected && (
+                  <span className="text-[9px] font-bold text-[#34C759] uppercase">Connected</span>
+                )}
+              </div>
+              <p className="text-[11px] text-[#86868B] mt-0.5">
+                Push Active Directory accounts and risk tiers to persistent Cloud DB.
+              </p>
+            </div>
+            <button
+              onClick={onSyncDatabase}
+              disabled={isSyncingDb}
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 text-[#1D1D1F] text-xs font-semibold flex items-center justify-center space-x-1.5 border border-black/[0.08] shadow-2xs transition active:scale-[0.98] cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[#34C759] ${isSyncingDb ? "animate-spin" : ""}`} />
+              <span>{isSyncingDb ? "Syncing DB..." : "Sync Database"}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Engine & Risk Weight Configuration */}
       <div className="apple-card p-6 bg-white border border-black/[0.06] rounded-2xl shadow-card space-y-6">
         <div className="flex items-center justify-between pb-4 border-b border-black/[0.06]">
           <div>
@@ -35,7 +135,7 @@ export const AdminSettings: React.FC = () => {
 
           <button
             onClick={handleSave}
-            className="px-4 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium flex items-center space-x-1.5 shadow-xs transition active:scale-[0.98]"
+            className="px-4 py-2 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-medium flex items-center space-x-1.5 shadow-xs transition active:scale-[0.98] cursor-pointer"
           >
             {saved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
             <span>{saved ? "Saved Changes" : "Save Preferences"}</span>
@@ -150,7 +250,7 @@ export const AdminSettings: React.FC = () => {
               <button
                 key={cores}
                 onClick={() => setWorkerCores(cores)}
-                className={`p-3 rounded-xl border text-left transition ${
+                className={`p-3 rounded-xl border text-left transition cursor-pointer ${
                   workerCores === cores
                     ? "bg-[#0071E3]/5 border-[#0071E3] text-[#0071E3]"
                     : "bg-[#FAFAFC] border-black/[0.06] text-[#6E6E73] hover:bg-white"
@@ -192,3 +292,4 @@ export const AdminSettings: React.FC = () => {
     </div>
   );
 };
+

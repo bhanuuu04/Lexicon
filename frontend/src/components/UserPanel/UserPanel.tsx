@@ -30,7 +30,9 @@ import {
   Search,
   XCircle,
   Wand2,
+  LogOut,
 } from "lucide-react";
+import { EnterpriseLogin } from "./EnterpriseLogin";
 import { HIBPLiveModal } from "../HIBPCheck/HIBPLiveModal";
 import { generateUltraStrongPassword } from "../../lib/passwordGenerator";
 import {
@@ -53,6 +55,7 @@ interface UserPanelProps {
   onSwitchToAdmin: () => void;
   onAccountRemediated?: (account: Account) => void;
   onSummaryUpdated?: () => void;
+  currentUser?: Account | null;
 }
 
 const RemediationTransitionCard: React.FC<{
@@ -247,21 +250,23 @@ export const UserPanel: React.FC<UserPanelProps> = ({
   onSwitchToAdmin,
   onAccountRemediated,
   onSummaryUpdated,
+  currentUser,
 }) => {
   const [isHIBPOpen, setIsHIBPOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "precheck" | "reset" | "activity" | "settings">("overview");
   const [mfaEnabled, setMfaEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
-  // Active User State
-  const [currentUsername, setCurrentUsername] = useState("alex.morgan");
-  const [account, setAccount] = useState<Account | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  // Active User State - Direct Instant Authenticated Access
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [currentUsername, setCurrentUsername] = useState(currentUser?.username || "alex.morgan");
+  const [account, setAccount] = useState<Account | null>(currentUser || null);
+  const [loadingUser, setLoadingUser] = useState(!currentUser);
 
   // Login Modal & Gateway State
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginUsernameInput, setLoginUsernameInput] = useState("alex.morgan");
-  const [loginPasswordInput, setLoginPasswordInput] = useState("Company2026!");
+  const [loginPasswordInput, setLoginPasswordInput] = useState("Xk9#vP!qR7$wL2zM");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginNotice, setLoginNotice] = useState<string | null>(null);
@@ -460,12 +465,12 @@ export const UserPanel: React.FC<UserPanelProps> = ({
   if (loadingUser && !account) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center space-y-4">
-        <div className="w-16 h-16 min-w-[64px] max-w-[64px] min-h-[64px] max-h-[64px] rounded-2xl bg-white border border-black/[0.08] flex items-center justify-center shadow-md p-2 animate-pulse overflow-hidden shrink-0">
+        <div className="w-16 h-16 min-w-[64px] max-w-[64px] min-h-[64px] max-h-[64px] rounded-2xl flex items-center justify-center p-2 animate-pulse overflow-hidden shrink-0">
           <img
             src="/lexicon-logo.png"
             alt="Lexicon"
             className="w-full h-full object-contain block"
-            style={{ width: "48px", height: "48px", maxWidth: "48px", maxHeight: "48px" }}
+            style={{ width: "48px", height: "48px", maxWidth: "48px", maxHeight: "48px", mixBlendMode: "multiply" }}
           />
         </div>
         <div className="text-center space-y-1">
@@ -597,88 +602,20 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#86868B]">
+              <p className="text-xs text-[#86868B] mt-0.5">
                 {account?.username}@lexicon.corp • {account?.role} ({account?.department})
               </p>
             </div>
           </div>
 
-          {/* Identity Switcher & Controls */}
           <div className="flex items-center space-x-2">
-            {/* Quick Switch Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setIsSwitchingUser(!isSwitchingUser)}
-                className="px-3 py-1.5 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-medium text-[#1D1D1F] border border-black/[0.06] flex items-center space-x-1.5 transition"
-              >
-                <Users className="w-3.5 h-3.5 text-[#0071E3]" />
-                <span>Switch Identity</span>
-              </button>
-
-              {isSwitchingUser && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-black/[0.08] shadow-xl p-2 z-30 space-y-1 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="px-2 py-1 text-[10px] uppercase font-bold text-[#86868B]">
-                    Select Identity to Test
-                  </div>
-                  {/* Hero Account */}
-                  <button
-                    onClick={() => {
-                      setCurrentUsername("alex.morgan");
-                      setIsSwitchingUser(false);
-                    }}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center justify-between ${
-                      currentUsername === "alex.morgan"
-                        ? "bg-[#0071E3] text-white"
-                        : "hover:bg-[#F5F5F7] text-[#1D1D1F]"
-                    }`}
-                  >
-                    <span>alex.morgan (Hero Target)</span>
-                    <span className="text-[10px] opacity-75">Admin</span>
-                  </button>
-                  {/* Other accounts */}
-                  {quickAccounts.slice(0, 5).map((qa) => (
-                    <button
-                      key={qa.id}
-                      onClick={() => {
-                        setCurrentUsername(qa.username);
-                        setIsSwitchingUser(false);
-                      }}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center justify-between ${
-                        currentUsername === qa.username
-                          ? "bg-[#0071E3] text-white"
-                          : "hover:bg-[#F5F5F7] text-[#1D1D1F]"
-                      }`}
-                    >
-                      <span className="truncate">{qa.username}</span>
-                      <span className="text-[10px] opacity-75">{qa.department.split(" ")[0]}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Login Gateway Modal Button */}
             <button
-              onClick={() => setIsLoginModalOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-xs font-semibold text-white flex items-center space-x-1.5 shadow-xs transition active:scale-[0.98] cursor-pointer"
-              title="Test Enterprise Active Directory Login & Blocked Credential Gateway"
+              onClick={() => setIsSwitchingUser(true)}
+              className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200/80 text-xs font-medium text-gray-700 transition flex items-center space-x-1.5 cursor-pointer shadow-2xs"
+              title="Switch active identity"
             >
-              <KeyRound className="w-3.5 h-3.5" />
-              <span>Login Portal</span>
-            </button>
-
-            {/* Test Block Toggle */}
-            <button
-              onClick={handleSimulateBlockToggle}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition ${
-                isBlocked
-                  ? "bg-[#34C759]/10 text-[#34C759] border border-[#34C759]/20 hover:bg-[#34C759]/20"
-                  : "bg-[#FF3B30]/10 text-[#FF3B30] border border-[#FF3B30]/20 hover:bg-[#FF3B30]/20"
-              }`}
-              title="Simulate blocking or unblocking this employee account"
-            >
-              {isBlocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-              <span>{isBlocked ? "Simulate Unblock" : "Simulate Block"}</span>
+              <Users className="w-3.5 h-3.5 text-gray-500" />
+              <span>Switch Identity</span>
             </button>
           </div>
         </div>
@@ -693,62 +630,72 @@ export const UserPanel: React.FC<UserPanelProps> = ({
           </div>
         )}
 
-
         {/* Navigation Tabs */}
         {!isBlocked && (
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-3 pt-1 flex items-center space-x-1 overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => setActiveTab("overview")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-                activeTab === "overview"
-                  ? "bg-[#0071E3] text-white shadow-xs font-semibold"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
-              }`}
-            >
-              Security Posture
-            </button>
-            <button
-              onClick={() => setActiveTab("reset")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center space-x-1 ${
-                activeTab === "reset"
-                  ? "bg-[#0071E3] text-white shadow-xs font-semibold"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
-              }`}
-            >
-              <KeyRound className="w-3.5 h-3.5" />
-              <span>Reset Password</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("precheck")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center space-x-1 ${
-                activeTab === "precheck"
-                  ? "bg-[#0071E3] text-white shadow-xs font-semibold"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
-              }`}
-            >
-              <Cpu className="w-3.5 h-3.5" />
-              <span>zxcvbn Pre-Check</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("activity")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-                activeTab === "activity"
-                  ? "bg-[#0071E3] text-white shadow-xs font-semibold"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
-              }`}
-            >
-              Activity & Log
-            </button>
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-                activeTab === "settings"
-                  ? "bg-[#0071E3] text-white shadow-xs font-semibold"
-                  : "text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-[#F5F5F7]"
-              }`}
-            >
-              Safeguard Settings
-            </button>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-3 pt-1 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  activeTab === "overview"
+                    ? "bg-[#0071E3] text-white shadow-2xs font-semibold"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                Security Posture
+              </button>
+              <button
+                onClick={() => setActiveTab("reset")}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1.5 cursor-pointer ${
+                  activeTab === "reset"
+                    ? "bg-[#0071E3] text-white shadow-2xs font-semibold"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Reset Password</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("precheck")}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1.5 cursor-pointer ${
+                  activeTab === "precheck"
+                    ? "bg-[#0071E3] text-white shadow-2xs font-semibold"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                <Cpu className="w-3.5 h-3.5" />
+                <span>Password Pre-Check</span>
+              </button>
+            </div>
+
+            {/* Secondary Settings & Activity */}
+            <div className="flex items-center space-x-1 shrink-0">
+              <button
+                onClick={() => setActiveTab("activity")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1.5 cursor-pointer ${
+                  activeTab === "activity"
+                    ? "bg-gray-900 text-white shadow-2xs font-semibold"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+                title="Account Activity & History Logs"
+              >
+                <History className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Activity Logs</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1.5 cursor-pointer ${
+                  activeTab === "settings"
+                    ? "bg-gray-900 text-white shadow-2xs font-semibold"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+                title="Account Safeguard Settings"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Settings</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1708,7 +1655,7 @@ export const UserPanel: React.FC<UserPanelProps> = ({
                   type="button"
                   onClick={() => {
                     setLoginUsernameInput("alex.morgan");
-                    setLoginPasswordInput("Company2026!");
+                    setLoginPasswordInput("Xk9#vP!qR7$wL2zM");
                   }}
                   className="px-2.5 py-1 rounded-lg bg-[#F5F5F7] hover:bg-[#EBEBED] text-[11px] font-semibold text-[#1D1D1F] border border-black/[0.06]"
                 >

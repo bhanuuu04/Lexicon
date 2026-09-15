@@ -13,98 +13,86 @@ export const RiskOverviewCards: React.FC<RiskOverviewCardsProps> = ({ summary, o
   const cards = [
     {
       id: "total",
-      title: "Identities Monitored",
+      title: "Total Accounts",
       value: summary.total_accounts.toLocaleString(),
-      subtitle: "Enterprise AD & IAM scope",
+      subtitle: "Enterprise AD scope",
       icon: Users,
-      valueColor: "text-[#1D1D1F]",
-      badgeColor: "bg-[#F5F5F7] text-[#6E6E73] border-black/[0.06]",
-      iconColor: "text-[#6E6E73]",
+      valueColor: "text-gray-900",
       filter: "ALL",
     },
     {
       id: "critical",
-      title: "Critical Defense Tier",
+      title: "Critical Risk",
       value: summary.critical_count.toLocaleString(),
-      subtitle: `${((summary.critical_count / summary.total_accounts) * 100).toFixed(1)}% immediate priority`,
+      subtitle: `${((summary.critical_count / summary.total_accounts) * 100).toFixed(1)}% immediate action`,
       icon: ShieldAlert,
-      valueColor: "text-[#FF3B30]",
-      badgeColor: "bg-[#FF3B30]/[0.08] text-[#FF3B30] border-[#FF3B30]/20",
-      iconColor: "text-[#FF3B30]",
+      valueColor: "text-red-600",
       filter: "Critical",
     },
     {
       id: "high",
-      title: "Elevated Risk Tier",
+      title: "High Risk",
       value: summary.high_risk_count.toLocaleString(),
-      subtitle: `${((summary.high_risk_count / summary.total_accounts) * 100).toFixed(1)}% scheduled remediation`,
+      subtitle: `${((summary.high_risk_count / summary.total_accounts) * 100).toFixed(1)}% elevated priority`,
       icon: AlertTriangle,
-      valueColor: "text-[#FF9500]",
-      badgeColor: "bg-[#FF9500]/[0.08] text-[#FF9500] border-[#FF9500]/20",
-      iconColor: "text-[#FF9500]",
+      valueColor: "text-amber-600",
       filter: "High",
     },
     {
       id: "breach",
       title: "Breach Matches",
       value: summary.breached_count.toLocaleString(),
-      subtitle: "Dark Web Compromised",
+      subtitle: "Known leak matches",
       icon: Database,
-      valueColor: "text-[#FF2D55]",
-      badgeColor: "bg-[#FF2D55]/[0.08] text-[#FF2D55] border-[#FF2D55]/20",
-      iconColor: "text-[#FF2D55]",
+      valueColor: "text-gray-900",
       filter: "BREACHED",
     },
     {
       id: "reuse",
-      title: "Lateral Reuse Chains",
+      title: "Reuse Clusters",
       value: summary.reuse_cluster_count.toLocaleString(),
-      subtitle: `${summary.total_reused_accounts.toLocaleString()} linked accounts`,
+      subtitle: `${summary.total_reused_accounts.toLocaleString()} shared credentials`,
       icon: Layers,
-      valueColor: "text-[#5856D6]",
-      badgeColor: "bg-[#5856D6]/[0.08] text-[#5856D6] border-[#5856D6]/20",
-      iconColor: "text-[#5856D6]",
+      valueColor: "text-gray-900",
       filter: "REUSED",
     },
     {
       id: "privileged",
-      title: "Privilege Tier Exposed",
+      title: "Admins at Risk",
       value: summary.privileged_at_risk_count.toLocaleString(),
       subtitle: `of ${summary.privileged_count.toLocaleString()} Domain Admins`,
       icon: ShieldCheck,
-      valueColor: "text-[#34C759]",
-      badgeColor: "bg-[#34C759]/[0.08] text-[#34C759] border-[#34C759]/20",
-      iconColor: "text-[#34C759]",
+      valueColor: summary.privileged_at_risk_count > 0 ? "text-red-600" : "text-gray-900",
       filter: "PRIVILEGED",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {cards.map((card) => {
         const IconComponent = card.icon;
         return (
           <div
             key={card.id}
             onClick={() => onCardClick && onCardClick(card.filter)}
-            className="apple-card p-4 cursor-pointer flex flex-col justify-between min-h-[120px] group active:scale-[0.99] border border-black/[0.06] bg-white shadow-card hover:shadow-card-hover transition-all"
+            className="p-3.5 cursor-pointer flex flex-col justify-between min-h-[110px] rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-colors shadow-2xs group"
           >
             {/* Header: Title + Icon Badge */}
             <div className="flex items-center justify-between gap-1.5">
-              <span className="text-[11px] font-semibold text-[#6E6E73] font-sans tracking-tight truncate">
+              <span className="text-[11px] font-medium text-gray-500 font-sans tracking-tight truncate">
                 {card.title}
               </span>
-              <div className={`p-1.5 rounded-lg border ${card.badgeColor} shrink-0 group-hover:scale-105 transition-transform duration-200`}>
-                <IconComponent className={`w-3.5 h-3.5 ${card.iconColor}`} />
+              <div className="p-1 rounded-md bg-gray-50 border border-gray-200/60 text-gray-400 group-hover:text-gray-600 shrink-0 transition-colors">
+                <IconComponent className="w-3.5 h-3.5" />
               </div>
             </div>
 
             {/* Value & Subtitle */}
-            <div className="mt-2.5">
-              <div className={`text-2xl sm:text-[26px] font-bold tracking-tight font-sans ${card.valueColor}`}>
+            <div className="mt-2">
+              <div className={`text-xl font-bold tracking-tight font-sans ${card.valueColor}`}>
                 {card.value}
               </div>
-              <p className="text-[11px] text-[#86868B] mt-0.5 font-normal tracking-tight truncate">
+              <p className="text-[10px] text-gray-400 mt-0.5 font-normal tracking-tight truncate">
                 {card.subtitle}
               </p>
             </div>
