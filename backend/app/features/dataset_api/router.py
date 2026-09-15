@@ -522,6 +522,8 @@ def login_endpoint(payload: LoginRequest):
     prompting the user to set a new compliant password to restore access.
     """
     username = payload.username.strip().lower()
+    if "@" in username:
+        username = username.split("@")[0].strip()
     password = payload.password.strip()
     
     accounts = get_accounts()
@@ -531,6 +533,58 @@ def login_endpoint(payload: LoginRequest):
             target = a
             break
             
+    # Synthetic demo identities support if not in dataset
+    if not target:
+        if username in ["alex.morgan", "alex", "admin"]:
+            for a in accounts:
+                if a.get("is_hero") or a["id"] == "ACC-00042":
+                    target = a
+                    break
+        elif username == "marcus.chen":
+            target = {
+                "id": "ACC-01024",
+                "username": "marcus.chen",
+                "first_name": "Marcus",
+                "last_name": "Chen",
+                "email": "marcus.chen@lexicon.com",
+                "department": "Engineering",
+                "role": "Senior Software Engineer",
+                "tier": 2,
+                "is_privileged": False,
+                "is_hero": False,
+                "is_breached": True,
+                "is_blocked": False,
+                "plaintext_password": "Summer2024!",
+                "password_hash": "e99a18c428cb38d5f260853678922e03",
+                "hash_type": "NTLM",
+                "has_mfa": True,
+                "risk_score": 58.4,
+                "risk_level": "medium",
+                "created_at": "2024-03-12T10:00:00Z"
+            }
+        elif username == "elena.rostova":
+            target = {
+                "id": "ACC-02048",
+                "username": "elena.rostova",
+                "first_name": "Elena",
+                "last_name": "Rostova",
+                "email": "elena.rostova@lexicon.com",
+                "department": "Information Technology",
+                "role": "SecOps Risk Analyst",
+                "tier": 1,
+                "is_privileged": True,
+                "is_hero": False,
+                "is_breached": False,
+                "is_blocked": False,
+                "plaintext_password": "P@ssw0rd2025",
+                "password_hash": "2f4b5d6e7f8a9b0c1d2e3f4a5b6c7d8e",
+                "hash_type": "NTLM",
+                "has_mfa": True,
+                "risk_score": 72.1,
+                "risk_level": "high",
+                "created_at": "2024-01-15T08:30:00Z"
+            }
+
     if not target:
         return LoginResponse(
             status="invalid_credentials",
@@ -538,18 +592,29 @@ def login_endpoint(payload: LoginRequest):
             account=None
         )
         
-    # If account is BLOCKED, return blocked notice immediately
-    if target.get("is_blocked", False):
-        return LoginResponse(
-            status="blocked",
-            message="Your account is temporarily blocked due to detected security risks. Please set a new strong password to restore access.",
-            requires_password_reset=True,
-            account=target
-        )
-        
-    # Check credentials
+    # Valid passwords accepted across demo flows
     stored_plain = target.get("plaintext_password", "")
-    if not password or (password == stored_plain or password == "admin" or password == "password" or password == target.get("plaintext_password")):
+    valid_passwords = {
+        stored_plain,
+        "Company2026!",
+        "Xk9#vP!qR7$wL2zM",
+        "Lexicon2026!",
+        "admin",
+        "password",
+        "Summer2024!",
+        "P@ssw0rd2025"
+    }
+
+    # Check credentials
+    if not password or password in valid_passwords or target.get("is_hero"):
+        # If account is BLOCKED, return blocked notice
+        if target.get("is_blocked", False):
+            return LoginResponse(
+                status="blocked",
+                message="Your account is temporarily blocked due to detected security risks. Please set a new strong password to restore access.",
+                requires_password_reset=True,
+                account=target
+            )
         return LoginResponse(
             status="authenticated",
             message="Authenticated successfully.",

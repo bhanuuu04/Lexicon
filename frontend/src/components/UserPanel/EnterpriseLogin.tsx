@@ -32,7 +32,7 @@ export const EnterpriseLogin: React.FC<EnterpriseLoginProps> = ({
   initialUsername = "alex.morgan@lexicon.com",
 }) => {
   const [emailInput, setEmailInput] = useState(initialUsername);
-  const [passwordInput, setPasswordInput] = useState("Xk9#vP!qR7$wL2zM");
+  const [passwordInput, setPasswordInput] = useState("Company2026!");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -401,7 +401,7 @@ export const EnterpriseLogin: React.FC<EnterpriseLoginProps> = ({
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
-                onClick={() => handleSelectQuickIdentity("alex.morgan", "Xk9#vP!qR7$wL2zM")}
+                onClick={() => handleSelectQuickIdentity("alex.morgan", "Company2026!")}
                 className="px-2.5 py-1 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-[10px] font-medium text-gray-700 transition cursor-pointer"
               >
                 Alex Morgan (Admin)
@@ -481,7 +481,7 @@ export const EnterpriseLogin: React.FC<EnterpriseLoginProps> = ({
                 {/* Identity 1 */}
                 <button
                   type="button"
-                  onClick={() => handleExecuteMicrosoftSSO("alex.morgan", "Xk9#vP!qR7$wL2zM")}
+                  onClick={() => handleExecuteMicrosoftSSO("alex.morgan", "Company2026!")}
                   className="w-full p-3 rounded-xl border border-gray-200 hover:border-blue-500/50 hover:bg-gray-50/80 flex items-center justify-between text-left transition group cursor-pointer"
                 >
                   <div className="flex items-center space-x-3">

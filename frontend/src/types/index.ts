@@ -252,6 +252,7 @@ export interface LoginResponse {
   status: "authenticated" | "blocked" | "invalid_credentials";
   message: string;
   account?: Account | null;
+  requires_password_reset?: boolean;
 }
 
 export interface DatabaseStatus {
