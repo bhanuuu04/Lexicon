@@ -132,7 +132,8 @@ def test_api_deterministic_password_reset_reject_and_accept():
     assert user_data["success"] is False
 
     # 3. Test acceptance (hardened compliant password)
-    strong_pwd = "Xk9#vP!qR7$wL2zM"
+    import uuid
+    strong_pwd = f"Xk9#vP!qR7$wL2zM_{uuid.uuid4().hex[:6]}"
     good_resp = client.post("/api/accounts/ACC-00042/reset-password", json={
         "new_password": strong_pwd
     })

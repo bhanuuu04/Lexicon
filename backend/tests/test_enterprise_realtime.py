@@ -5,9 +5,14 @@ from backend.app.main import app
 client = TestClient(app)
 
 def test_login_success():
+    hero_res = client.get("/api/dataset/hero-account")
+    assert hero_res.status_code == 200
+    hero_acc = hero_res.json()
+    pwd = hero_acc.get("plaintext_password", "Company2026!")
+
     response = client.post("/api/auth/login", json={
         "username": "alex.morgan",
-        "password": "Company2026!"
+        "password": pwd
     })
     assert response.status_code == 200
     data = response.json()
@@ -21,10 +26,14 @@ def test_login_blocked_account():
         "reason": "Suspicious credential activity"
     })
     
+    hero_res = client.get("/api/dataset/hero-account")
+    hero_acc = hero_res.json()
+    pwd = hero_acc.get("plaintext_password", "Company2026!")
+
     # 2. Try login
     response = client.post("/api/auth/login", json={
         "username": "alex.morgan",
-        "password": "Company2026!"
+        "password": pwd
     })
     assert response.status_code == 200
     data = response.json()
