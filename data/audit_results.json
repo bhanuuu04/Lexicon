@@ -19,93 +19,93 @@
   "department_risk_summary": {
     "Information Technology": {
       "total": 6085,
-      "critical": 577,
-      "high": 2019,
-      "medium": 1946,
-      "low": 1543,
+      "critical": 620,
+      "high": 2043,
+      "medium": 1989,
+      "low": 1433,
       "privileged": 3815,
       "breached": 2589,
-      "avg_risk": 0.4405
+      "avg_risk": 0.4505
     },
     "Human Resources": {
       "total": 3952,
-      "critical": 219,
-      "high": 1250,
-      "medium": 1255,
-      "low": 1228,
+      "critical": 241,
+      "high": 1280,
+      "medium": 1257,
+      "low": 1174,
       "privileged": 1301,
       "breached": 1724,
-      "avg_risk": 0.3944
+      "avg_risk": 0.405
     },
     "Operations": {
       "total": 8096,
-      "critical": 409,
-      "high": 2584,
-      "medium": 2657,
-      "low": 2446,
+      "critical": 443,
+      "high": 2648,
+      "medium": 2677,
+      "low": 2328,
       "privileged": 2754,
       "breached": 3438,
-      "avg_risk": 0.3954
+      "avg_risk": 0.4058
     },
     "Engineering": {
       "total": 10805,
-      "critical": 492,
-      "high": 3428,
-      "medium": 3562,
-      "low": 3323,
+      "critical": 553,
+      "high": 3502,
+      "medium": 3588,
+      "low": 3162,
       "privileged": 3072,
       "breached": 4718,
-      "avg_risk": 0.3903
+      "avg_risk": 0.4002
     },
     "Finance": {
       "total": 7558,
-      "critical": 551,
-      "high": 2416,
-      "medium": 2393,
-      "low": 2198,
+      "critical": 586,
+      "high": 2466,
+      "medium": 2421,
+      "low": 2085,
       "privileged": 3236,
       "breached": 3209,
-      "avg_risk": 0.4106
+      "avg_risk": 0.4207
     },
     "Legal": {
       "total": 2468,
-      "critical": 243,
-      "high": 810,
-      "medium": 772,
-      "low": 643,
+      "critical": 257,
+      "high": 824,
+      "medium": 775,
+      "low": 612,
       "privileged": 1481,
       "breached": 1064,
-      "avg_risk": 0.4365
+      "avg_risk": 0.4462
     },
     "Sales": {
       "total": 6070,
-      "critical": 255,
-      "high": 1923,
-      "medium": 1945,
-      "low": 1947,
+      "critical": 275,
+      "high": 1973,
+      "medium": 1962,
+      "low": 1860,
       "privileged": 1281,
       "breached": 2646,
-      "avg_risk": 0.3812
+      "avg_risk": 0.3913
     },
     "Marketing": {
       "total": 2964,
-      "critical": 116,
-      "high": 884,
-      "medium": 1004,
-      "low": 960,
+      "critical": 126,
+      "high": 911,
+      "medium": 1001,
+      "low": 926,
       "privileged": 579,
       "breached": 1274,
-      "avg_risk": 0.3746
+      "avg_risk": 0.3849
     },
     "Executive": {
       "total": 2002,
-      "critical": 316,
-      "high": 679,
-      "medium": 623,
-      "low": 384,
+      "critical": 337,
+      "high": 684,
+      "medium": 639,
+      "low": 342,
       "privileged": 2002,
       "breached": 839,
-      "avg_risk": 0.4964
+      "avg_risk": 0.5076
     }
   },
   "top_reuse_clusters": [
@@ -348,7 +348,7 @@
     },
     {
       "group_id": 266,
-      "password_sample": "WelcomeToLexicon2023!",
+      "password_sample": "LexiconPass@2025",
       "total_accounts": 65,
       "privileged_count": 25,
       "departments": {
@@ -382,7 +382,7 @@
     },
     {
       "group_id": 256,
-      "password_sample": "NewUser2024$",
+      "password_sample": "LexiconPass@2025",
       "total_accounts": 65,
       "privileged_count": 28,
       "departments": {
@@ -416,7 +416,7 @@
     },
     {
       "group_id": 652,
-      "password_sample": "mountain-rocket-2025",
+      "password_sample": "LexiconPass@2025",
       "total_accounts": 65,
       "privileged_count": 25,
       "departments": {
@@ -450,7 +450,7 @@
     },
     {
       "group_id": 775,
-      "password_sample": "HR2023!",
+      "password_sample": "LexiconPass@2025",
       "total_accounts": 65,
       "privileged_count": 30,
       "departments": {
@@ -802,7 +802,7 @@
     "frameworks": {
       "nist_sp_800_63b": {
         "name": "NIST SP 800-63B Guidelines",
-        "score": 78.5,
+        "score": 77.1,
         "status": "PARTIAL",
         "controls": {
           "min_8_char_length": "98.0% compliant",
@@ -836,21 +836,21 @@
       },
       "iso_27001": {
         "name": "ISO/IEC 27001:2022 Control A.9",
-        "score": 65.2,
+        "score": 64.7,
         "status": "PARTIAL",
         "controls": {
           "password_management_system": "Automated via Lexicon Engine",
           "access_rights_review": "Real-time risk scoring active",
-          "credential_entropy_hygiene": "82.5% high-entropy"
+          "credential_entropy_hygiene": "75.6% high-entropy"
         },
-        "findings": "Overall ISO/IEC 27001 authentication hygiene score: 65.2/100."
+        "findings": "Overall ISO/IEC 27001 authentication hygiene score: 64.7/100."
       }
     }
   },
   "active_directory_threat_surface": {
     "kerberoasting_exposure": {
-      "vulnerable_accounts_count": 6424,
-      "percentage_of_privileged": 32.9,
+      "vulnerable_accounts_count": 6802,
+      "percentage_of_privileged": 34.8,
       "threat_description": "Privileged service/admin accounts with weak crackable hashes and no MFA vulnerable to offline TGS ticket cracking.",
       "sample_target_ids": [
         "ACC-00042",
@@ -866,8 +866,8 @@
       ]
     },
     "as_rep_roasting_exposure": {
-      "vulnerable_accounts_count": 15764,
-      "percentage_of_directory": 31.5,
+      "vulnerable_accounts_count": 16867,
+      "percentage_of_directory": 33.7,
       "threat_description": "User accounts with weak credentials vulnerable to pre-authentication AS-REP offline brute-force attacks.",
       "sample_target_ids": [
         "ACC-55937",
